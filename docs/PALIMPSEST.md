@@ -149,8 +149,9 @@ A starting point, not a contract. Design the real format in build step 1 and kee
 
 Rules for deriving that data. All are **Decided** as starting points; put the numbers in constants and tune them on the three demo repositories.
 
-- **Which history.** Walk the default branch's first-parent history so there is one linear sequence of commits to scrub.
-- **Clips.** Bucket commits by month. A month's color is the author who changed the most lines of that file in it. A month with no commits continues the previous clip. Merge neighboring months with the same author into one clip.
+- **Which history.** Walk the default branch's first-parent history so there is one linear sequence of commits to scrub. A merge commit on that line is credited to the author of the merged branch's last commit, not to whoever merged it, and a GitHub pull-request merge shows the pull request's title as its subject (Decided in step 1).
+- **Clips.** Bucket commits by month. A month's color is the author who changed the most lines of that file in it. A month with no commits continues the previous clip. Merge neighboring months with the same author into one clip. An author's stretch shorter than 3 months is absorbed by its longer neighbor, so the busiest files show about 10 color changes instead of about 37 (Decided in step 1, `min_clip_months`).
+- **Vendored files.** Vendored folders, lock files and generated code are flagged per file and left out of folder sizes and Overview (Decided in step 1).
 - **Untouched.** A stretch of 12 months or more with no commit to the file is drawn as Untouched instead of continuing the last author's clip.
 - **Renames.** Git does not record them. Start with exact matches (a path deleted and a path added in the same commit with identical content), then add similarity matching above a threshold, as `git log -M` does.
 - **Lines.** Process one file's commits oldest to newest, diffing each version against the previous one, and keep an owner for every line. Inside a changed hunk, pair old and new lines in order when they are similar enough; a paired line continues with a new color, an unpaired one is a death and a birth.
@@ -379,7 +380,7 @@ Two deliberate differences between the themes, both for legibility:
 | --- | --- | --- | --- |
 | Opens by default, precomputed | `alacritty/alacritty` | 2,494 | Recognizable, a clear folder structure, maintainers who changed over the years, and a visible split into several crates. |
 | Suggestion | `BurntSushi/ripgrep` | 2,287 | Overwhelmingly one author, so it tests a nearly one-color view. It has a large reorganization into `crates/`. |
-| Suggestion | `docker/compose` | 6,319 | Many contributors, and a rewrite from Python to Go where nearly every file dies and a new set is born. |
+| Suggestion | `docker/compose` | 6,319 | Many contributors, many moves between folders, and over a thousand renames. Its default branch's first-parent history starts in April 2020 with the Go version, so the Python-to-Go rewrite is not on it; kept anyway (Decided in step 1). |
 
 - Precompute all three with the command-line tool and ship the files in `web/public/data/`. None of them is ever cloned in the browser.
 - The expectations in the "Why" column (author mix, renames, the rewrite) come from general knowledge and were not measured. Check them when the data exists; if alacritty turns out to make a dull demo, tell the author.
