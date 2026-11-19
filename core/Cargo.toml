@@ -1,0 +1,18 @@
+[package]
+name = "palimpsest-core"
+description = "Walks a git history and turns it into the tracks Palimpsest draws."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = ["git"]
+git = ["dep:gix"]
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+imara-diff = "0.2.0"
+gix = { version = "0.90.0", default-features = false, features = ["sha1", "mailmap"], optional = true }
+
+[dev-dependencies]
+serde_json = "1.0.154"

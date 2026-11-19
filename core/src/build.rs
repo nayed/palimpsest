@@ -1,0 +1,548 @@
+//! From a repository to the data file.
+//!
+//! Two passes. The expensive one diffs every commit against its first parent
+//! (`diff::diff_commit`). The cheap one, [`assemble`], walks those diffs oldest
+//! first to give files identities that survive renames, cut clips, and size
+//! the Overview folders. `assemble` is a pure function, which is what the tests
+//! exercise most.
+
+use std::collections::{BTreeMap, HashMap};
+
+use crate::clips::{Clip, Touch, clips};
+use crate::diff::{ChangeKind, FileChange, diff_commit};
+use crate::format::{
+    self, Changes, Clips, Commits, Data, Files, Moment, Overview, OverviewRow, Repo,
+};
+use crate::source::{RawCommit, Result, Source};
+use crate::time::{month_of, month_start};
+use crate::{Options, authors};
+
+/// Reads the whole first-parent history of `src` and builds the data file.
+/// `progress` is called with (commits done, commits in total).
+pub fn build(
+    src: &dyn Source,
+    opts: &Options,
+    progress: &mut dyn FnMut(usize, usize),
+) -> Result<Data> {
+    let chain = first_parent_chain(src)?;
+    let mut diffs = Vec::with_capacity(chain.len());
+    for (i, c) in chain.iter().enumerate() {
+        let parent_tree = if i == 0 {
+            None
+        } else {
+            Some(chain[i - 1].tree)
+        };
+        diffs.push(diff_commit(src, parent_tree, c.tree, opts)?);
+        progress(i + 1, chain.len());
+    }
+    Ok(assemble(&chain, &diffs, opts))
+}
+
+/// The commits from the root to the head following first parents, oldest first.
+pub fn first_parent_chain(src: &dyn Source) -> Result<Vec<RawCommit>> {
+    let mut chain = Vec::new();
+    let mut next = Some(src.head()?);
+    while let Some(id) = next {
+        let c = src.commit(id)?;
+        next = c.parents.first().copied();
+        chain.push(c);
+    }
+    chain.reverse();
+    Ok(chain)
+}
+
+struct FileAcc {
+    born: u32,
+    died: Option<u32>,
+    commits: u32,
+    lines: u32,
+    paths: Vec<(u32, u32)>,
+    touches: Vec<Touch>,
+}
+
+fn touch_weight(c: &FileChange) -> u32 {
+    (c.added + c.deleted).max(1)
+}
+
+/// Every folder containing `path`: "a/b/c.rs" gives "a" and "a/b".
+fn folders_of(path: &str) -> impl Iterator<Item = &str> {
+    path.match_indices('/').map(move |(i, _)| &path[..i])
+}
+
+pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options) -> Data {
+    assert_eq!(commits.len(), diffs.len());
+    let mut data = Data {
+        format: format::FORMAT.into(),
+        version: format::VERSION,
+        ..Default::default()
+    };
+    if commits.is_empty() {
+        data.repo.name = opts.name.clone();
+        return data;
+    }
+
+    // Commit times, made non-decreasing.
+    let mut times = Vec::with_capacity(commits.len());
+    for c in commits {
+        let prev = times.last().copied().unwrap_or(i64::MIN);
+        times.push(c.time.max(prev));
+    }
+    let (start, end) = (times[0], *times.last().unwrap());
+
+    let (commit_author, author_table) = authors::collect(commits, opts.ranked_authors);
+    data.authors = author_table;
+
+    data.repo = Repo {
+        name: opts.name.clone(),
+        head: commits.last().unwrap().id.to_hex(),
+        commit_count: commits.len() as u32,
+        start,
+        end,
+    };
+
+    data.commits = Commits::default();
+    for (i, c) in commits.iter().enumerate() {
+        let (subject, why) = split_message(&c.message);
+        data.commits.time.push(times[i]);
+        data.commits.author.push(commit_author[i]);
+        data.commits.hash.push(c.id.to_hex()[..7].to_string());
+        data.commits.subject.push(subject);
+        data.commits.why.push(why);
+    }
+
+    // Files, paths and changes.
+    let mut path_ids: HashMap<String, u32> = HashMap::new();
+    let mut intern = |paths: &mut Vec<String>, p: &str| -> u32 {
+        *path_ids.entry(p.to_string()).or_insert_with(|| {
+            paths.push(p.to_string());
+            paths.len() as u32 - 1
+        })
+    };
+    let mut files: Vec<FileAcc> = Vec::new();
+    let mut live: HashMap<String, usize> = HashMap::new();
+    let mut folder_lines: HashMap<String, i64> = HashMap::new();
+    let mut folder_peak: HashMap<String, i64> = HashMap::new();
+    let mut changes = Changes {
+        start: vec![0],
+        ..Default::default()
+    };
+
+    for (i, diff) in diffs.iter().enumerate() {
+        let ci = i as u32;
+        for ch in diff {
+            let mut new_file = |files: &mut Vec<FileAcc>, paths: &mut Vec<String>| {
+                files.push(FileAcc {
+                    born: ci,
+                    died: None,
+                    commits: 0,
+                    lines: 0,
+                    paths: vec![(ci, intern(paths, &ch.path))],
+                    touches: Vec::new(),
+                });
+                files.len() - 1
+            };
+            let id = match ch.kind {
+                ChangeKind::Added | ChangeKind::Modified => match live.get(&ch.path) {
+                    Some(&id) => id,
+                    None => {
+                        let id = new_file(&mut files, &mut data.paths);
+                        live.insert(ch.path.clone(), id);
+                        id
+                    }
+                },
+                ChangeKind::Renamed => {
+                    let old = ch.old_path.as_deref().unwrap_or_default();
+                    let id = match live.remove(old) {
+                        Some(id) => {
+                            let p = intern(&mut data.paths, &ch.path);
+                            files[id].paths.push((ci, p));
+                            id
+                        }
+                        None => new_file(&mut files, &mut data.paths),
+                    };
+                    live.insert(ch.path.clone(), id);
+                    id
+                }
+                ChangeKind::Deleted => match live.remove(&ch.path) {
+                    Some(id) => {
+                        files[id].died = Some(ci);
+                        id
+                    }
+                    None => continue,
+                },
+            };
+            let f = &mut files[id];
+            f.commits += 1;
+            if ch.kind != ChangeKind::Deleted {
+                f.lines = ch.lines_after;
+                f.touches.push(Touch {
+                    time: times[i],
+                    author: commit_author[i],
+                    weight: touch_weight(ch),
+                });
+            }
+
+            let before = ch.old_path.as_deref().unwrap_or(&ch.path);
+            if ch.kind != ChangeKind::Added {
+                for d in folders_of(before) {
+                    *folder_lines.entry(d.to_string()).or_default() -= ch.lines_before as i64;
+                }
+            }
+            if ch.kind != ChangeKind::Deleted {
+                for d in folders_of(&ch.path) {
+                    let n = folder_lines.entry(d.to_string()).or_default();
+                    *n += ch.lines_after as i64;
+                    let peak = folder_peak.entry(d.to_string()).or_default();
+                    *peak = (*peak).max(*n);
+                }
+            }
+
+            changes.file.push(id as u32);
+            changes.kind.push(ch.kind as u8);
+            changes.added.push(ch.added);
+            changes.deleted.push(ch.deleted);
+        }
+        changes.start.push(changes.file.len() as u32);
+    }
+    data.changes = changes;
+
+    data.files = Files {
+        path_start: vec![0],
+        ..Default::default()
+    };
+    data.clips = Clips {
+        start: vec![0],
+        ..Default::default()
+    };
+    for f in &files {
+        data.files.born.push(f.born);
+        data.files.died.push(f.died.map_or(-1, |d| d as i32));
+        data.files.commits.push(f.commits);
+        data.files.lines.push(f.lines);
+        for &(c, p) in &f.paths {
+            data.files.path_commit.push(c);
+            data.files.path.push(p);
+        }
+        data.files.path_start.push(data.files.path.len() as u32);
+        let to = f.died.map_or(end, |d| times[d as usize]);
+        push_clips(
+            &mut data.clips,
+            &clips(
+                times[f.born as usize],
+                to,
+                &f.touches,
+                opts.untouched_months,
+            ),
+        );
+    }
+
+    data.overview = overview(
+        diffs,
+        &times,
+        &commit_author,
+        &folder_lines,
+        &folder_peak,
+        opts,
+    );
+    data
+}
+
+fn push_clips(out: &mut Clips, clips: &[Clip]) {
+    for c in clips {
+        out.from.push(c.from);
+        out.to.push(c.to);
+        out.author.push(c.author.map_or(-1, |a| a as i32));
+    }
+    out.start.push(out.from.len() as u32);
+}
+
+/// Picks the Overview folders: the biggest ones, going one level deeper while a
+/// single folder holds most of the code. Size is the most lines a folder ever
+/// had, so a folder that was rewritten away (Python to Go) can still show.
+fn choose_folders(peak: &HashMap<String, i64>, opts: &Options) -> Vec<String> {
+    let children = |dir: Option<&str>| -> Vec<String> {
+        let mut c: Vec<String> = peak
+            .keys()
+            .filter(|k| match dir {
+                None => !k.contains('/'),
+                Some(d) => k
+                    .strip_prefix(d)
+                    .and_then(|r| r.strip_prefix('/'))
+                    .is_some_and(|r| !r.contains('/')),
+            })
+            .cloned()
+            .collect();
+        c.sort();
+        c
+    };
+    let size = |d: &String| peak.get(d).copied().unwrap_or(0);
+    let total: i64 = children(None).iter().map(size).sum::<i64>().max(1);
+
+    let mut chosen = children(None);
+    loop {
+        let Some(biggest) = chosen.iter().max_by_key(|d| size(d)).cloned() else {
+            break;
+        };
+        let kids = children(Some(&biggest));
+        if (size(&biggest) as f64) < opts.descend_share * total as f64 || kids.is_empty() {
+            break;
+        }
+        chosen.retain(|d| *d != biggest);
+        chosen.extend(kids);
+    }
+    chosen.retain(|d| size(d) > 0);
+    chosen.sort_by_key(|d| (std::cmp::Reverse(size(d)), d.clone()));
+    chosen.truncate(opts.overview_rows);
+    chosen
+}
+
+struct RowAcc {
+    lines: i64,
+    peak: i64,
+    born: Option<i64>,
+    emptied: Option<i64>,
+    sizes: Vec<u32>,
+    touches: Vec<Touch>,
+}
+
+fn overview(
+    diffs: &[Vec<FileChange>],
+    times: &[i64],
+    commit_author: &[u32],
+    _folder_lines: &HashMap<String, i64>,
+    folder_peak: &HashMap<String, i64>,
+    opts: &Options,
+) -> Overview {
+    let folders = choose_folders(folder_peak, opts);
+    let row_of = |path: &str| -> usize {
+        folders
+            .iter()
+            .enumerate()
+            .filter(|(_, f)| {
+                path.strip_prefix(f.as_str())
+                    .is_some_and(|r| r.starts_with('/'))
+            })
+            .max_by_key(|(_, f)| f.len())
+            .map_or(folders.len(), |(i, _)| i)
+    };
+
+    let (start, end) = (times[0], *times.last().unwrap());
+    let first_month = month_of(start);
+    let month_count = (month_of(end) - first_month + 1) as usize;
+    let mut rows: Vec<RowAcc> = (0..=folders.len())
+        .map(|_| RowAcc {
+            lines: 0,
+            peak: 0,
+            born: None,
+            emptied: None,
+            sizes: vec![0; month_count],
+            touches: vec![],
+        })
+        .collect();
+
+    // Moves between folders, grouped per commit.
+    let mut moves: BTreeMap<(u32, String, String), (u32, String)> = BTreeMap::new();
+
+    for (i, diff) in diffs.iter().enumerate() {
+        for ch in diff {
+            if ch.kind != ChangeKind::Added {
+                let r = &mut rows[row_of(ch.old_path.as_deref().unwrap_or(&ch.path))];
+                r.lines -= ch.lines_before as i64;
+            }
+            if ch.kind != ChangeKind::Deleted {
+                let r = &mut rows[row_of(&ch.path)];
+                r.lines += ch.lines_after as i64;
+                r.touches.push(Touch {
+                    time: times[i],
+                    author: commit_author[i],
+                    weight: touch_weight(ch),
+                });
+            }
+            if let (ChangeKind::Renamed, Some(old)) = (ch.kind, &ch.old_path) {
+                let (from, to) = (parent(old), parent(&ch.path));
+                if from != to {
+                    let e = moves
+                        .entry((i as u32, from.to_string(), to.to_string()))
+                        .or_insert((0, ch.path.clone()));
+                    e.0 += 1;
+                }
+            }
+        }
+        let m = (month_of(times[i]) - first_month) as usize;
+        for r in &mut rows {
+            r.peak = r.peak.max(r.lines);
+            if r.lines > 0 {
+                r.born.get_or_insert(times[i]);
+                r.emptied = None;
+            } else if r.born.is_some() && r.emptied.is_none() {
+                r.emptied = Some(times[i]);
+            }
+            // Carry this commit's size forward to the end of the timeline; later
+            // commits overwrite the months they reach.
+            let n = r.lines.max(0) as u32;
+            r.sizes[m..].iter_mut().for_each(|s| *s = n);
+        }
+    }
+
+    let mut out = Overview {
+        first_month_start: month_start(first_month),
+        month_starts: (0..=month_count as i32)
+            .map(|k| month_start(first_month + k))
+            .collect(),
+        ..Default::default()
+    };
+    for (k, r) in rows.into_iter().enumerate() {
+        let Some(born) = r.born else { continue };
+        let folder = folders.get(k).cloned();
+        let to = r.emptied.unwrap_or(end);
+        let mut row_clips = Clips {
+            start: vec![0],
+            ..Default::default()
+        };
+        push_clips(
+            &mut row_clips,
+            &clips(born, to, &r.touches, opts.untouched_months),
+        );
+        out.rows.push(OverviewRow {
+            label: folder
+                .as_ref()
+                .map_or("everything else".into(), |f| format!("{f}/")),
+            folder,
+            born,
+            died: r.emptied,
+            lines: r.lines.max(0) as u32,
+            peak_lines: r.peak.max(0) as u32,
+            sizes: r.sizes,
+            clips: row_clips,
+        });
+    }
+
+    // Notable moments: a chosen folder appearing after the first commit, and
+    // files moving between folders (most files first).
+    let mut moments = Vec::new();
+    for row in out
+        .rows
+        .iter()
+        .filter(|r| r.folder.is_some() && r.born > start)
+    {
+        let commit = times.partition_point(|&t| t < row.born) as u32;
+        moments.push((
+            u32::MAX,
+            Moment {
+                commit,
+                kind: "folderBorn".into(),
+                folder: row.folder.clone().unwrap(),
+                from: None,
+                files: 0,
+                example: None,
+            },
+        ));
+    }
+    for ((commit, from, to), (files, example)) in moves {
+        moments.push((
+            files,
+            Moment {
+                commit,
+                kind: "move".into(),
+                folder: to,
+                from: Some(from),
+                files,
+                example: Some(example),
+            },
+        ));
+    }
+    moments.sort_by_key(|(score, m)| (std::cmp::Reverse(*score), m.commit));
+    out.moments = moments
+        .into_iter()
+        .take(opts.max_moments)
+        .map(|(_, m)| m)
+        .collect();
+    out
+}
+
+fn parent(path: &str) -> &str {
+    path.rfind('/').map_or("", |i| &path[..i])
+}
+
+/// The subject (first paragraph, on one line) and the why (the body's first
+/// paragraph, unless it is only trailers such as "Signed-off-by:").
+fn split_message(message: &str) -> (String, String) {
+    let message = message.replace("\r\n", "\n");
+    let mut paragraphs = message
+        .trim()
+        .split("\n\n")
+        .map(str::trim)
+        .filter(|p| !p.is_empty());
+    let one_line = |p: &str| p.split_whitespace().collect::<Vec<_>>().join(" ");
+    let subject = paragraphs.next().map(one_line).unwrap_or_default();
+    let why = paragraphs
+        .next()
+        .filter(|p| !is_trailers(p))
+        .map(one_line)
+        .unwrap_or_default();
+    (subject, truncate(why, 400))
+}
+
+fn is_trailers(paragraph: &str) -> bool {
+    paragraph.lines().all(|l| {
+        l.split_once(": ").is_some_and(|(k, _)| {
+            !k.is_empty() && k.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        })
+    })
+}
+
+fn truncate(s: String, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s;
+    }
+    let cut: String = s.chars().take(max - 1).collect();
+    format!("{}…", cut.trim_end())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn subject_and_why() {
+        let (s, w) = split_message(
+            "Fix the lexer\n\nIt hung on files with\nno trailing newline.\n\nMore.\n",
+        );
+        assert_eq!(s, "Fix the lexer");
+        assert_eq!(w, "It hung on files with no trailing newline.");
+        let (_, w) = split_message("Bump\n\nSigned-off-by: A <a@b.c>\nCo-authored-by: B <b@c.d>\n");
+        assert_eq!(w, "");
+        assert_eq!(split_message("").0, "");
+    }
+
+    #[test]
+    fn folders_of_a_path() {
+        assert_eq!(folders_of("a/b/c.rs").collect::<Vec<_>>(), ["a", "a/b"]);
+        assert_eq!(folders_of("c.rs").count(), 0);
+    }
+
+    #[test]
+    fn descends_into_a_folder_that_holds_most_of_the_code() {
+        let peak: HashMap<String, i64> = [
+            ("crates", 900),
+            ("crates/core", 500),
+            ("crates/cli", 300),
+            ("crates/cli/src", 300),
+            ("docs", 60),
+            ("ci", 40),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v))
+        .collect();
+        let opts = Options::default();
+        assert_eq!(
+            choose_folders(&peak, &opts),
+            ["crates/core", "crates/cli", "docs", "ci"]
+        );
+        let opts = Options {
+            overview_rows: 2,
+            ..Options::default()
+        };
+        assert_eq!(choose_folders(&peak, &opts), ["crates/core", "crates/cli"]);
+    }
+}
