@@ -67,11 +67,11 @@ fn reads_a_real_repository() {
     write(dir, "src/new.rs", b"fn new() {}\n");
     git(dir, &["add", "-A"], bo, 3);
     git(dir, &["commit", "-q", "-m", "Side work"], bo, 3);
-    git(dir, &["checkout", "-q", "main"], bo, 4);
+    git(dir, &["checkout", "-q", "main"], ann, 4);
     git(
         dir,
         &["merge", "-q", "--no-ff", "-m", "Merge side", "side"],
-        bo,
+        ann,
         4,
     );
 
@@ -90,6 +90,7 @@ fn reads_a_real_repository() {
     assert_eq!(d.commits.why[0], "Because.");
     // The mailmap folds Ann's work address into one author.
     assert_eq!(d.authors.name, ["Ann", "Bo"]);
+    // Ann merged Bo's branch: the merge is Bo's work.
     assert_eq!(d.commits.author, [0, 0, 1]);
     assert_eq!(d.commits.time[0], 1_609_502_400);
 

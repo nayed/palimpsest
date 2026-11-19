@@ -86,6 +86,9 @@ pub struct Files {
     pub commits: Vec<u32>,
     /// Line count at the newest commit, or just before it was deleted.
     pub lines: Vec<u32>,
+    /// Vendored, generated or a lock file: left out of folder sizes, and best
+    /// left out of the files Tracks picks.
+    pub vendored: Vec<bool>,
     /// Offsets into `pathCommit` and `path`, one more than there are files.
     pub path_start: Vec<u32>,
     /// From this commit on, the file was at `paths[path[k]]`.
@@ -158,7 +161,9 @@ pub struct Moment {
     pub folder: String,
     /// For a move: the folder they moved from.
     pub from: Option<String>,
-    /// For a move: how many files moved, and the path of one of them.
+    /// For a move: how many files moved between these two folders (the commit
+    /// may have moved more elsewhere), and the path of one of them. For a
+    /// folder birth: how many files it started with.
     pub files: u32,
     pub example: Option<String>,
 }

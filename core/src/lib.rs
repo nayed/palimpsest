@@ -13,6 +13,7 @@ pub mod mem;
 pub mod source;
 pub mod text;
 pub mod time;
+pub mod vendored;
 
 #[cfg(feature = "git")]
 pub mod git;

@@ -15,6 +15,7 @@ use crate::format::{
 };
 use crate::source::{RawCommit, Result, Source};
 use crate::time::{month_of, month_start};
+use crate::vendored::is_vendored;
 use crate::{Options, authors};
 
 /// Reads the whole first-parent history of `src` and builds the data file.
@@ -24,7 +25,8 @@ pub fn build(
     opts: &Options,
     progress: &mut dyn FnMut(usize, usize),
 ) -> Result<Data> {
-    let chain = first_parent_chain(src)?;
+    let mut chain = first_parent_chain(src)?;
+    attribute_merges(src, &mut chain)?;
     let mut diffs = Vec::with_capacity(chain.len());
     for (i, c) in chain.iter().enumerate() {
         let parent_tree = if i == 0 {
@@ -49,6 +51,21 @@ pub fn first_parent_chain(src: &dyn Source) -> Result<Vec<RawCommit>> {
     }
     chain.reverse();
     Ok(chain)
+}
+
+/// A merge commit on the first-parent line brings in someone else's branch.
+/// It is credited to the author of that branch's last commit rather than to
+/// whoever merged it; otherwise a project that merges pull requests would
+/// credit its maintainers with everyone's code.
+pub fn attribute_merges(src: &dyn Source, chain: &mut [RawCommit]) -> Result<()> {
+    for c in chain.iter_mut() {
+        if let Some(&merged) = c.parents.get(1) {
+            let tip = src.commit(merged)?;
+            c.author_name = tip.author_name;
+            c.author_email = tip.author_email;
+        }
+    }
+    Ok(())
 }
 
 struct FileAcc {
@@ -183,12 +200,12 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
             }
 
             let before = ch.old_path.as_deref().unwrap_or(&ch.path);
-            if ch.kind != ChangeKind::Added {
+            if ch.kind != ChangeKind::Added && !is_vendored(before) {
                 for d in folders_of(before) {
                     *folder_lines.entry(d.to_string()).or_default() -= ch.lines_before as i64;
                 }
             }
-            if ch.kind != ChangeKind::Deleted {
+            if ch.kind != ChangeKind::Deleted && !is_vendored(&ch.path) {
                 for d in folders_of(&ch.path) {
                     let n = folder_lines.entry(d.to_string()).or_default();
                     *n += ch.lines_after as i64;
@@ -214,7 +231,14 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
         start: vec![0],
         ..Default::default()
     };
+    let mut head_lines = 0i64;
     for f in &files {
+        let latest = &data.paths[f.paths.last().unwrap().1 as usize];
+        let vendored = is_vendored(latest);
+        if f.died.is_none() && !vendored {
+            head_lines += f.lines as i64;
+        }
+        data.files.vendored.push(vendored);
         data.files.born.push(f.born);
         data.files.died.push(f.died.map_or(-1, |d| d as i32));
         data.files.commits.push(f.commits);
@@ -243,6 +267,7 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
         &commit_author,
         &folder_lines,
         &folder_peak,
+        head_lines,
         opts,
     );
     data
@@ -258,9 +283,15 @@ fn push_clips(out: &mut Clips, clips: &[Clip]) {
 }
 
 /// Picks the Overview folders: the biggest ones, going one level deeper while a
-/// single folder holds most of the code. Size is the most lines a folder ever
-/// had, so a folder that was rewritten away (Python to Go) can still show.
-fn choose_folders(peak: &HashMap<String, i64>, opts: &Options) -> Vec<String> {
+/// single folder holds most of today's code. Folders are ranked by the most
+/// lines they ever had, so a folder that was rewritten away can still show.
+/// Vendored, generated and lock files are not counted.
+fn choose_folders(
+    peak: &HashMap<String, i64>,
+    head: &HashMap<String, i64>,
+    head_total: i64,
+    opts: &Options,
+) -> Vec<String> {
     let children = |dir: Option<&str>| -> Vec<String> {
         let mut c: Vec<String> = peak
             .keys()
@@ -277,15 +308,16 @@ fn choose_folders(peak: &HashMap<String, i64>, opts: &Options) -> Vec<String> {
         c
     };
     let size = |d: &String| peak.get(d).copied().unwrap_or(0);
-    let total: i64 = children(None).iter().map(size).sum::<i64>().max(1);
+    let now = |d: &String| head.get(d).copied().unwrap_or(0);
 
     let mut chosen = children(None);
     loop {
-        let Some(biggest) = chosen.iter().max_by_key(|d| size(d)).cloned() else {
+        let Some(biggest) = chosen.iter().max_by_key(|d| now(d)).cloned() else {
             break;
         };
         let kids = children(Some(&biggest));
-        if (size(&biggest) as f64) < opts.descend_share * total as f64 || kids.is_empty() {
+        if (now(&biggest) as f64) < opts.descend_share * head_total.max(1) as f64 || kids.is_empty()
+        {
             break;
         }
         chosen.retain(|d| *d != biggest);
@@ -315,11 +347,12 @@ fn overview(
     diffs: &[Vec<FileChange>],
     times: &[i64],
     commit_author: &[u32],
-    _folder_lines: &HashMap<String, i64>,
+    folder_lines: &HashMap<String, i64>,
     folder_peak: &HashMap<String, i64>,
+    head_lines: i64,
     opts: &Options,
 ) -> Overview {
-    let folders = choose_folders(folder_peak, opts);
+    let folders = choose_folders(folder_peak, folder_lines, head_lines, opts);
     let row_of = |path: &str| -> usize {
         folders
             .iter()
@@ -354,11 +387,12 @@ fn overview(
 
     for (i, diff) in diffs.iter().enumerate() {
         for ch in diff {
-            if ch.kind != ChangeKind::Added {
-                let r = &mut rows[row_of(ch.old_path.as_deref().unwrap_or(&ch.path))];
+            let before = ch.old_path.as_deref().unwrap_or(&ch.path);
+            if ch.kind != ChangeKind::Added && !is_vendored(before) {
+                let r = &mut rows[row_of(before)];
                 r.lines -= ch.lines_before as i64;
             }
-            if ch.kind != ChangeKind::Deleted {
+            if ch.kind != ChangeKind::Deleted && !is_vendored(&ch.path) {
                 let r = &mut rows[row_of(&ch.path)];
                 r.lines += ch.lines_after as i64;
                 if matches!(ch.kind, ChangeKind::Added | ChangeKind::Renamed) {
@@ -370,7 +404,10 @@ fn overview(
                     weight: touch_weight(ch),
                 });
             }
-            if let (ChangeKind::Renamed, Some(old)) = (ch.kind, &ch.old_path) {
+            if let (ChangeKind::Renamed, Some(old)) = (ch.kind, &ch.old_path)
+                && !is_vendored(old)
+                && !is_vendored(&ch.path)
+            {
                 let (from, to) = (parent(old), parent(&ch.path));
                 if from != to {
                     let e = moves
@@ -449,9 +486,15 @@ fn overview(
     // one moment per commit, so a single reorganization is not listed five times,
     // and a move wins a tie because it says more.
     let mut moments = Vec::new();
+    // A reorganization moves files between many pairs of folders in one
+    // commit: it scores the total, and is labeled with its biggest pair.
+    let mut moved_in_commit: HashMap<u32, u32> = HashMap::new();
+    for ((commit, _, _), (files, _)) in &moves {
+        *moved_in_commit.entry(*commit).or_default() += files;
+    }
     for ((commit, from, to), (files, example)) in moves {
         moments.push((
-            files,
+            moved_in_commit[&commit],
             Moment {
                 commit,
                 kind: "move".into(),
@@ -475,7 +518,15 @@ fn overview(
             },
         ));
     }
-    moments.sort_by_key(|(score, m)| (std::cmp::Reverse(*score), m.commit));
+    moments.sort_by_key(|(score, m)| {
+        use std::cmp::Reverse;
+        (
+            Reverse(*score),
+            m.commit,
+            m.kind != "move",
+            Reverse(m.files),
+        )
+    });
     let mut seen = std::collections::HashSet::new();
     out.moments = moments
         .into_iter()
@@ -491,7 +542,9 @@ fn parent(path: &str) -> &str {
 }
 
 /// The subject (first paragraph, on one line) and the why (the body's first
-/// paragraph, unless it is only trailers such as "Signed-off-by:").
+/// paragraph, unless it is only trailers such as "Signed-off-by:"). For a
+/// GitHub "Merge pull request #n from ..." commit, the pull request's title,
+/// which GitHub puts in the body, is the subject.
 fn split_message(message: &str) -> (String, String) {
     let message = message.replace("\r\n", "\n");
     let mut paragraphs = message
@@ -500,7 +553,12 @@ fn split_message(message: &str) -> (String, String) {
         .map(str::trim)
         .filter(|p| !p.is_empty());
     let one_line = |p: &str| p.split_whitespace().collect::<Vec<_>>().join(" ");
-    let subject = paragraphs.next().map(one_line).unwrap_or_default();
+    let mut subject = paragraphs.next().map(one_line).unwrap_or_default();
+    if subject.starts_with("Merge pull request #")
+        && let Some(title) = paragraphs.next()
+    {
+        subject = one_line(title);
+    }
     let why = paragraphs
         .next()
         .filter(|p| !is_trailers(p))
@@ -539,6 +597,11 @@ mod tests {
         let (_, w) = split_message("Bump\n\nSigned-off-by: A <a@b.c>\nCo-authored-by: B <b@c.d>\n");
         assert_eq!(w, "");
         assert_eq!(split_message("").0, "");
+        let (s, w) =
+            split_message("Merge pull request #12 from a/b\n\nFix watch paths\n\nThey broke.");
+        assert_eq!((s.as_str(), w.as_str()), ("Fix watch paths", "They broke."));
+        let (s, _) = split_message("Merge pull request #12 from a/b");
+        assert_eq!(s, "Merge pull request #12 from a/b");
     }
 
     #[test]
@@ -562,13 +625,21 @@ mod tests {
         .collect();
         let opts = Options::default();
         assert_eq!(
-            choose_folders(&peak, &opts),
+            choose_folders(&peak, &peak, 1000, &opts),
             ["crates/core", "crates/cli", "docs", "ci"]
         );
         let opts = Options {
             overview_rows: 2,
             ..Options::default()
         };
-        assert_eq!(choose_folders(&peak, &opts), ["crates/core", "crates/cli"]);
+        assert_eq!(
+            choose_folders(&peak, &peak, 1000, &opts),
+            ["crates/core", "crates/cli"]
+        );
+        // Not when the folder holds less than 60% of today's code.
+        assert_eq!(
+            choose_folders(&peak, &peak, 2000, &Options::default()),
+            ["crates", "docs", "ci"]
+        );
     }
 }
