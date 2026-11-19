@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palimpsest design: author colors</title>
+<!-- Static render of the design canvas. Visual reference only: read exact sizes and colors from it, do not copy the markup as app code. Everything is drawn with HTML elements here; the real app draws the timeline on a canvas. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:rgb(244, 242, 238)}
+</style>
+</head>
+<body>
+<div style="width: 1440px; height: 700px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px; padding: 32px 40px; background: #f4f2ee; color: #201d1a; font-family: Barlow, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px">
+<h1 style="margin: 0; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 44px; line-height: 1; letter-spacing: 0.01em; text-transform: uppercase">Author colors</h1>
+<ol style="margin: 0; padding-left: 20px; max-width: 900px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 32px; font-size: 14px">
+<li>Authors are ranked once per repo by commits over its whole history, so colors never change while you scrub.</li>
+<li>The top five get a color, in this order. Everyone else is Others.</li>
+<li>Bots are never ranked. Their commits always go to Others.</li>
+<li>Yellow-green is reserved for the playhead and the current selection, never an author.</li>
+</ol>
+</div>
+
+<div style="flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+
+<section style="display: flex; flex-direction: column; gap: 10px; padding: 24px; border-radius: 10px; background: #2a2531; color: #f1edf5">
+<h2 style="margin: 0 0 4px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 22px; text-transform: uppercase; letter-spacing: 0.02em">Dark</h2>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">1ST</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #6dabdf; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">JW</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #221e28"><span style="position: absolute; top: 0; bottom: 0; left: 0%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #6dabdf; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Jonas Weber</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #b3abc0">#6dabdf</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">2ND</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">SL</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #221e28"><span style="position: absolute; top: 0; bottom: 0; left: 6%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Sara Lindqvist</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #b3abc0">#9df3cc</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">3RD</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">MO</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #221e28"><span style="position: absolute; top: 0; bottom: 0; left: 12%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Mira Okafor</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #b3abc0">#dfc1ff</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">4TH</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #e3975a; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">AK</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #221e28"><span style="position: absolute; top: 0; bottom: 0; left: 18%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #e3975a; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Fourth author</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #b3abc0">#e3975a</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">5TH</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #d078a0; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">RT</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #221e28"><span style="position: absolute; top: 0; bottom: 0; left: 24%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #d078a0; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Fifth author</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #b3abc0">#d078a0</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">OTHERS</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #6a676f; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">+</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #221e28"><span style="position: absolute; top: 0; bottom: 0; left: 30%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #6a676f; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Everyone else, and bots</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #b3abc0">#6a676f</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">UNTOUCHED</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px); color: #e2dcea; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center"></span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #221e28"><span style="position: absolute; top: 0; bottom: 0; left: 36%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px); color: #e2dcea; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Nobody changed it in this stretch</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #b3abc0">hatched</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">NOW</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #e4f26b; color: #1d2106; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center"></span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #221e28"><span style="position: absolute; top: 0; bottom: 0; left: 42%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #e4f26b; color: #1d2106; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Playhead and selection only</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #b3abc0">#e4f26b</span>
+</div>
+
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px; padding: 24px; border-radius: 10px; background: #e3e0da; color: #201d1a">
+<h2 style="margin: 0 0 4px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 22px; text-transform: uppercase; letter-spacing: 0.02em">Light</h2>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">1ST</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #77ccff; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">JW</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #d9d5ce"><span style="position: absolute; top: 0; bottom: 0; left: 0%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #77ccff; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Jonas Weber</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c564e">#77ccff</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">2ND</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #42be8f; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">SL</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #d9d5ce"><span style="position: absolute; top: 0; bottom: 0; left: 6%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #42be8f; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Sara Lindqvist</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c564e">#42be8f</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">3RD</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #aa83d9; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">MO</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #d9d5ce"><span style="position: absolute; top: 0; bottom: 0; left: 12%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #aa83d9; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Mira Okafor</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c564e">#aa83d9</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">4TH</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #d0792a; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">AK</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #d9d5ce"><span style="position: absolute; top: 0; bottom: 0; left: 18%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #d0792a; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Fourth author</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c564e">#d0792a</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">5TH</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #fd9ac6; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">RT</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #d9d5ce"><span style="position: absolute; top: 0; bottom: 0; left: 24%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #fd9ac6; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Fifth author</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c564e">#fd9ac6</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">OTHERS</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #8b857f; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">+</span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #d9d5ce"><span style="position: absolute; top: 0; bottom: 0; left: 30%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #8b857f; color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Everyone else, and bots</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c564e">#8b857f</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">UNTOUCHED</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: repeating-linear-gradient(135deg, #c4beb4 0 3px, #e3e0da 3px 6px); color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center"></span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #d9d5ce"><span style="position: absolute; top: 0; bottom: 0; left: 36%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: repeating-linear-gradient(135deg, #c4beb4 0 3px, #e3e0da 3px 6px); color: #201d1a; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Nobody changed it in this stretch</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c564e">hatched</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px; height: 48px">
+<span style="flex: 0 0 74px; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px">NOW</span>
+<span style="flex: 0 0 34px; height: 22px; border-radius: 3px; background: #e4f26b; color: #1d2106; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center"></span>
+<span style="flex: 1; min-width: 0; height: 30px; position: relative; border-radius: 4px; background: #d9d5ce"><span style="position: absolute; top: 0; bottom: 0; left: 42%; right: 0; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; border-radius: 4px; background: #e4f26b; color: #1d2106; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden">Playhead and selection only</span></span>
+<span style="flex: 0 0 82px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c564e">#e4f26b</span>
+</div>
+
+</section>
+
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palimpsest design: loading, dark</title>
+<!-- Static render of the design canvas. Visual reference only: read exact sizes and colors from it, do not copy the markup as app code. Everything is drawn with HTML elements here; the real app draws the timeline on a canvas. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:rgb(32, 28, 38)}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; background: #201c26; color: #f1edf5; font-family: Barlow, system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 10px 20px; border-bottom: 1px solid #3d3746">
+<div style="font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 20px; letter-spacing: 0.02em; text-transform: uppercase">Palimpsest</div>
+<div style="display: flex; align-items: center; gap: 8px; flex: 0 1 360px; min-width: 0">
+<label for="repoLd" style="color: #b3abc0; font-size: 13px">Repository</label>
+<input id="repoLd" type="text" value="github.com/example/coral" style="flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #3d3746; border-radius: 4px; background: #18151d; color: #f1edf5; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">
+</div>
+<nav aria-label="Views" style="display: flex; gap: 2px; padding: 2px; border: 1px solid #3d3746; border-radius: 6px; background: #18151d">
+<a href="01-overview.html" style="height: 44px; padding: 0 14px; display: flex; align-items: center; border-radius: 4px; color: #f1edf5; text-decoration: none; font-weight: 500">Overview</a>
+<a href="02-tracks.html" aria-current="page" style="height: 44px; padding: 0 14px; display: flex; align-items: center; border-radius: 4px; background: #f1edf5; color: #16131b; text-decoration: none; font-weight: 600">Tracks</a>
+<a href="03-lines.html" style="height: 44px; padding: 0 14px; display: flex; align-items: center; border-radius: 4px; color: #f1edf5; text-decoration: none; font-weight: 500">Lines</a>
+</nav>
+<div role="group" aria-label="Theme" style="margin-left: auto; display: flex; gap: 2px; padding: 2px; border: 1px solid #3d3746; border-radius: 26px; background: #18151d">
+<a href="../light/06-loading.html" aria-label="Light theme" aria-current="false" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: transparent; color: #f1edf5"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg></a>
+<a href="06-loading.html" aria-label="Dark theme" aria-current="true" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #f1edf5; color: #16131b"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></a>
+</div>
+</header>
+
+<main style="display: flex; flex-wrap: wrap; gap: 24px 48px; padding: 20px">
+
+<section style="flex: 3 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 54px; line-height: 1; letter-spacing: 0.01em">1,240 OF 3,870 COMMITS</div>
+<div style="color: #b3abc0">Reading history newest first. Back to September 2023 so far.</div>
+</div>
+<div role="progressbar" aria-label="Commits read" aria-valuemin="0" aria-valuemax="100" aria-valuenow="32" style="height: 12px; display: flex; border-radius: 3px; overflow: hidden; background: #221e28"><div style="width: 32%; background: #f1edf5"></div></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px">
+<button type="button" style="height: 44px; padding: 0 16px; border: 1px solid #5a5366; border-radius: 6px; background: transparent; color: #f1edf5; font: inherit; font-weight: 500; cursor: pointer">Stop loading</button>
+<a href="02-tracks.html" style="min-height: 44px; display: flex; align-items: center; color: #f1edf5; font-weight: 500">Back to the demo repo</a>
+</div>
+</section>
+
+<section style="flex: 2 1 340px; min-width: 0; display: flex; flex-direction: column">
+<div style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #3d3746; color: #b3abc0"><span>Download the repository</span><span>done, 48 MB</span></div>
+<div style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #3d3746; font-weight: 600"><span>Read every commit</span><span style="padding: 2px 6px; border-radius: 3px; background: #e4f26b; color: #1d2106">32%</span></div>
+<div style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #3d3746; border-bottom: 1px solid #3d3746; color: #b3abc0"><span>Work out line history</span><span>when you open a file</span></div>
+<div style="padding-top: 12px; color: #b3abc0; font-size: 13px">You can already scrub and play the part that has loaded.</div>
+</section>
+
+</main>
+
+<section style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 20px; border-top: 1px solid #3d3746; border-bottom: 1px solid #3d3746; background: #2a2531">
+<button type="button" aria-label="Previous commit" style="width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #f1edf5; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 6.5 9 12 14"></path><path d="M5 4v10"></path></svg>
+</button>
+<button type="button" aria-label="Play history" style="width: 64px; height: 44px; box-sizing: border-box; border: 0; border-radius: 6px; background: #e4f26b; color: #1d2106; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 18 18" fill="currentColor"><path d="M6 3.5v11l8.5-5.5z"></path></svg>
+</button>
+<button type="button" aria-label="Next commit" style="width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #f1edf5; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l5.5 5L6 14"></path><path d="M13 4v10"></path></svg>
+</button>
+<button type="button" style="height: 44px; padding: 0 12px; border: 0; background: transparent; color: #f1edf5; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px; cursor: pointer">4× SPEED</button>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 14px 20px 0; background: #2a2531; font-size: 13px">
+<span style="color: #b3abc0">Authors found so far</span>
+
+<span style="display: flex; align-items: center; gap: 6px"><span style="min-width: 26px; height: 18px; border-radius: 3px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center">SL</span>Sara Lindqvist</span>
+
+<span style="display: flex; align-items: center; gap: 6px"><span style="min-width: 26px; height: 18px; border-radius: 3px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center">MO</span>Mira Okafor</span>
+
+</div>
+
+<section style="flex: 1; display: flex; gap: 12px; padding: 26px 20px 24px; background: #2a2531">
+<div style="flex: 0 0 168px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<div style="height: 46px"></div>
+
+<div style="height: 30px; display: flex; align-items: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">src/reef.ts</div>
+
+<div style="height: 30px; display: flex; align-items: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">src/tide.ts</div>
+
+<div style="height: 30px; display: flex; align-items: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">src/shell.ts</div>
+
+<div style="height: 30px; display: flex; align-items: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">tests/reef.test.ts</div>
+
+<div style="height: 30px; display: flex; align-items: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">docs/guide.md</div>
+
+<div style="height: 30px; display: flex; align-items: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">package.json</div>
+
+</div>
+<div style="flex: 1; min-width: 0; align-self: flex-start; position: relative; display: flex; flex-direction: column; gap: 4px">
+<div style="height: 20px; display: flex; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; color: #b3abc0">
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2020</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2021</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2022</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2023</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2024</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2025</div>
+
+<div style="flex: 11 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2026</div>
+
+</div>
+<div style="height: 22px; position: relative; font-size: 13px">
+<div style="position: absolute; top: 0; right: 46.4%; padding-right: 6px; line-height: 22px; white-space: nowrap; color: #b3abc0">Not read yet</div>
+<div style="position: absolute; top: 0; left: 53.6%; padding-left: 6px; line-height: 22px; white-space: nowrap"><span style="font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 14px">SEP 2023</span> read back to here</div>
+</div>
+
+<div style="height: 30px; position: relative; border-radius: 4px; background: #221e28">
+
+<div style="position: absolute; top: 0; bottom: 0; left: 53.6%; width: 18.5%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">SL</div>
+
+<div style="position: absolute; top: 0; bottom: 0; left: 72.3%; width: 27.6%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">MO</div>
+
+</div>
+
+<div style="height: 30px; position: relative; border-radius: 4px; background: #221e28">
+
+<div style="position: absolute; top: 0; bottom: 0; left: 53.6%; width: 46.3%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">SL</div>
+
+</div>
+
+<div style="height: 30px; position: relative; border-radius: 4px; background: #221e28">
+
+<div style="position: absolute; top: 0; bottom: 0; left: 60.2%; width: 39.7%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">MO</div>
+
+</div>
+
+<div style="height: 30px; position: relative; border-radius: 4px; background: #221e28">
+
+<div style="position: absolute; top: 0; bottom: 0; left: 53.6%; width: 30.6%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">SL</div>
+
+<div style="position: absolute; top: 0; bottom: 0; left: 84.3%; width: 15.6%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">MO</div>
+
+</div>
+
+<div style="height: 30px; position: relative; border-radius: 4px; background: #221e28">
+
+<div style="position: absolute; top: 0; bottom: 0; left: 53.6%; width: 25.8%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px); color: #e2dcea; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">untouched</div>
+
+<div style="position: absolute; top: 0; bottom: 0; left: 79.5%; width: 20.4%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">SL</div>
+
+</div>
+
+<div style="height: 30px; position: relative; border-radius: 4px; background: #221e28">
+
+<div style="position: absolute; top: 0; bottom: 0; left: 53.6%; width: 46.3%; box-sizing: border-box; padding: 0 7px; display: flex; align-items: center; border-radius: 4px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden">SL</div>
+
+</div>
+
+<div aria-hidden="true" style="position: absolute; top: 46px; bottom: 0; left: 0; width: 53.5%; box-sizing: border-box; border: 1px dashed #8a8296; border-radius: 4px; background: rgba(42,37,49,0.6)"></div>
+<div aria-hidden="true" style="position: absolute; top: 24px; bottom: 0; left: 53.6%; border-left: 1px dashed #f1edf5"></div>
+<div aria-hidden="true" style="position: absolute; top: -4px; bottom: -8px; right: 0; width: 2px; background: #e4f26b"></div>
+<div aria-hidden="true" style="position: absolute; top: -18px; right: -8px; width: 18px; height: 14px; box-sizing: border-box; border: 0; border-radius: 3px; background: #e4f26b"></div>
+</div>
+</section>
+
+</div>
+</body>
+</html>

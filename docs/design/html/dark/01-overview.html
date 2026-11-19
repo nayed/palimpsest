@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palimpsest design: overview, dark</title>
+<!-- Static render of the design canvas. Visual reference only: read exact sizes and colors from it, do not copy the markup as app code. Everything is drawn with HTML elements here; the real app draws the timeline on a canvas. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:rgb(32, 28, 38)}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; background: #201c26; color: #f1edf5; font-family: Barlow, system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 10px 20px; border-bottom: 1px solid #3d3746">
+<div style="font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 20px; letter-spacing: 0.02em; text-transform: uppercase">Palimpsest</div>
+<div style="display: flex; align-items: center; gap: 8px; flex: 0 1 360px; min-width: 0">
+<label for="repoOv" style="color: #b3abc0; font-size: 13px">Repository</label>
+<input id="repoOv" type="text" value="github.com/example/tidepool" style="flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #3d3746; border-radius: 4px; background: #18151d; color: #f1edf5; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">
+</div>
+<nav aria-label="Views" style="display: flex; gap: 2px; padding: 2px; border: 1px solid #3d3746; border-radius: 6px; background: #18151d">
+<a href="01-overview.html" aria-current="page" style="height: 44px; padding: 0 14px; display: flex; align-items: center; border-radius: 4px; background: #f1edf5; color: #16131b; text-decoration: none; font-weight: 600">Overview</a>
+<a href="02-tracks.html" style="height: 44px; padding: 0 14px; display: flex; align-items: center; border-radius: 4px; color: #f1edf5; text-decoration: none; font-weight: 500">Tracks</a>
+<a href="03-lines.html" style="height: 44px; padding: 0 14px; display: flex; align-items: center; border-radius: 4px; color: #f1edf5; text-decoration: none; font-weight: 500">Lines</a>
+</nav>
+<div role="group" aria-label="Theme" style="margin-left: auto; display: flex; gap: 2px; padding: 2px; border: 1px solid #3d3746; border-radius: 26px; background: #18151d">
+<a href="../light/01-overview.html" aria-label="Light theme" aria-current="false" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: transparent; color: #f1edf5"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg></a>
+<a href="01-overview.html" aria-label="Dark theme" aria-current="true" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #f1edf5; color: #16131b"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></a>
+</div>
+</header>
+
+<main style="display: flex; flex-wrap: wrap; gap: 20px 48px; padding: 20px">
+
+<section style="flex: 2 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 54px; line-height: 1; letter-spacing: 0.01em">12 MAR 2026</div>
+<div style="color: #b3abc0">Commit 2,814 of 3,102 · <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">a41f9c2</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-weight: 600; font-size: 15px">Who wrote the code that exists on this day</h2>
+<div style="display: flex; gap: 2px; height: 44px">
+
+<div style="flex: 38 1 0; min-width: 0; display: flex; align-items: center; padding: 0 10px; border-radius: 4px; background: #6dabdf; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden">JW 38%</div>
+
+<div style="flex: 41 1 0; min-width: 0; display: flex; align-items: center; padding: 0 10px; border-radius: 4px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden">SL 41%</div>
+
+<div style="flex: 21 1 0; min-width: 0; display: flex; align-items: center; padding: 0 10px; border-radius: 4px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden">MO 21%</div>
+
+</div>
+</div>
+</section>
+
+<section style="flex: 3 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 10px">
+<span style="flex: 0 0 26px; height: 18px; margin-top: 2px; border-radius: 3px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center">MO</span>
+<div style="min-width: 0"><div style="font-weight: 600; font-size: 15px">Fix off-by-one when a token ends at the buffer boundary</div><div style="color: #b3abc0; font-size: 13px">This commit changed 1 file, added 1 and deleted 1.</div></div>
+</div>
+<div style="display: flex; flex-direction: column; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">
+<a href="03-lines.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #3d3746; color: #f1edf5; text-decoration: none"><span>src/parser/lexer.ts</span><span style="padding: 2px 6px; border-radius: 3px; background: transparent; color: #e4f26b; font-family: Barlow, system-ui, sans-serif; font-weight: 500">changed, see lines</span></a>
+<a href="02-tracks.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #3d3746; color: #f1edf5; text-decoration: none"><span>src/plugin.ts</span><span style="font-family: Barlow, system-ui, sans-serif; color: #b3abc0">born</span></a>
+<a href="02-tracks.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #3d3746; border-bottom: 1px solid #3d3746; color: #b3abc0; text-decoration: none"><span style="text-decoration: line-through">src/legacy.ts</span><span style="font-family: Barlow, system-ui, sans-serif">deleted after 6 years</span></a>
+</div>
+</section>
+
+</main>
+
+<section style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 20px; border-top: 1px solid #3d3746; border-bottom: 1px solid #3d3746; background: #2a2531">
+<button type="button" aria-label="Previous commit" style="width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #f1edf5; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 6.5 9 12 14"></path><path d="M5 4v10"></path></svg>
+</button>
+<button type="button" aria-label="Play history" style="width: 64px; height: 44px; box-sizing: border-box; border: 0; border-radius: 6px; background: #e4f26b; color: #1d2106; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 18 18" fill="currentColor"><path d="M6 3.5v11l8.5-5.5z"></path></svg>
+</button>
+<button type="button" aria-label="Next commit" style="width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #f1edf5; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l5.5 5L6 14"></path><path d="M13 4v10"></path></svg>
+</button>
+<button type="button" style="height: 44px; padding: 0 12px; border: 0; background: transparent; color: #f1edf5; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 16px; cursor: pointer">4× SPEED</button>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 14px 20px 0; background: #2a2531; font-size: 13px">
+<span style="color: #b3abc0">Colored by who was writing</span>
+
+<span style="display: flex; align-items: center; gap: 6px"><span style="min-width: 26px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; background: #6dabdf; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center">JW</span>Jonas Weber</span>
+
+<span style="display: flex; align-items: center; gap: 6px"><span style="min-width: 26px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; background: #9df3cc; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center">SL</span>Sara Lindqvist</span>
+
+<span style="display: flex; align-items: center; gap: 6px"><span style="min-width: 26px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; background: #dfc1ff; color: #16131b; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center">MO</span>Mira Okafor</span>
+
+<span style="display: flex; align-items: center; gap: 6px"><span style="min-width: 26px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px); color: #e2dcea; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center"></span>Untouched</span>
+
+</div>
+
+<section style="flex: 1; display: flex; gap: 12px; padding: 26px 20px 24px; background: #2a2531">
+<div style="flex: 0 0 168px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<div style="height: 46px; display: flex; align-items: flex-end; padding-bottom: 4px; box-sizing: border-box; color: #b3abc0; font-size: 13px">Taller track, bigger folder</div>
+
+<a href="02-tracks.html" style="height: 110px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 4px; color: #f1edf5; text-decoration: none; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">src/parser/</span>
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 14px"><path d="M7 4l5 5-5 5"></path></svg>
+</a>
+
+<a href="02-tracks.html" style="height: 86px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 4px; color: #f1edf5; text-decoration: none; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">src/core/</span>
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 14px"><path d="M7 4l5 5-5 5"></path></svg>
+</a>
+
+<a href="02-tracks.html" style="height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 4px; color: #f1edf5; text-decoration: none; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">tests/</span>
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 14px"><path d="M7 4l5 5-5 5"></path></svg>
+</a>
+
+<a href="02-tracks.html" style="height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 4px; color: #f1edf5; text-decoration: none; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">docs/</span>
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 14px"><path d="M7 4l5 5-5 5"></path></svg>
+</a>
+
+<a href="02-tracks.html" style="height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 4px; color: #f1edf5; text-decoration: none; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">everything else</span>
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 14px"><path d="M7 4l5 5-5 5"></path></svg>
+</a>
+
+</div>
+<div style="flex: 1; min-width: 0; align-self: flex-start; position: relative; display: flex; flex-direction: column; gap: 4px">
+<div style="height: 20px; display: flex; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 500; font-size: 14px; color: #b3abc0">
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2020</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2021</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2022</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2023</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2024</div>
+
+<div style="flex: 12 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2025</div>
+
+<div style="flex: 11 1 0; min-width: 0; overflow: hidden; border-left: 1px solid #5a5366; text-align: center">2026</div>
+
+</div>
+<div style="height: 22px; position: relative; font-size: 13px">
+
+<div style="position: absolute; top: 0; left: 12%; padding-left: 6px; line-height: 22px; white-space: nowrap"><span style="font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 14px">NOV 2020</span> src/parser/ appears</div>
+
+<div style="position: absolute; top: 0; left: 53%; padding-left: 6px; line-height: 22px; white-space: nowrap"><span style="font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 14px">SEP 2023</span> lexer.ts moves from core/ to parser/</div>
+
+</div>
+
+<div style="height: 110px; position: relative; display: flex; align-items: flex-end; border-radius: 4px; overflow: hidden; background: #221e28">
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 5%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 5%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 5%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 5%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 5%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 6%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 6%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 7%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 7%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 8%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 9%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 9%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 10%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 10%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 11%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 11%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 12%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 13%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 13%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 14%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 14%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 15%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 15%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 16%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 17%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 17%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 18%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 18%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 19%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 19%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 20%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 21%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 21%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 22%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 57%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 58%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 59%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 60%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 61%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 62%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 63%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 65%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 66%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 67%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 71%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 73%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 74%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 75%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 76%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 77%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 78%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 79%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 84%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 85%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 86%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 89%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 90%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 91%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 95%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 97%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 99%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 100%; background: #dfc1ff"></div>
+
+
+<span style="position: absolute; top: 5px; left: 12.5%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #6dabdf; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">JW</span>
+
+<span style="position: absolute; top: 5px; left: 53.5%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #9df3cc; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">SL</span>
+
+<span style="position: absolute; top: 5px; left: 75.2%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #dfc1ff; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">MO</span>
+
+</div>
+
+<div style="height: 86px; position: relative; display: flex; align-items: flex-end; border-radius: 4px; overflow: hidden; background: #221e28">
+
+<div style="flex: 1; min-width: 0; height: 30%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 33%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 35%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 37%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 37%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 38%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 38%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 39%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 42%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 45%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 48%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 51%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 52%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 52%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 53%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 53%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 55%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 57%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 60%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 63%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 66%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 67%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 72%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 75%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 78%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 85%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 91%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 96%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 97%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 100%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 58%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 60%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 62%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 63%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 64%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 63%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 63%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 62%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 63%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 64%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 67%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 71%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 71%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 73%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 76%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 77%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 77%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 77%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 76%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 76%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 76%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 78%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 84%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 84%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 85%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 89%; background: #9df3cc"></div>
+
+
+<span style="position: absolute; top: 5px; left: 0.5%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #6dabdf; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">JW</span>
+
+<span style="position: absolute; top: 5px; left: 36.6%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #9df3cc; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">SL</span>
+
+</div>
+
+<div style="height: 78px; position: relative; display: flex; align-items: flex-end; border-radius: 4px; overflow: hidden; background: #221e28">
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 0%; background: transparent"></div>
+
+<div style="flex: 1; min-width: 0; height: 17%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 19%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 20%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 21%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 22%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 22%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 22%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 21%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 21%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 20%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 20%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 20%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 21%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 22%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 23%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 25%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 28%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 30%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 33%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 36%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 39%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 41%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 43%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 44%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 45%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 46%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 46%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 46%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 45%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 45%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 44%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 44%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 44%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 45%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 46%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 47%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 49%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 52%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 55%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 57%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 60%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 63%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 65%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 67%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 70%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 72%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 74%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 76%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 79%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 84%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 89%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 91%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 96%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 100%; background: #dfc1ff"></div>
+
+
+<span style="position: absolute; top: 5px; left: 4.1%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #6dabdf; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">JW</span>
+
+<span style="position: absolute; top: 5px; left: 43.9%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #9df3cc; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">SL</span>
+
+<span style="position: absolute; top: 5px; left: 70.4%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #dfc1ff; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">MO</span>
+
+</div>
+
+<div style="height: 56px; position: relative; display: flex; align-items: flex-end; border-radius: 4px; overflow: hidden; background: #221e28">
+
+<div style="flex: 1; min-width: 0; height: 36%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 41%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 42%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 42%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 43%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 40%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 41%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 42%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 42%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 47%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 47%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 48%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 49%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 50%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 47%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 47%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 48%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 49%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 53%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 54%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 55%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 55%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 56%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 53%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 54%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 55%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 55%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 60%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 61%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 61%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 62%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 63%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 60%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 61%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 61%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 62%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 66%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 67%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 66%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 67%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 68%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 69%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 73%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 74%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 74%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 75%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 76%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 73%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 74%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 74%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 75%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 86%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 88%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 88%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 89%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 86%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px)"></div>
+
+<div style="flex: 1; min-width: 0; height: 88%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 88%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 95%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 96%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 95%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 99%; background: #dfc1ff"></div>
+
+<div style="flex: 1; min-width: 0; height: 100%; background: #dfc1ff"></div>
+
+
+<span style="position: absolute; top: 5px; left: 0.5%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #6dabdf; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">JW</span>
+
+<span style="position: absolute; top: 5px; left: 58.3%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px); color: #e2dcea; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">untouched</span>
+
+<span style="position: absolute; top: 5px; left: 84.8%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #dfc1ff; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">MO</span>
+
+</div>
+
+<div style="height: 56px; position: relative; display: flex; align-items: flex-end; border-radius: 4px; overflow: hidden; background: #221e28">
+
+<div style="flex: 1; min-width: 0; height: 79%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 79%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 79%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 79%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 80%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 81%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 82%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 83%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 84%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 84%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 84%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 84%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 85%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 85%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 85%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 85%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 86%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 86%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 86%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 86%; background: #6dabdf"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 87%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 88%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 88%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 88%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 88%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 89%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 89%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 89%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 90%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 90%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 90%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 90%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 91%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 91%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 91%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 91%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 92%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 93%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 94%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 95%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 95%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 95%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 95%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 96%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 96%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 96%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 96%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 97%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 97%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 97%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 97%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 98%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 99%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 99%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 99%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 99%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 100%; background: #9df3cc"></div>
+
+<div style="flex: 1; min-width: 0; height: 100%; background: #9df3cc"></div>
+
+
+<span style="position: absolute; top: 5px; left: 0.5%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #6dabdf; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">JW</span>
+
+<span style="position: absolute; top: 5px; left: 37.8%; min-width: 26px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 3px; background: #9df3cc; color: #16131b; box-shadow: 0 0 0 2px #221e28; font-family: 'Barlow Condensed', Barlow, sans-serif; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; white-space: nowrap">SL</span>
+
+</div>
+
+
+<div aria-hidden="true" style="position: absolute; top: 24px; bottom: 0; left: 12%; border-left: 1px dashed #f1edf5"></div>
+
+<div aria-hidden="true" style="position: absolute; top: 24px; bottom: 0; left: 53%; border-left: 1px dashed #f1edf5"></div>
+
+<div aria-hidden="true" style="position: absolute; top: 46px; bottom: 0; left: 89.8%; right: 0; background: rgba(42,37,49,0.7)"></div>
+<div aria-hidden="true" style="position: absolute; top: -4px; bottom: -8px; left: 89.8%; width: 2px; margin-left: -1px; background: #e4f26b"></div>
+<div aria-hidden="true" style="position: absolute; top: -18px; left: 89.8%; width: 18px; height: 14px; box-sizing: border-box; margin-left: -9px; border: 0; border-radius: 3px; background: #e4f26b"></div>
+</div>
+</section>
+
+</div>
+</body>
+</html>
