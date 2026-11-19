@@ -31,6 +31,9 @@ pub struct Options {
     pub ranked_authors: usize,
     /// A stretch with no commit this long, in months, is drawn as Untouched.
     pub untouched_months: i32,
+    /// An author's stretch shorter than this, in months, is absorbed by the
+    /// longer neighboring stretch. 1 keeps every month as it is.
+    pub min_clip_months: i32,
     /// How alike a deleted and an added file must be to count as a rename (0 to 1).
     pub rename_similarity: f64,
     /// Skip similarity matching when a commit has more deleted × added file
@@ -50,6 +53,7 @@ impl Default for Options {
             name: String::new(),
             ranked_authors: 5,
             untouched_months: 12,
+            min_clip_months: 3,
             rename_similarity: 0.5,
             rename_limit: 10_000,
             overview_rows: 5,

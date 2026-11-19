@@ -284,8 +284,13 @@ fn clips_follow_who_was_writing() {
     fx.write("f.rs", &lines(10, "a"))
         .write("other.rs", "o\n")
         .commit("Ann Lee", 0, "Add");
+    // Bo writes for three months running; one month alone would be absorbed.
     fx.write("f.rs", &(lines(10, "a") + &lines(5, "b")))
         .commit("Bo Kim", 100, "Bo writes");
+    fx.write("f.rs", &(lines(10, "a") + &lines(6, "b")))
+        .commit("Bo Kim", 130, "Bo writes more");
+    fx.write("f.rs", &(lines(10, "a") + &lines(7, "b")))
+        .commit("Bo Kim", 160, "And more");
     // Over a year with no commit to f.rs, then Ann deletes it.
     fx.write("other.rs", "o2\n")
         .commit("Ann Lee", 300, "Unrelated");
@@ -294,6 +299,18 @@ fn clips_follow_who_was_writing() {
 
     let f = file_id(&d, "f.rs");
     assert_eq!(clip_authors(&d, f), ["Ann Lee", "Bo Kim", "untouched"]);
+    // A single month from Bo inside Ann's stretch does not cut it.
+    let mut fx = Fixture::new();
+    fx.write("g.rs", &lines(10, "a"))
+        .commit("Ann Lee", 0, "Add");
+    for (k, day_n) in [40, 70, 100, 130, 160].into_iter().enumerate() {
+        let who = if k == 1 { "Bo Kim" } else { "Ann Lee" };
+        fx.write("g.rs", &lines(11 + k, "a"))
+            .commit(who, day_n, "Edit");
+    }
+    let d2 = fx.build();
+    assert_eq!(clip_authors(&d2, file_id(&d2, "g.rs")), ["Ann Lee"]);
+
     let o = file_id(&d, "other.rs");
     assert_eq!(clip_authors(&d, o), ["Ann Lee"]);
 }

@@ -4,7 +4,8 @@
 //! Commits are bucketed by calendar month. A month belongs to the author who
 //! changed the most lines in it. A month with no commits continues the
 //! previous clip, and neighboring months with the same author are one clip.
-//! A gap of `untouched_months` or more with no commits is an Untouched clip.
+//! A gap of `untouched_months` or more with no commits is an Untouched clip,
+//! and an author's stretch shorter than `min_months` is absorbed by its neighbor.
 
 use crate::time::{month_of, month_start};
 
@@ -27,47 +28,88 @@ pub struct Clip {
 /// Clips covering `born` to `end`. `touches` must be sorted by time; the
 /// commit that deletes a file is not a touch (deleting is not writing), but
 /// `end` is its time.
-pub fn clips(born: i64, end: i64, touches: &[Touch], untouched_months: i32) -> Vec<Clip> {
-    let mut out: Vec<Clip> = Vec::new();
-    let mut push = |from: i64, to: i64, author: Option<u32>| {
-        if to <= from {
-            return;
-        }
-        match out.last_mut() {
-            Some(last) if last.author == author && last.to == from => last.to = to,
-            _ => out.push(Clip { from, to, author }),
-        }
-    };
-
+///
+/// An author's stretch shorter than `min_months` is absorbed by the longer
+/// neighboring stretch, so a single busy month from someone else does not cut
+/// a long stretch in three. Untouched stretches never absorb or get absorbed.
+pub fn clips(
+    born: i64,
+    end: i64,
+    touches: &[Touch],
+    untouched_months: i32,
+    min_months: i32,
+) -> Vec<Clip> {
     let months = monthly_winners(touches);
     let Some(&(first_month, first_author)) = months.first() else {
-        push(born, end, None);
-        return out;
+        return vec![Clip {
+            from: born,
+            to: end,
+            author: None,
+        }]
+        .into_iter()
+        .filter(|c| c.to > c.from)
+        .collect();
     };
 
-    let mut from = born;
-    let mut author = first_author;
+    // Runs of months: (first month, author). Each run lasts until the next one.
+    let mut runs: Vec<(i32, Option<u32>)> = vec![(first_month, Some(first_author))];
     let mut prev = first_month;
     for &(m, a) in &months[1..] {
         if m - prev > untouched_months {
-            push(from, month_start(prev + 1), Some(author));
-            push(month_start(prev + 1), month_start(m), None);
-            from = month_start(m);
-            author = a;
-        } else if a != author {
-            push(from, month_start(m), Some(author));
-            from = month_start(m);
-            author = a;
+            runs.push((prev + 1, None));
+            runs.push((m, Some(a)));
+        } else if runs.last().unwrap().1 != Some(a) {
+            runs.push((m, Some(a)));
         }
         prev = m;
     }
-    if month_of(end) - prev > untouched_months {
-        push(from, month_start(prev + 1), Some(author));
-        push(month_start(prev + 1), end, None);
-    } else {
-        push(from, end, Some(author));
+    let end_month = month_of(end);
+    if end_month - prev > untouched_months {
+        runs.push((prev + 1, None));
+    }
+    smooth(&mut runs, end_month + 1, min_months);
+
+    let mut out = Vec::with_capacity(runs.len());
+    for (k, &(m, author)) in runs.iter().enumerate() {
+        let from = if k == 0 { born } else { month_start(m) };
+        let to = runs.get(k + 1).map_or(end, |&(next, _)| month_start(next));
+        if to > from {
+            out.push(Clip { from, to, author });
+        }
     }
     out
+}
+
+/// Merges author runs shorter than `min_months` into their longer author
+/// neighbor, shortest first, until none is left that can be merged.
+fn smooth(runs: &mut Vec<(i32, Option<u32>)>, end_month: i32, min_months: i32) {
+    let len = |runs: &[(i32, Option<u32>)], k: usize| {
+        runs.get(k + 1).map_or(end_month, |r| r.0) - runs[k].0
+    };
+    loop {
+        let candidate = (0..runs.len())
+            .filter(|&k| runs[k].1.is_some() && len(runs, k) < min_months)
+            .filter_map(|k| {
+                let left = k.checked_sub(1).filter(|&j| runs[j].1.is_some());
+                let right = Some(k + 1).filter(|&j| j < runs.len() && runs[j].1.is_some());
+                let into = match (left, right) {
+                    (Some(l), Some(r)) => Some(if len(runs, r) > len(runs, l) { r } else { l }),
+                    (l, r) => l.or(r),
+                }?;
+                Some((len(runs, k), k, into))
+            })
+            .min();
+        let Some((_, k, into)) = candidate else { break };
+        runs[k].1 = runs[into].1;
+        // Join neighbors that now share an author.
+        let mut joined: Vec<(i32, Option<u32>)> = Vec::with_capacity(runs.len());
+        for &r in runs.iter() {
+            if joined.last().is_none_or(|l| l.1 != r.1) {
+                joined.push(r);
+            }
+        }
+        *runs = joined;
+    }
 }
 
 /// (month, author who changed the most lines that month), in order. A tie goes
@@ -118,7 +160,7 @@ mod tests {
     fn one_author_is_one_clip() {
         let t = [touch(0, 1, 10), touch(3, 1, 5), touch(4, 1, 1)];
         assert_eq!(
-            clips(mid(0), mid(10), &t, 12),
+            clips(mid(0), mid(10), &t, 12, 1),
             [Clip {
                 from: mid(0),
                 to: mid(10),
@@ -137,7 +179,7 @@ mod tests {
             touch(5, 1, 1),
         ];
         assert_eq!(
-            clips(mid(0), mid(8), &t, 12),
+            clips(mid(0), mid(8), &t, 12, 1),
             [
                 Clip {
                     from: mid(0),
@@ -162,7 +204,7 @@ mod tests {
     fn long_gaps_are_untouched() {
         let t = [touch(0, 1, 10), touch(14, 2, 3)];
         assert_eq!(
-            clips(mid(0), mid(15), &t, 12),
+            clips(mid(0), mid(15), &t, 12, 1),
             [
                 Clip {
                     from: mid(0),
@@ -183,7 +225,7 @@ mod tests {
         );
         // Eleven empty months are not enough.
         assert_eq!(
-            clips(mid(0), mid(13), &[touch(0, 1, 1), touch(12, 1, 1)], 12).len(),
+            clips(mid(0), mid(13), &[touch(0, 1, 1), touch(12, 1, 1)], 12, 1).len(),
             1
         );
     }
@@ -192,7 +234,7 @@ mod tests {
     fn untouched_until_deleted() {
         let t = [touch(0, 1, 10)];
         assert_eq!(
-            clips(mid(0), mid(30), &t, 12),
+            clips(mid(0), mid(30), &t, 12, 1),
             [
                 Clip {
                     from: mid(0),
@@ -211,10 +253,40 @@ mod tests {
     #[test]
     fn same_author_after_a_gap_stays_separate_from_untouched() {
         let t = [touch(0, 1, 1), touch(20, 1, 1)];
-        let c = clips(mid(0), mid(21), &t, 12);
+        let c = clips(mid(0), mid(21), &t, 12, 1);
         assert_eq!(
             c.iter().map(|c| c.author).collect::<Vec<_>>(),
             [Some(1), None, Some(1)]
+        );
+    }
+
+    #[test]
+    fn short_stretches_are_absorbed() {
+        // Ann for months 0-9, Bo wins month 4 only, Cy wins months 10-11.
+        let mut t: Vec<Touch> = (0..10).map(|m| touch(m, 1, 5)).collect();
+        t[4] = touch(4, 2, 50);
+        t.push(touch(10, 3, 5));
+        t.push(touch(11, 3, 5));
+        let authors = |c: Vec<Clip>| c.iter().map(|c| c.author).collect::<Vec<_>>();
+        assert_eq!(
+            authors(clips(mid(0), mid(12), &t, 12, 1)),
+            [Some(1), Some(2), Some(1), Some(3)]
+        );
+        assert_eq!(
+            authors(clips(mid(0), mid(12), &t, 12, 3)),
+            [Some(1), Some(3)]
+        );
+        let c = clips(mid(0), mid(12), &t, 12, 3);
+        assert_eq!((c[0].from, c[0].to, c[1].to), (mid(0), start(10), mid(12)));
+    }
+
+    #[test]
+    fn untouched_is_never_absorbed() {
+        let t = [touch(0, 1, 1), touch(20, 2, 1)];
+        let c = clips(mid(0), mid(21), &t, 12, 6);
+        assert_eq!(
+            c.iter().map(|c| c.author).collect::<Vec<_>>(),
+            [Some(1), None, Some(2)]
         );
     }
 }

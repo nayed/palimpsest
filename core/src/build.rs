@@ -232,6 +232,7 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
                 to,
                 &f.touches,
                 opts.untouched_months,
+                opts.min_clip_months,
             ),
         );
     }
@@ -300,6 +301,11 @@ struct RowAcc {
     lines: i64,
     peak: i64,
     born: Option<i64>,
+    /// The commit the folder appeared in, and how many files arrived with it.
+    born_commit: u32,
+    born_files: u32,
+    /// Files added or moved into the folder by the current commit.
+    arrivals: u32,
     emptied: Option<i64>,
     sizes: Vec<u32>,
     touches: Vec<Touch>,
@@ -334,6 +340,9 @@ fn overview(
             lines: 0,
             peak: 0,
             born: None,
+            born_commit: 0,
+            born_files: 0,
+            arrivals: 0,
             emptied: None,
             sizes: vec![0; month_count],
             touches: vec![],
@@ -352,6 +361,9 @@ fn overview(
             if ch.kind != ChangeKind::Deleted {
                 let r = &mut rows[row_of(&ch.path)];
                 r.lines += ch.lines_after as i64;
+                if matches!(ch.kind, ChangeKind::Added | ChangeKind::Renamed) {
+                    r.arrivals += 1;
+                }
                 r.touches.push(Touch {
                     time: times[i],
                     author: commit_author[i],
@@ -372,7 +384,11 @@ fn overview(
         for r in &mut rows {
             r.peak = r.peak.max(r.lines);
             if r.lines > 0 {
-                r.born.get_or_insert(times[i]);
+                if r.born.is_none() {
+                    r.born = Some(times[i]);
+                    r.born_commit = i as u32;
+                    r.born_files = r.arrivals;
+                }
                 r.emptied = None;
             } else if r.born.is_some() && r.emptied.is_none() {
                 r.emptied = Some(times[i]);
@@ -381,6 +397,7 @@ fn overview(
             // commits overwrite the months they reach.
             let n = r.lines.max(0) as u32;
             r.sizes[m..].iter_mut().for_each(|s| *s = n);
+            r.arrivals = 0;
         }
     }
 
@@ -391,8 +408,12 @@ fn overview(
             .collect(),
         ..Default::default()
     };
+    let mut births = Vec::new();
     for (k, r) in rows.into_iter().enumerate() {
         let Some(born) = r.born else { continue };
+        if let Some(folder) = folders.get(k).filter(|_| r.born_commit > 0) {
+            births.push((r.born_commit, folder.clone(), r.born_files));
+        }
         let folder = folders.get(k).cloned();
         let to = r.emptied.unwrap_or(end);
         let mut row_clips = Clips {
@@ -401,7 +422,13 @@ fn overview(
         };
         push_clips(
             &mut row_clips,
-            &clips(born, to, &r.touches, opts.untouched_months),
+            &clips(
+                born,
+                to,
+                &r.touches,
+                opts.untouched_months,
+                opts.min_clip_months,
+            ),
         );
         out.rows.push(OverviewRow {
             label: folder
@@ -417,27 +444,11 @@ fn overview(
         });
     }
 
-    // Notable moments: a chosen folder appearing after the first commit, and
-    // files moving between folders (most files first).
+    // Notable moments: an Overview folder appearing after the first commit, and
+    // files moving between folders. The more files involved, the more notable;
+    // one moment per commit, so a single reorganization is not listed five times,
+    // and a move wins a tie because it says more.
     let mut moments = Vec::new();
-    for row in out
-        .rows
-        .iter()
-        .filter(|r| r.folder.is_some() && r.born > start)
-    {
-        let commit = times.partition_point(|&t| t < row.born) as u32;
-        moments.push((
-            u32::MAX,
-            Moment {
-                commit,
-                kind: "folderBorn".into(),
-                folder: row.folder.clone().unwrap(),
-                from: None,
-                files: 0,
-                example: None,
-            },
-        ));
-    }
     for ((commit, from, to), (files, example)) in moves {
         moments.push((
             files,
@@ -451,9 +462,24 @@ fn overview(
             },
         ));
     }
+    for (commit, folder, files) in births {
+        moments.push((
+            files,
+            Moment {
+                commit,
+                kind: "folderBorn".into(),
+                folder,
+                from: None,
+                files,
+                example: None,
+            },
+        ));
+    }
     moments.sort_by_key(|(score, m)| (std::cmp::Reverse(*score), m.commit));
+    let mut seen = std::collections::HashSet::new();
     out.moments = moments
         .into_iter()
+        .filter(|(_, m)| seen.insert(m.commit))
         .take(opts.max_moments)
         .map(|(_, m)| m)
         .collect();
