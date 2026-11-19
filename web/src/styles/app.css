@@ -1,0 +1,538 @@
+/* Layout: header, upper half, transport, then the timeline filling the rest. */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 640px;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  padding: 10px var(--page-padding);
+  border-bottom: 1px solid var(--line);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.repo-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 360px;
+  min-width: 0;
+}
+
+.repo-field label {
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.repo-field input {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-height);
+  padding: 0 12px;
+  border: 1px solid var(--line-input);
+  border-radius: var(--radius-clip);
+  background: var(--well);
+  font-family: var(--font-code);
+  font-size: 13px;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--well);
+}
+
+.tab {
+  height: var(--control-height);
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-clip);
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.tab[aria-current="page"] {
+  background: var(--active-bg);
+  color: var(--active-fg);
+  font-weight: 600;
+}
+
+.tab[aria-disabled="true"] {
+  color: var(--disabled);
+  cursor: default;
+}
+
+/* Upper half: a fixed height, so the timeline below never jumps between the
+   playing feed and the paused file view. */
+
+.upper {
+  display: flex;
+  gap: 16px 40px;
+  padding: 16px var(--page-padding);
+  height: clamp(300px, 42vh, 460px);
+  overflow: hidden;
+}
+
+.panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-main {
+  flex: 3 1 520px;
+}
+
+.panel-side {
+  flex: 2 1 340px;
+  gap: 14px;
+  padding-top: 4px;
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.panel-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.panel-title.mono {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.caption {
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.well {
+  border-radius: var(--radius-control);
+  background: var(--well);
+}
+
+.empty {
+  color: var(--mute);
+  padding: 14px;
+}
+
+.chip {
+  flex: 0 0 auto;
+  min-width: 26px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--radius-chip);
+  color: var(--on-author);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chip-untouched {
+  background: var(--untouched);
+}
+
+/* The date at the playhead */
+
+.date-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 54px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.commit-count {
+  color: var(--mute);
+}
+
+/* Commits going by */
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--well);
+  overflow: hidden;
+}
+
+.feed-row {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px 0 0;
+  border-left: 4px solid transparent;
+}
+
+.feed-row.current {
+  background: var(--selected-row);
+  border-left-color: var(--selected-mark);
+}
+
+.feed-date {
+  flex: 0 0 96px;
+  padding-left: 8px;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.feed-subject {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-row.current .feed-subject {
+  font-weight: 600;
+}
+
+.feed-files {
+  flex: 0 1 auto;
+  max-width: 40%;
+  min-width: 0;
+  color: var(--mute);
+  font-family: var(--font-code);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-row.current .feed-files {
+  color: var(--fg);
+}
+
+/* A file's history, and the current commit */
+
+.file-history {
+  padding: 14px 16px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.subhead {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-item,
+.current-commit {
+  display: flex;
+  gap: 10px;
+}
+
+.history-item .chip,
+.current-commit .chip {
+  margin-top: 2px;
+}
+
+.history-subject {
+  font-weight: 600;
+}
+
+.history-detail {
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.current-commit {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.why {
+  margin-top: 8px;
+  color: var(--fg);
+  font-size: 13px;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Transport */
+
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px var(--page-padding);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.icon-button {
+  width: var(--control-height);
+  height: var(--control-height);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-button:hover {
+  background: var(--selected-row-on-panel);
+}
+
+.play-button {
+  width: 64px;
+  height: var(--control-height);
+  border: 2px solid var(--now-outline);
+  border-radius: var(--radius-control);
+  background: var(--now);
+  color: var(--on-now);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.speed {
+  position: relative;
+}
+
+.speed-button {
+  height: var(--control-height);
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.speed-button.open {
+  border-color: var(--line-strong);
+  background: var(--well);
+}
+
+.menu {
+  position: absolute;
+  z-index: 10;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-menu);
+  background: var(--well);
+  box-shadow: var(--shadow-menu);
+}
+
+.speed-menu {
+  bottom: 52px;
+  left: 0;
+  width: 240px;
+}
+
+.speed-menu button {
+  min-height: var(--control-height);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-clip);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.speed-menu button:hover {
+  background: var(--selected-row);
+}
+
+.speed-menu button[aria-pressed="true"] {
+  background: var(--active-bg);
+  color: var(--active-fg);
+  font-weight: 600;
+}
+
+.speed-value {
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+.speed-note {
+  font-size: 13px;
+}
+
+/* Legend and timeline */
+
+.lower {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  padding: 14px var(--page-padding) 0;
+  font-size: 13px;
+}
+
+.legend-title {
+  color: var(--mute);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 12px;
+  padding: 0 var(--page-padding);
+}
+
+.timeline-gutter {
+  flex: 0 0 var(--gutter-width);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--track-gap);
+}
+
+.row-label {
+  height: var(--track-height);
+  display: flex;
+  align-items: center;
+}
+
+.path-label {
+  max-width: 100%;
+  padding: 2px 5px;
+  margin-left: -5px;
+  border-radius: var(--radius-chip);
+  font-family: var(--font-code);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.path-label.absent {
+  color: var(--mute);
+}
+
+.path-label.selected {
+  color: var(--now);
+}
+
+.path-label.changed {
+  background: var(--highlight-bg);
+  color: var(--highlight-fg);
+}
+
+.timeline-tracks {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  touch-action: none;
+}
+
+.timeline-tracks:focus-visible {
+  outline-offset: -2px;
+}
+
+.timeline-tracks canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.ruler {
+  position: absolute;
+  left: 0;
+  right: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--mute);
+}
+
+.year {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.year.tick {
+  border-left: 1px solid var(--line-strong);
+}
+
+.message {
+  padding: 40px var(--page-padding);
+}

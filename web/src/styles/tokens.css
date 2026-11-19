@@ -1,0 +1,131 @@
+/*
+ * Palimpsest design tokens, read from the approved designs.
+ *
+ * Two themes, chosen by the user with the sun and moon switch in the header.
+ * There is deliberately no prefers-color-scheme rule: the theme never follows
+ * the system. Set data-theme="dark" or data-theme="light" on the root element.
+ *
+ * Copied from docs/design/tokens.css. Use only these variables for color. The
+ * canvas drawing code reads the same values with getComputedStyle.
+ *
+ * Only the dark theme is used for now; the light values are kept for later.
+ */
+
+:root,
+[data-theme="dark"] {
+  /* Surfaces */
+  --bg: #201c26;            /* page background, the upper "viewer" half */
+  --panel: #2a2531;         /* transport bar and the timeline half */
+  --well: #18151d;          /* code viewer, inputs, menus, tab container */
+  --lane: #221e28;          /* empty track behind the clips */
+
+  /* Lines */
+  --line: #3d3746;          /* dividers, borders of quiet containers */
+  --line-input: #3d3746;    /* text field border */
+  --line-strong: #5a5366;   /* ruler ticks, outlined buttons */
+  --line-dashed: #8a8296;   /* deleted-file end caps, "not read yet" outline */
+
+  /* Text */
+  --fg: #f1edf5;
+  --mute: #b3abc0;          /* secondary text; passes 4.5:1 on bg, panel and well */
+  --disabled: #8a8296;
+  --on-author: #16131b;     /* text on any author color */
+
+  /* The active tab, the active theme button, the selected speed */
+  --active-bg: #f1edf5;
+  --active-fg: #16131b;
+
+  /* "Now": the playhead, the play button, the current selection. Never an author. */
+  --now: #e4f26b;
+  --on-now: #1d2106;
+  --playhead-line: #e4f26b;
+  --now-outline: transparent;         /* dark needs no outline around yellow-green fills */
+  --selected-row: #2f2a38;            /* selected code row or menu row on --well */
+  --selected-row-on-panel: #3b3547;   /* the same on --panel (Lines view) */
+  --selected-mark: #e4f26b;           /* 4px bar at the left of a selected row */
+  --highlight-bg: transparent;        /* inline highlights are yellow-green text in dark */
+  --highlight-fg: #e4f26b;
+  --focus-ring: #e4f26b;
+
+  /* Authors, by rank. Rank is by commits over the whole history. */
+  --author-1: #6dabdf;
+  --author-2: #9df3cc;
+  --author-3: #dfc1ff;
+  --author-4: #e3975a;
+  --author-5: #d078a0;
+  --author-others: #6a676f;           /* sixth author onward, and bots */
+  --untouched: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px);
+  --untouched-stripe: #4a4455;      /* the two colors of the --untouched hatch, */
+  --untouched-gap: #2f2a38;         /* for the canvas, which cannot read a gradient */
+  --on-untouched: #e2dcea;
+  --former-author-chip: #4a4455;      /* chip of a deleted or not-yet-written line */
+
+  /* Everything after the playhead is veiled */
+  --future-veil: rgba(42, 37, 49, 0.7);
+  --shadow-menu: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] {
+  --bg: #eeece8;
+  --panel: #e3e0da;
+  --well: #f8f7f4;
+  --lane: #d9d5ce;
+
+  --line: #cbc6bd;
+  --line-input: #8a8378;
+  --line-strong: #a8a297;
+  --line-dashed: #8a8378;
+
+  --fg: #201d1a;
+  --mute: #5c564e;
+  --disabled: #8a8378;
+  --on-author: #201d1a;
+
+  --active-bg: #201d1a;
+  --active-fg: #f8f7f4;
+
+  --now: #e4f26b;
+  --on-now: #1d2106;
+  --playhead-line: #201d1a;           /* yellow-green is invisible as a thin line on light */
+  --now-outline: #201d1a;             /* 2px outline around yellow-green fills */
+  --selected-row: #eef59a;
+  --selected-row-on-panel: #eef59a;
+  --selected-mark: #201d1a;
+  --highlight-bg: #eef59a;
+  --highlight-fg: #201d1a;
+  --focus-ring: #201d1a;
+
+  --author-1: #77ccff;
+  --author-2: #42be8f;
+  --author-3: #aa83d9;
+  --author-4: #d0792a;
+  --author-5: #fd9ac6;
+  --author-others: #8b857f;
+  --untouched: repeating-linear-gradient(135deg, #c4beb4 0 3px, #e3e0da 3px 6px);
+  --untouched-stripe: #c4beb4;
+  --untouched-gap: #e3e0da;
+  --on-untouched: #201d1a;
+  --former-author-chip: #b9b3a9;
+
+  --future-veil: rgba(227, 224, 218, 0.7);
+  --shadow-menu: 0 14px 36px rgba(32, 29, 26, 0.2);
+}
+
+:root {
+  /* Type */
+  --font-ui: Barlow, system-ui, sans-serif;
+  --font-display: "Barlow Condensed", Barlow, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Sizes */
+  --control-height: 44px;   /* every button, field, tab and menu row */
+  --radius-clip: 4px;       /* clips, lanes, fields, tabs */
+  --radius-control: 6px;    /* play button, tab container, outlined buttons, code well */
+  --radius-menu: 8px;
+  --radius-chip: 3px;
+  --track-height: 30px;
+  --track-gap: 4px;
+  --gutter-width: 168px;    /* track labels, left of the timeline */
+  --ruler-height: 22px;
+  --page-padding: 20px;
+}
