@@ -1,4 +1,4 @@
-# Deployed in build step 5 with `npx wrangler deploy` from this folder.
+# Deploy from this folder: npx wrangler@4.165.0 deploy --var ALLOWED_ORIGINS:<site origin>
 name = "palimpsest-git-proxy"
 main = "src/proxy.ts"
 compatibility_date = "2026-11-01"
