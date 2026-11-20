@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "pnpm wasm && tsc --noEmit && vite build",
     "wasm": "../scripts/build-wasm.sh",
-    "ship": "VITE_GIT_PROXY=https://palimpsest-git-proxy.nayed-saidali.workers.dev pnpm build && wrangler deploy",
+    "ship": "VITE_GIT_PROXY=https://palimpsest-git-proxy.nayed.workers.dev pnpm build && wrangler deploy",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

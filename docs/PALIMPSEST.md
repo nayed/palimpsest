@@ -77,7 +77,7 @@ The one idea that holds the product together: **the playhead is shared**. The da
 | Rust to JavaScript bridge | **wasm-bindgen**, typed arrays across the boundary | Decided | |
 | Storing a cloned repository | The browser's private file system (OPFS), with computed history cached by repository and head commit | Decided | |
 | CORS proxy | One **Cloudflare Worker** | Decided | GitHub does not allow cross-origin git fetches from a browser. The Worker forwards only git smart-HTTP requests to `github.com` and nothing else; it must not be usable as an open proxy. |
-| Hosting | **Cloudflare Pages** | Decided | Static site plus that one Worker. In step 5, Cloudflare's tooling had folded Pages into Workers, so the site is deployed as Workers static assets (`web/wrangler.jsonc`) at palimpsest.nayed-saidali.workers.dev, with the proxy at palimpsest-git-proxy.nayed-saidali.workers.dev. |
+| Hosting | **Cloudflare Pages** | Decided | Static site plus that one Worker. In step 5, Cloudflare's tooling had folded Pages into Workers, so the site is deployed as Workers static assets (`web/wrangler.jsonc`) at palimpsest.nayed.workers.dev, with the proxy at palimpsest-git-proxy.nayed.workers.dev. |
 | Tests | `cargo test` for the core, **Vitest** for the front end, **Playwright** for the views | Decided | The history logic is where the bugs will be. Test it hardest. |
 | Package manager | **pnpm** | Decided | |
 | Fonts | Barlow, Barlow Condensed and JetBrains Mono, bundled locally with `@fontsource` | Decided | No request to Google Fonts at runtime. |

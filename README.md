@@ -7,7 +7,7 @@ In the Middle Ages, parchment was too precious to throw away, so scribes **scrap
 
 **Palimpsest** is a git time machine for the web: open a public repository, then scrub through its history like a video. Every file is a track, colored by who was writing it, so you can watch code be born, change hands, move and disappear, then zoom in on any single line to see who wrote it, when, and why.
 
-**Try it: [palimpsest.nayed-saidali.workers.dev](https://palimpsest.nayed-saidali.workers.dev)**
+**Try it: [palimpsest.nayed.workers.dev](https://palimpsest.nayed.workers.dev)**
 
 ![Palimpsest playing the history of alacritty: tracks of files colored by author, with commits going by](./docs/images/palimpsest.gif)
 

@@ -6,4 +6,4 @@ compatibility_date = "2026-11-01"
 [vars]
 # Origins allowed to use the proxy: the deployed site. (In development, Vite
 # serves the same code itself and needs nothing here.)
-ALLOWED_ORIGINS = "https://palimpsest.nayed-saidali.workers.dev"
+ALLOWED_ORIGINS = "https://palimpsest.nayed.workers.dev"
