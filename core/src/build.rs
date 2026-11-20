@@ -11,12 +11,20 @@ use std::collections::{BTreeMap, HashMap};
 use crate::clips::{Clip, Touch, clips};
 use crate::diff::{ChangeKind, FileChange, diff_commit};
 use crate::format::{
-    self, Changes, Clips, Commits, Data, Files, Moment, Overview, OverviewRow, Repo,
+    self, Changes, Clips, Commits, Data, Files, LineFile, Moment, Overview, OverviewRow, Repo,
+    Share,
 };
+use crate::lines::Owners;
 use crate::source::{RawCommit, Result, Source};
 use crate::time::{month_of, month_start};
 use crate::vendored::is_vendored;
 use crate::{Options, authors};
+
+/// The main data file and the per-file line histories.
+pub struct Output {
+    pub data: Data,
+    pub lines: Vec<LineFile>,
+}
 
 /// Reads the whole first-parent history of `src` and builds the data file.
 /// `progress` is called with (commits done, commits in total).
@@ -25,6 +33,15 @@ pub fn build(
     opts: &Options,
     progress: &mut dyn FnMut(usize, usize),
 ) -> Result<Data> {
+    Ok(build_all(src, opts, progress)?.data)
+}
+
+/// Like [`build`], also returning each file's line history.
+pub fn build_all(
+    src: &dyn Source,
+    opts: &Options,
+    progress: &mut dyn FnMut(usize, usize),
+) -> Result<Output> {
     let mut chain = first_parent_chain(src)?;
     attribute_merges(src, &mut chain)?;
     let mut diffs = Vec::with_capacity(chain.len());
@@ -37,7 +54,7 @@ pub fn build(
         diffs.push(diff_commit(src, parent_tree, c.tree, opts)?);
         progress(i + 1, chain.len());
     }
-    Ok(assemble(&chain, &diffs, opts))
+    Ok(assemble_all(&chain, &diffs, opts))
 }
 
 /// The commits from the root to the head following first parents, oldest first.
@@ -75,6 +92,10 @@ struct FileAcc {
     lines: u32,
     paths: Vec<(u32, u32)>,
     touches: Vec<Touch>,
+    lines_file: Option<LineFile>,
+    owners: Owners,
+    /// Line history was lost (the file became binary): none is kept.
+    lines_lost: bool,
 }
 
 fn touch_weight(c: &FileChange) -> u32 {
@@ -87,6 +108,10 @@ fn folders_of(path: &str) -> impl Iterator<Item = &str> {
 }
 
 pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options) -> Data {
+    assemble_all(commits, diffs, opts).data
+}
+
+pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options) -> Output {
     assert_eq!(commits.len(), diffs.len());
     let mut data = Data {
         format: format::FORMAT.into(),
@@ -95,7 +120,10 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
     };
     if commits.is_empty() {
         data.repo.name = opts.name.clone();
-        return data;
+        return Output {
+            data,
+            lines: vec![],
+        };
     }
 
     // Commit times, made non-decreasing.
@@ -143,6 +171,11 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
         start: vec![0],
         ..Default::default()
     };
+    // Lines alive now, by who last wrote them; sampled at the end of each month.
+    let first_month = month_of(start);
+    let month_count = (month_of(end) - first_month + 1) as usize;
+    let mut owned = vec![0i64; data.authors.name.len()];
+    let mut share_months: Vec<Option<Vec<(u32, u32)>>> = vec![None; month_count];
 
     for (i, diff) in diffs.iter().enumerate() {
         let ci = i as u32;
@@ -155,6 +188,9 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
                     lines: 0,
                     paths: vec![(ci, intern(paths, &ch.path))],
                     touches: Vec::new(),
+                    lines_file: None,
+                    owners: Owners::default(),
+                    lines_lost: false,
                 });
                 files.len() - 1
             };
@@ -199,6 +235,43 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
                 });
             }
 
+            let mut moved = |from: Option<u32>, to: Option<u32>| {
+                if let Some(a) = from {
+                    owned[a as usize] -= 1;
+                }
+                if let Some(a) = to {
+                    owned[a as usize] += 1;
+                }
+            };
+            match &ch.lines {
+                Some(edit) if !f.lines_lost => {
+                    f.owners.apply(edit, commit_author[i], &mut moved);
+                    let lf = f.lines_file.get_or_insert_with(|| LineFile {
+                        format: format::LINES_FORMAT.into(),
+                        version: format::VERSION,
+                        file: id as u32,
+                        ops_start: vec![0],
+                        ..Default::default()
+                    });
+                    lf.commits.push(ci);
+                    for &(op, n) in &edit.ops {
+                        lf.ops.push(op as u32);
+                        lf.ops.push(n);
+                    }
+                    lf.ops_start.push(lf.ops.len() as u32);
+                    lf.texts.extend(edit.texts.iter().cloned());
+                }
+                None if f.lines_file.is_some() && !f.lines_lost => {
+                    for &a in &f.owners.0 {
+                        moved(Some(a), None);
+                    }
+                    f.owners.0.clear();
+                    f.lines_file = None;
+                    f.lines_lost = true;
+                }
+                _ => {}
+            }
+
             let before = ch.old_path.as_deref().unwrap_or(&ch.path);
             if ch.kind != ChangeKind::Added && !is_vendored(before) {
                 for d in folders_of(before) {
@@ -220,6 +293,15 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
             changes.deleted.push(ch.deleted);
         }
         changes.start.push(changes.file.len() as u32);
+        let m = (month_of(times[i]) - first_month) as usize;
+        share_months[m] = Some(
+            owned
+                .iter()
+                .enumerate()
+                .filter(|(_, n)| **n > 0)
+                .map(|(a, n)| (a as u32, *n as u32))
+                .collect(),
+        );
     }
     data.changes = changes;
 
@@ -239,6 +321,7 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
             head_lines += f.lines as i64;
         }
         data.files.vendored.push(vendored);
+        data.files.has_lines.push(f.lines_file.is_some());
         data.files.born.push(f.born);
         data.files.died.push(f.died.map_or(-1, |d| d as i32));
         data.files.commits.push(f.commits);
@@ -270,7 +353,26 @@ pub fn assemble(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Options
         head_lines,
         opts,
     );
-    data
+
+    let mut share = Share {
+        start: vec![0],
+        ..Default::default()
+    };
+    let mut current: Vec<(u32, u32)> = Vec::new();
+    for month in share_months {
+        if let Some(m) = month {
+            current = m;
+        }
+        for &(a, n) in &current {
+            share.author.push(a);
+            share.lines.push(n);
+        }
+        share.start.push(share.author.len() as u32);
+    }
+    data.overview.share = share;
+
+    let lines = files.into_iter().filter_map(|f| f.lines_file).collect();
+    Output { data, lines }
 }
 
 fn push_clips(out: &mut Clips, clips: &[Clip]) {

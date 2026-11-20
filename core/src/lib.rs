@@ -9,6 +9,7 @@ pub mod build;
 pub mod clips;
 pub mod diff;
 pub mod format;
+pub mod lines;
 pub mod mem;
 pub mod source;
 pub mod text;
@@ -18,7 +19,7 @@ pub mod vendored;
 #[cfg(feature = "git")]
 pub mod git;
 
-pub use build::{assemble, build};
+pub use build::{Output, assemble, assemble_all, build, build_all};
 pub use format::Data;
 pub use source::Source;
 
@@ -35,6 +36,11 @@ pub struct Options {
     /// An author's stretch shorter than this, in months, is absorbed by the
     /// longer neighboring stretch. 1 keeps every month as it is.
     pub min_clip_months: i32,
+    /// Follow individual lines (line history and who wrote today's code).
+    pub line_history: bool,
+    /// How alike an old and a new line must be to count as the same line
+    /// rewritten rather than one line dying and another being born (0 to 1).
+    pub line_similarity: f64,
     /// How alike a deleted and an added file must be to count as a rename (0 to 1).
     pub rename_similarity: f64,
     /// Skip similarity matching when a commit has more deleted × added file
@@ -55,6 +61,8 @@ impl Default for Options {
             ranked_authors: 5,
             untouched_months: 12,
             min_clip_months: 3,
+            line_history: true,
+            line_similarity: 0.5,
             rename_similarity: 0.5,
             rename_limit: 10_000,
             overview_rows: 5,

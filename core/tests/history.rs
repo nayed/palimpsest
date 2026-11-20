@@ -359,3 +359,55 @@ fn the_format_serializes_with_camel_case_keys() {
     let back: Data = serde_json::from_str(&json).unwrap();
     assert_eq!(back, d);
 }
+
+#[test]
+fn line_history_replays_to_the_file_contents() {
+    let mut fx = Fixture::new();
+    fx.write("a.rs", "fn a() {\n    one();\n}\n")
+        .commit("Ann Lee", 0, "Add");
+    fx.write("a.rs", "// header\nfn a() {\n    one(1);\n    two();\n}\n")
+        .commit("Bo Kim", 40, "Edit");
+    fx.mv("a.rs", "src/a.rs").commit("Bo Kim", 80, "Move");
+    fx.write("src/a.rs", "fn a() {\n    one(1);\n}\n")
+        .commit("Ann Lee", 120, "Trim");
+    fx.write("b.bin", "\0binary")
+        .commit("Ann Lee", 130, "Binary");
+    fx.remove("src/a.rs").commit("Ann Lee", 140, "Delete");
+    let out = palimpsest_core::build_all(&fx.repo, &Options::default(), &mut |_, _| {}).unwrap();
+    let d = &out.data;
+
+    assert_eq!(d.files.has_lines, [true, false]);
+    assert_eq!(out.lines.len(), 1);
+    let lf = &out.lines[0];
+    assert_eq!(lf.commits, [0, 1, 2, 3, 5]);
+    // Replaying up to "Trim" gives the file as it was then.
+    let upto = |n: usize| palimpsest_core::format::LineFile {
+        commits: lf.commits[..n].to_vec(),
+        ops_start: lf.ops_start[..=n].to_vec(),
+        ..lf.clone()
+    };
+    assert_eq!(
+        palimpsest_core::lines::replay(&upto(2)),
+        ["// header", "fn a() {", "    one(1);", "    two();", "}"]
+    );
+    assert_eq!(
+        palimpsest_core::lines::replay(&upto(4)),
+        ["fn a() {", "    one(1);", "}"]
+    );
+    assert!(palimpsest_core::lines::replay(lf).is_empty());
+
+    // Who wrote the code that exists, per month: January all Ann (3 lines);
+    // February Bo wrote 3 of 5; after the deletion, nothing is left.
+    let share = |m: usize| -> Vec<(String, u32)> {
+        let s = &d.overview.share;
+        (s.start[m] as usize..s.start[m + 1] as usize)
+            .map(|k| (d.authors.name[s.author[k] as usize].clone(), s.lines[k]))
+            .collect()
+    };
+    assert_eq!(share(0), [("Ann Lee".to_string(), 3)]);
+    assert_eq!(
+        share(1),
+        [("Ann Lee".to_string(), 2), ("Bo Kim".to_string(), 3)]
+    );
+    assert!(share(4).is_empty());
+}

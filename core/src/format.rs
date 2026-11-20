@@ -89,6 +89,9 @@ pub struct Files {
     /// Vendored, generated or a lock file: left out of folder sizes, and best
     /// left out of the files Tracks picks.
     pub vendored: Vec<bool>,
+    /// Whether `lines/<file id>.json` holds the file's line history. False
+    /// for vendored and binary files.
+    pub has_lines: Vec<bool>,
     /// Offsets into `pathCommit` and `path`, one more than there are files.
     pub path_start: Vec<u32>,
     /// From this commit on, the file was at `paths[path[k]]`.
@@ -132,6 +135,43 @@ pub struct Overview {
     pub month_starts: Vec<i64>,
     /// Folder births and moves between folders, most significant first.
     pub moments: Vec<Moment>,
+    /// Who wrote the code that exists at the end of each month.
+    pub share: Share,
+}
+
+/// For each month of `Overview::month_starts`, through `start`: the lines
+/// alive at the end of the month, counted by the author who last wrote them.
+/// Vendored and binary files are not counted.
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Share {
+    pub start: Vec<u32>,
+    pub author: Vec<u32>,
+    pub lines: Vec<u32>,
+}
+
+pub const LINES_FORMAT: &str = "palimpsest-lines";
+
+/// One file's line history, in `lines/<file id>.json`, loaded when the file
+/// is opened. Replaying the edits in order gives every line its identity:
+/// new lines and new versions are numbered in the order edits create them.
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct LineFile {
+    /// Always "palimpsest-lines".
+    pub format: String,
+    pub version: u32,
+    pub file: u32,
+    /// The commits that changed the file's lines, oldest first; the author of
+    /// each new version is that commit's author.
+    pub commits: Vec<u32>,
+    /// Offsets into `ops`, one more than there are commits.
+    pub ops_start: Vec<u32>,
+    /// Pairs of (operation, count): 0 keep, 1 delete, 2 insert, 3 rewrite,
+    /// applied to the lines from the top. Lines after the last pair are kept.
+    pub ops: Vec<u32>,
+    /// Text of each inserted or rewritten line, in the order the edits use them.
+    pub texts: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]

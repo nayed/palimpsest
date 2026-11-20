@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use palimpsest_core::{Options, build, git::GitSource};
+use palimpsest_core::{Options, build_all, git::GitSource};
 
 #[derive(Parser)]
 #[command(
@@ -72,7 +72,7 @@ fn build_data(repo: PathBuf, out: PathBuf, opts: Options, pretty: bool) -> Resul
         .map_err(anyhow::Error::from_boxed)
         .with_context(|| format!("opening {}", repo.display()))?;
     let mut last = 0;
-    let data = build(&src, &opts, &mut |done, total| {
+    let output = build_all(&src, &opts, &mut |done, total| {
         if done == total || done - last >= 250 {
             eprint!("\rReading commits: {done} of {total}");
             last = done;
@@ -80,6 +80,7 @@ fn build_data(repo: PathBuf, out: PathBuf, opts: Options, pretty: bool) -> Resul
     })
     .map_err(anyhow::Error::from_boxed)?;
     eprintln!();
+    let data = &output.data;
 
     let json = if pretty {
         serde_json::to_vec_pretty(&data)?
@@ -90,6 +91,19 @@ fn build_data(repo: PathBuf, out: PathBuf, opts: Options, pretty: bool) -> Resul
         std::fs::create_dir_all(dir)?;
     }
     std::fs::write(&out, &json).with_context(|| format!("writing {}", out.display()))?;
+
+    // One line-history file per file, next to the main file.
+    let lines_dir = out.with_file_name("lines");
+    if lines_dir.exists() {
+        std::fs::remove_dir_all(&lines_dir)?;
+    }
+    std::fs::create_dir_all(&lines_dir)?;
+    let mut lines_bytes = 0;
+    for lf in &output.lines {
+        let bytes = serde_json::to_vec(lf)?;
+        lines_bytes += bytes.len();
+        std::fs::write(lines_dir.join(format!("{}.json", lf.file)), bytes)?;
+    }
 
     let ranked: Vec<String> = (1..=opts.ranked_authors as u8)
         .filter_map(|r| data.authors.rank.iter().position(|&x| x == r))
@@ -107,6 +121,11 @@ fn build_data(repo: PathBuf, out: PathBuf, opts: Options, pretty: bool) -> Resul
         out.display(),
         json.len() as f64 / 1e6,
         started.elapsed()
+    );
+    eprintln!(
+        "  line history: {} files, {:.1} MB",
+        output.lines.len(),
+        lines_bytes as f64 / 1e6
     );
     eprintln!(
         "  {} commits, {} authors ({} bots)",
