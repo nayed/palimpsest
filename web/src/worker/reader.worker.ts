@@ -60,7 +60,8 @@ async function open(repo: string, proxy: string, limit: number) {
     status({ step: "indexing", bytes: pack.length, downloaded: true });
     void writePack(repo, head, pack);
   }
-  if (stopped) return;
+  // Stopped while the last of the download arrived: say so.
+  if (stopped) return status({ step: "stopped" });
 
   reader = new Reader(repo);
   const total = reader.load(pack, head, () => {});

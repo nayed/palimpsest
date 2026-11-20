@@ -175,6 +175,7 @@ export async function fetchPack(
       else if (band === 3) throw new GitError("protocol", dec.decode(p.data.subarray(1)).trim());
     }
   }
+  if (opts.signal?.aborted) throw new GitError("stopped", "Stopped.");
   if (!pack.length) throw new GitError("protocol", "GitHub sent no pack.");
   return concat(pack);
 }
