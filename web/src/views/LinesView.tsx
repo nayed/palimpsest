@@ -63,6 +63,7 @@ function LinesTimeline({ session, lines }: { session: Session; lines: LineHistor
   const clips = useMemo(() => lines.order.map((id) => lineClips(h, lines, id)), [h, lines]);
   const content = useCallback((i: number): RowContent => ({ style: "plain", clips: clips[i]! }), [clips]);
   const markers = useMemo(() => moveMarkers(h, lines.file), [h, lines.file]);
+  const heights = useMemo(() => lines.order.map(() => ROW), [lines]);
 
   useViewKeys((e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -108,7 +109,7 @@ function LinesTimeline({ session, lines }: { session: Session; lines: LineHistor
   return (
     <Timeline
       playback={playback}
-      heights={lines.order.map(() => ROW)}
+      heights={heights}
       gap={GAP}
       gutter={Math.round(width * 0.44)}
       label={label}

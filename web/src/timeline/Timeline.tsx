@@ -132,28 +132,42 @@ export function Timeline(props: TimelineProps) {
     else if (y + heights[row]! > viewBottom) scroller.scrollTop = y + heights[row]! - scroller.clientHeight + 8;
   }, [props.revealRow, layout, heights, labelAbove]);
 
-  // Redraw on the next frame when the playhead, rows, scroll or size change.
+  // Drawing. Everything the frame needs is read from `frame` when it is
+  // drawn, so new props only schedule a redraw: resizing the canvas (which
+  // clears it) happens only when its size changes. At high speed a view
+  // re-renders on every commit, faster than the screen refreshes, and
+  // restarting the drawing then would leave the canvas blank.
+  const frame = useRef({ trackWidth, height: size.height, heights, markerSpace, readFrom, markers });
+  frame.current = { trackWidth, height: size.height, heights, markerSpace, readFrom, markers };
   const cache = useRef<{ key: string; rows: Map<number, RowContent> }>({ key: "", rows: new Map() });
-  useEffect(() => {
-    cache.current = { key: "", rows: new Map() };
-  }, [props.content]);
+  const redrawRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx || !trackWidth) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(trackWidth * dpr);
-    canvas.height = Math.round(size.height * dpr);
-    themeRef.current = readTheme(canvas);
+    if (!canvas || !ctx) return;
+    let dpr = window.devicePixelRatio || 1;
 
     const render = () => {
       frameRef.current = 0;
+      const f = frame.current;
+      if (!f.trackWidth || !f.height) return;
+      // Resize only when needed: assigning a size clears the canvas.
+      dpr = window.devicePixelRatio || 1;
+      const w = Math.round(f.trackWidth * dpr);
+      const hh = Math.round(f.height * dpr);
+      if (canvas.width !== w || canvas.height !== hh) {
+        canvas.width = w;
+        canvas.height = hh;
+      }
+      themeRef.current ??= readTheme(canvas);
       const p = propsRef.current;
       const s = playback.state;
-      const commit = h.commitAt(s.time);
+      const history = playback.history;
+      const commit = history.commitAt(s.time);
       const key = `${commit}|${s.playing}`;
       if (cache.current.key !== key) cache.current = { key, rows: new Map() };
-      const [a, b] = visible(scrollTopRef.current, size.height);
+      const [a, b] = visible(scrollTopRef.current, f.height);
       const rows: DrawnRow[] = [];
       for (let i = a; i < b; i++) {
         let c = cache.current.rows.get(i);
@@ -161,7 +175,7 @@ export function Timeline(props: TimelineProps) {
           c = p.content(i, commit, s.playing);
           cache.current.rows.set(i, c);
         }
-        rows.push({ ...c, y: layoutRef.current.ys[i]!, h: heights[i]! });
+        rows.push({ ...c, y: layoutRef.current.ys[i]!, h: f.heights[i]! });
       }
       draw(
         ctx,
@@ -169,13 +183,13 @@ export function Timeline(props: TimelineProps) {
           scale: scaleRef.current,
           rows,
           playhead: s.time,
-          width: trackWidth,
-          height: size.height,
-          markerSpace,
+          width: f.trackWidth,
+          height: f.height,
+          markerSpace: f.markerSpace,
           scrollTop: scrollTopRef.current,
           contentBottom: layoutRef.current.bottom,
-          markers: markersRef.current,
-          readFrom,
+          markers: f.markers,
+          readFrom: f.readFrom,
           monthStarts: p.monthStarts,
         },
         themeRef.current!,
@@ -194,8 +208,13 @@ export function Timeline(props: TimelineProps) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = 0;
     };
-  }, [playback, h, trackWidth, size.height, heights, markerSpace, props.content, markers, readFrom]);
-  const redrawRef = useRef<() => void>(() => {});
+  }, [playback]);
+
+  // New rows, sizes or markers: forget built rows and draw again.
+  useEffect(() => {
+    cache.current = { key: "", rows: new Map() };
+    redrawRef.current();
+  }, [props.content, h, trackWidth, size.height, heights, markerSpace, markers, readFrom]);
 
   // Dragging anywhere scrubs; a click on a row selects it; a click on the
   // ruler jumps there.

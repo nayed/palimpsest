@@ -62,3 +62,20 @@ test("the speed menu changes speed and closes with Escape", async ({ page }) => 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("group", { name: "Playback speed" })).toBeHidden();
 });
+
+test("the tracks stay drawn while playing at 16× speed", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "4× speed" }).click();
+  await page.getByRole("button", { name: /^16×/ }).click();
+  await page.waitForTimeout(1500);
+  // Count distinct colors on the canvas: a blank canvas has one.
+  const colors = await page.evaluate(() => {
+    const c = document.querySelector<HTMLCanvasElement>(".timeline-area canvas")!;
+    const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+    const seen = new Set<number>();
+    for (let i = 0; i < d.length; i += 4 * 97) seen.add((d[i]! << 16) | (d[i + 1]! << 8) | d[i + 2]!);
+    return seen.size;
+  });
+  expect(colors).toBeGreaterThan(10);
+  await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
+});

@@ -72,6 +72,7 @@ export function TracksView({ session }: { session: Session }) {
   }, [files, selected, h, store]);
 
   const tracks = useMemo(() => fileTracks(h, files), [h, files]);
+  const heights = useMemo(() => files.map(() => row), [files, row]);
   const changed = useMemo(() => new Set(h.changesIn(commit).map((c) => c.file)), [h, commit]);
   const content = useCallback(
     (i: number, c: number, isPlaying: boolean): RowContent => {
@@ -131,7 +132,7 @@ export function TracksView({ session }: { session: Session }) {
   const timeline = (
     <Timeline
       playback={playback}
-      heights={files.map(() => row)}
+      heights={heights}
       gap={gap}
       gutter={phone ? 0 : GUTTER}
       labelAbove={phone ? LABEL_ABOVE : 0}
