@@ -13,11 +13,12 @@ test("opens on the demo, already playing", async ({ page }) => {
   expect(await page.locator(".row-label").count()).toBeGreaterThan(5);
 });
 
-test("pausing shows the selected file; steps move one commit", async ({ page }) => {
+test("pausing shows the selected file as it was; steps move one commit", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Pause" }).click();
   await expect(page.getByRole("button", { name: "Play history" })).toBeVisible();
-  await expect(page.getByText("Every commit that changed this file")).toBeVisible();
+  await expect(page.getByText("The file exactly as it was at the playhead")).toBeVisible();
+  await expect(page.locator(".code")).toBeVisible();
 
   const count = page.locator(".commit-count");
   const n = async () => Number((await count.textContent())!.match(/Commit ([\d,]+)/)![1]!.replace(/,/g, ""));
@@ -31,11 +32,12 @@ test("pausing shows the selected file; steps move one commit", async ({ page }) 
 test("dragging scrubs, and clicking a track selects its file", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Pause" }).click();
-  const canvas = page.locator(".timeline-tracks canvas");
+  const canvas = page.locator(".timeline-area");
   const box = (await canvas.boundingBox())!;
 
   // Drag to about four fifths of the timeline: well into the 2020s.
-  await page.mouse.move(box.x + 10, box.y + 90);
+  // Start right of the 168px label column.
+  await page.mouse.move(box.x + 200, box.y + 90);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * 0.8, box.y + 90, { steps: 10 });
   await page.mouse.up();
