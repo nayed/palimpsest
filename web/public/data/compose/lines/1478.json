@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1478,"commits":[1258,2445,3932],"opsStart":[0,2,6,6],"ops":[2,7,0,6,3,1],"texts":["services:","  ssh:","    image: build-test-ssh","    build:","      context: .","      ssh:","        - fake-ssh=./fixtures/build-test/ssh/fake_rsa","        - fake-ssh=./fake_rsa"]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2043,"commits":[3406,3932],"opsStart":[0,2,2],"ops":[2,5],"texts":["services:","  app:","    image: alpine","    init: true","    command: ash -c \"if [[ -f /tmp/restart.lock ]] ; then sleep infinity; else touch /tmp/restart.lock; fi\""]}

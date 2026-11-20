@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1798,"commits":[2520,3932],"opsStart":[0,2,2],"ops":[2,12],"texts":["services:","  a:","    build:","      dockerfile_inline: |","        FROM nginx","        RUN mkdir /data/","    develop:","      watch:","        - path: .","          include: A.*","          target: /data/","          action: sync"]}

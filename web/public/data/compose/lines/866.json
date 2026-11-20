@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":866,"commits":[32,34,46],"opsStart":[0,2,6,8],"ops":[2,6,0,6,2,1,1,7],"texts":["#!/usr/bin/env bash","","go get -u github.com/gogo/protobuf/proto","go get -u github.com/gogo/protobuf/jsonpb","go get -u github.com/golang/protobuf/protoc-gen-go","go get -u github.com/stevvooe/protobuild","go get -u gotest.tools/gotestsum"]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":255,"commits":[1187],"opsStart":[0,2],"ops":[2,3],"texts":["[undeadleech@archhq colored_reset]$ printf \"\\e[41m\"","\u001b[41m[undeadleech@archhq colored_reset]$ \u001b[H\u001b[2J[undeadleech@archhq colored_reset]$ printf \"\\e[0m\"","\u001b[0m[undeadleech@archhq colored_reset]$ ls -\b\u001b[K"]}

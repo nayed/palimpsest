@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2074,"commits":[3414,3932],"opsStart":[0,2,2],"ops":[2,11],"texts":["services:","  included:","    image: alpine","    secrets:","      - my-secret","    command: cat /run/secrets/my-secret","","secrets:","  my-secret:","    environment: 'MY_SECRET'",""]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1730,"commits":[2173,3420,3932],"opsStart":[0,2,6,6],"ops":[2,5,0,4,3,1],"texts":["volumes:","  my_vol: {}","","networks:","  my_net: {}","  my_net: {}"]}

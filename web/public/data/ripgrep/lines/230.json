@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":230,"commits":[1062,1297,2052],"opsStart":[0,2,6,10],"ops":[2,1,1,1,2,2,0,2,2,1],"texts":["disable_all_formatting = true","max_width = 79","use_small_heuristics = \"max\"","edition = \"2024\""]}

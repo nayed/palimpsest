@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2013,"commits":[3326,3418,3932],"opsStart":[0,2,2,2],"ops":[2,17],"texts":["services:","  incomplete:","    volumes:","      - data:/data","    networks:","      - internal","    models:","      llm:","  gated:","    profiles: [\"extra\"]","volumes:","  data:","networks:","  internal:","models:","  llm:","    model: ai/example"]}

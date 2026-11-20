@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2016,"commits":[3344,3932],"opsStart":[0,2,2],"ops":[2,5],"texts":["services:","  app:","    build: .","    expose:","      - \"8080\""]}

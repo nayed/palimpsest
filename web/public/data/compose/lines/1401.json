@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1401,"commits":[849,988,3423,3932],"opsStart":[0,2,2,2,2],"ops":[2,11],"texts":["services:","  foo:","    image: alpine","    command: \"echo hello\"","","  bar:","    image: alpine","    command: \"echo world\"","    depends_on:","      foo:","        condition: \"service_completed_successfully\""]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1601,"commits":[1587,1588],"opsStart":[0,2,4],"ops":[2,16,1,16],"texts":["version: '3.3'","","services:","  servic1:","    image: nginx","    ports:","      - 8081:80","  service2:","    image: nginx","    ports:","      - 8082:80","  service3:","    image: nginx","    ports:","      - 8083:80",""]}

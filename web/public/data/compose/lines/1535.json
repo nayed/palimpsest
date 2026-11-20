@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1535,"commits":[1403,1405,1408,1529,3416,3932],"opsStart":[0,2,6,10,10,10,10],"ops":[2,4,0,3,2,1,0,5,2,4],"texts":["services:","  simple:","    image: alpine:3.13.12","    command: top","    pull_policy: missing","  latest:","    image: alpine:latest","    pull_policy: missing","    command: top"]}

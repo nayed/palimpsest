@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2260,"commits":[3772,3932],"opsStart":[0,2,2],"ops":[2,6],"texts":["services:","  app:","    image: alpine","    umask: 027","    # the entrypoint records the mask it started with","    command: sh -c \"umask > /tmp/entrypoint-umask && sleep infinity\""]}

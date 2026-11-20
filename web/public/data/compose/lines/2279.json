@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2279,"commits":[3799,3932],"opsStart":[0,2,2],"ops":[2,7],"texts":["services:","  app:","    image: alpine","    command: sh -c 'sleep 2; exit 3'","    pre_start:","      - image: alpine","        command: echo hook-ran"]}

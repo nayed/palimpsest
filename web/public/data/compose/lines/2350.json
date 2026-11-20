@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2350,"commits":[3950],"opsStart":[0,2],"ops":[2,9],"texts":["services:","  app:","    image: alpine","    init: true","    command: sh -c 'echo failing-to-boot; sleep infinity'","    healthcheck:","      test: [\"CMD\", \"false\"]","      interval: 1s","      retries: 3"]}

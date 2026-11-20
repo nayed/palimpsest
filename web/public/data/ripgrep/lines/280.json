@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":280,"commits":[1810,1907],"opsStart":[0,2,6],"ops":[2,8,0,4,2,2],"texts":["/*!","Modules for generating completions for various shells.","*/","","pub(super) mod bash;","pub(super) mod fish;","pub(super) mod powershell;","pub(super) mod zsh;","static ENCODINGS: &'static str = include_str!(\"encodings.sh\");",""]}

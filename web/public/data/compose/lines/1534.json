@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1534,"commits":[1403,1529,3416],"opsStart":[0,2,2,4],"ops":[2,7,1,7],"texts":["services:","  simple:","    image: alpine:3.13","    command: top","  another:","    image: alpine:3.13","    command: top"]}

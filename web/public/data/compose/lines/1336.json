@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1336,"commits":[788,988,3932],"opsStart":[0,2,2,2],"ops":[2,10],"texts":["<!doctype html>","<html lang=\"en\">","<head>","  <meta charset=\"utf-8\">","  <title>Docker Nginx</title>","</head>","<body>","  <h2>Hello from Nginx container</h2>","</body>","</html>"]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1499,"commits":[1298,2205,3418,3932],"opsStart":[0,2,6,10,10],"ops":[2,3,0,3,2,2,0,2,1,1],"texts":["services:","  env-compose-priority:","    image: env-compose-priority","    build:","      context: ."]}

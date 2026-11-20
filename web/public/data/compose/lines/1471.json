@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1471,"commits":[1219,2739,3420,3932],"opsStart":[0,2,4,10,10],"ops":[2,5,1,1,0,3,1,1,2,2],"texts":["version: '3.8'","services:","  simple:","    image: alpine","    command: echo \"Hi there!!\"","    init: true","    command: sleep infinity"]}

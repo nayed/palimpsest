@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":244,"commits":[1306,1753,1905],"opsStart":[0,2,6,8],"ops":[2,5,0,4,3,1,1,5],"texts":["#!/bin/sh","","mkdir -p stage","cp ../../ubuntu-install-packages ./stage/","docker build -t burntsushi/cross:arm-unknown-linux-gnueabihf .","docker build -t burntsushi/cross:aarch64-unknown-linux-gnu ."]}

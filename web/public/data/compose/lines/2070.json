@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2070,"commits":[3414,3932],"opsStart":[0,2,2],"ops":[2,5],"texts":["FROM alpine","ARG FOO","LABEL FOO=$FOO","CMD [\"sleep\", \"infinity\"]",""]}

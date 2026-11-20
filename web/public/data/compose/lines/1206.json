@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1206,"commits":[526,690,1043],"opsStart":[0,2,2,4],"ops":[2,1,1,1],"texts":["{\"Current\":true,\"Description\":\"Current DOCKER_HOST based configuration\",\"DockerEndpoint\":\"npipe:////./pipe/docker_engine\",\"KubernetesEndpoint\":\"\",\"ContextType\":\"moby\",\"Name\":\"default\",\"StackOrchestrator\":\"swarm\"}"]}

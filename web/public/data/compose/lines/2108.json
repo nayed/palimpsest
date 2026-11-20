@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2108,"commits":[3420,3932],"opsStart":[0,2,2],"ops":[2,9],"texts":["services:","  build:","    build:","      dockerfile_inline: \"FROM base\"","      additional_contexts:","        base: \"service:build_base\"","  build_base:","    build:","      dockerfile_inline: \"FROM alpine\""]}

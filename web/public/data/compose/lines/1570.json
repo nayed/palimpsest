@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1570,"commits":[1473,3420,3932],"opsStart":[0,2,14,14],"ops":[2,9,0,2,1,1,2,1,0,3,1,1,2,1],"texts":["services:","  foo:","    image: built-image-dependency","    build:","      context: .","  bar:","    image: built-image-dependency","    depends_on:","      - foo","    image: ${BUILT_IMAGE}","    image: ${BUILT_IMAGE}"]}

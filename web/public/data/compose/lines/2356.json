@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2356,"commits":[3953],"opsStart":[0,2],"ops":[2,11],"texts":["services:","  web:","    image: alpine","    init: true","    command: sleep infinity","jobs:","  migrate:","    image: alpine","    command: echo migration done","    triggers:","      manual: true"]}

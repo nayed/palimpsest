@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2024,"commits":[3367,3402],"opsStart":[0,2,4],"ops":[2,8,1,8],"texts":["services:","  native:","    image: alpine:3.19","    command: [\"sleep\", \"infinity\"]","  pinned:","    image: alpine:3.19","    platform: ${PINNED_PLATFORM}","    command: [\"sleep\", \"infinity\"]"]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":322,"commits":[2206,2216],"opsStart":[0,2,4],"ops":[2,8,1,8],"texts":["pub(crate) use self::imp::*;","","#[cfg(not(feature = \"unstable-index\"))]","#[path = \"disabled.rs\"]","mod imp;","#[cfg(feature = \"unstable-index\")]","#[path = \"enabled.rs\"]","mod imp;"]}

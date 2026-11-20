@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1775,"commits":[2396,3415,3932],"opsStart":[0,2,6,6],"ops":[2,9,0,8,3,1],"texts":["services:","  service:","    image: alpine","    command: sleep infinity","  service-with-replicas:","    image: alpine","    command: sleep infinity","    deploy:","      replicas: 3","      replicas: 3"]}

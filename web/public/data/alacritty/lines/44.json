@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":44,"commits":[162,864],"opsStart":[0,2,4],"ops":[2,11,1,11],"texts":["#!/usr/bin/env bash","set -v","","# Get kernel info","UNAME=$(uname -r)","","# Install linux tools for the perf binary","sudo apt-get install -y \\","    linux-tools-common \\","    linux-tools-generic \\","    linux-tools-$UNAME"]}

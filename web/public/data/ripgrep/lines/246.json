@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":246,"commits":[1306,1905],"opsStart":[0,2,4],"ops":[2,5,1,5],"texts":["#!/bin/sh","","mkdir -p stage","cp ../../ubuntu-install-packages ./stage/","docker build -t burntsushi/cross:i686-unknown-linux-gnu ."]}

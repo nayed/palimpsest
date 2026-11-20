@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":299,"commits":[1236],"opsStart":[0,2],"ops":[2,5],"texts":["[undeadleech@undeadlap alacritty]$ echo -e \"\\e[4mUNDERLINED\"","\u001b[4mUNDERLINED","[undeadleech@undeadlap alacritty]$ clear","\u001b[3J\u001b[H\u001b[2J[undeadleech@undeadlap alacritty]$ exit","exit"]}

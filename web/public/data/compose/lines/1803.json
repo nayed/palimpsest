@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1803,"commits":[2533,3912],"opsStart":[0,2,2],"ops":[2,3],"texts":["services:","  foo:","    image: bar"]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1491,"commits":[1298,3418,3932],"opsStart":[0,2,6,6],"ops":[2,5,0,4,1,1],"texts":["services:","  env-file-comments:","    build:","      context: .","    image: env-file-comments"]}

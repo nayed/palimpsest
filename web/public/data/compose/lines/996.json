@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":996,"commits":[130,302],"opsStart":[0,2,4],"ops":[2,2,1,2],"texts":["docker: 'foo' is not a docker command.","See 'docker --help'"]}

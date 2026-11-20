@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1928,"commits":[2926,3932],"opsStart":[0,2,2],"ops":[2,5],"texts":["services:","  app:","    extends:","      file: extends.yaml","      service: test"]}

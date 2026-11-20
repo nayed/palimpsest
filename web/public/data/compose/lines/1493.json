@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1493,"commits":[1298,3418,3932],"opsStart":[0,2,6,6],"ops":[2,6,0,5,3,1],"texts":["services:","  env-interpolation:","    image: bash","    environment:","      IMAGE: ${IMAGE}","    command: echo \"$IMAGE\"","    command: echo \"$IMAGE\""]}

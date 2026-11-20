@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2087,"commits":[3417,3932],"opsStart":[0,2,2],"ops":[2,4],"texts":["FROM alpine","RUN printf '#!/bin/sh\\necho \"built-image-marker\"\\n' > /usr/local/bin/built-marker \\","    && chmod +x /usr/local/bin/built-marker",""]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2121,"commits":[3424,3932],"opsStart":[0,2,2],"ops":[2,5],"texts":["FROM alpine","RUN --mount=type=secret,id=test-secret ls -la /run/secrets/; cp /run/secrets/test-secret /tmp","","CMD [\"cat\", \"/tmp/test-secret\"]",""]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1498,"commits":[1298,3418,3932],"opsStart":[0,2,6,6],"ops":[2,7,0,2,1,1],"texts":["services:","  env-compose-priority:","    image: env-compose-priority","    build:","      context: .","    environment:","      WHEREAMI: \"Compose File\""]}

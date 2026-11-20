@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1781,"commits":[2430,3421],"opsStart":[0,2,4],"ops":[2,10,1,10],"texts":["services:","  app:","    image: alpine","    volumes:","      - my_vol:/my_vol","","volumes:","  my_vol:","    external: true","    name: test_external_volume_2"]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":254,"commits":[1358],"opsStart":[0,2],"ops":[2,6],"texts":["blank_issues_enabled: true","contact_links:","  - name: Ask a question","    about: |","      You've come to seek help or want to discuss something related to ripgrep.","    url: https://github.com/BurntSushi/ripgrep/discussions/new"]}

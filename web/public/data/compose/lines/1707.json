@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1707,"commits":[2107,2224,3932],"opsStart":[0,2,6,6],"ops":[2,1,3,1,2,2],"texts":["COMPOSE_FILE=\"${COMPOSE_FILE:-development/compose.yaml}\"","COMPOSE_FILE=\"${COMPOSE_FILE:-development/compose.yaml}\"","IMAGE_NAME=test","COMPOSE_PROFILES=test"]}

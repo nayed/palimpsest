@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":2000,"commits":[3265,3417,3932],"opsStart":[0,2,2,2],"ops":[2,7],"texts":["services:","  sample:","    image: alpine","    command: sh -c 'sleep 30'","    pre_start:","      - image: alpine","        command: sh -c 'exit 17'"]}

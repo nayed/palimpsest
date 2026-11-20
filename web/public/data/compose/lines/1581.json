@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1581,"commits":[1537,1540,3932],"opsStart":[0,2,6,6],"ops":[2,5,0,3,3,1],"texts":["services:","  ping:","    image: alpine","    command: \"sh -c 'ping -c 1 localhost && exit 1'\"","    restart: \"on-failure:2\"","    command: \"sh -c 'ping -c 2 localhost && exit 1'\""]}

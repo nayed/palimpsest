@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1904,"commits":[2762,3424,3932],"opsStart":[0,2,6,6],"ops":[2,12,0,11,3,1],"texts":["secrets:","  test-secret:","    file: test-secret.txt","","services:","  secret-build-test:","    profiles: [\"test\"]","    build:","      context: .","      dockerfile: Dockerfile","      secrets:","        - test-secret","        - test-secret"]}

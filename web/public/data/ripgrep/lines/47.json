@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":47,"commits":[105,268],"opsStart":[0,2,4],"ops":[2,5,1,5],"texts":["These are internal microbenchmarks for tracking the peformance of individual","components inside of ripgrep. At the moment, they aren't heavily used.","","For performance benchmarks of ripgrep proper, see the sibling `benchsuite`","directory."]}

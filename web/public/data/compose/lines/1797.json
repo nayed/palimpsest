@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1797,"commits":[2518,3419,3932],"opsStart":[0,2,2,2],"ops":[2,9],"texts":["services:","  serviceA:","    build:","      context: .","      dockerfile: Dockerfile","  serviceB:","    build:","      context: .","      dockerfile: Dockerfile"]}

@@ -1,0 +1,1 @@
+{"format":"palimpsest-lines","version":1,"file":1875,"commits":[2668,3932],"opsStart":[0,2,2],"ops":[2,9],"texts":["#! serviceB-service.yaml","# Generated code, do not edit","apiVersion: v1","kind: Service","metadata:","    name: serviceb-published","    namespace: bridge","spec:","    type: LoadBalancer"]}
