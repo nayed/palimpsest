@@ -37,6 +37,7 @@ export function fixture(): Data {
       commits: [3, 2, 1],
       lines: [10, 20, 500],
       vendored: [false, false, true],
+      hasLines: [true, true, false],
       pathStart: [0, 1, 3, 4],
       pathCommit: [0, 0, 2, 3],
       path: [0, 1, 2, 3],
@@ -54,6 +55,12 @@ export function fixture(): Data {
       to: [day(31), day(800), day(800), day(800)],
       author: [0, -1, 1, 0],
     },
-    overview: { rows: [], firstMonthStart: day(0), monthStarts: [day(0)], moments: [] },
+    overview: {
+      rows: [],
+      firstMonthStart: day(0),
+      monthStarts: [day(0)],
+      moments: [],
+      share: { start: [0], author: [], lines: [] },
+    },
   };
 }

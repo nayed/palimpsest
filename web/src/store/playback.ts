@@ -11,7 +11,10 @@ export const DEFAULT_SPEED: Speed = 4;
 /** At the default speed, the whole history plays in this many seconds. */
 export const SECONDS_AT_DEFAULT_SPEED = 90;
 
+export type View = "overview" | "tracks" | "lines";
+
 export interface PlayState {
+  view: View;
   /** The playhead, in seconds since the epoch. */
   time: number;
   playing: boolean;
@@ -19,6 +22,12 @@ export interface PlayState {
   /** Folder shown in Tracks: "" for the whole repository. */
   folder: string;
   selectedFile: number;
+  /** A line of the selected file, by its line-history id, or -1. */
+  selectedLine: number;
+  /** A line number from the URL, resolved once the file's lines load. */
+  lineNumber: number | null;
+  /** Overview's selected folder row, or -1. */
+  selectedRow: number;
   /** True while the user drags the playhead. */
   scrubbing: boolean;
 }
@@ -45,11 +54,15 @@ export class Playback {
   constructor(history: History, initial: Partial<PlayState> = {}) {
     this.history = history;
     this.store = new Store<PlayState>({
+      view: "tracks",
       time: history.start,
       playing: false,
       speed: DEFAULT_SPEED,
       folder: "",
       selectedFile: 0,
+      selectedLine: -1,
+      selectedRow: -1,
+      lineNumber: null,
       scrubbing: false,
       ...initial,
     });
@@ -105,6 +118,14 @@ export class Playback {
       while (p > 0 && t[p] === t[c]) p--;
       if (p >= 0) this.seek(t[p]!);
     }
+  }
+
+  /** Moves the playhead by whole months, pausing playback. */
+  stepMonths(months: number): void {
+    this.pause();
+    const d = new Date(this.state.time * 1000);
+    d.setUTCMonth(d.getUTCMonth() + months);
+    this.seek(d.getTime() / 1000);
   }
 
   /** Advances the playhead by `dt` seconds of real time. */

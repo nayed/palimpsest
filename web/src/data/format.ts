@@ -32,6 +32,8 @@ export interface Data {
     commits: number[];
     lines: number[];
     vendored: boolean[];
+    /** Whether lines/<file id>.json exists. */
+    hasLines: boolean[];
     pathStart: number[];
     pathCommit: number[];
     path: number[];
@@ -50,6 +52,8 @@ export interface Data {
     firstMonthStart: number;
     monthStarts: number[];
     moments: Moment[];
+    /** Lines alive at the end of each month, by who last wrote them. */
+    share: { start: number[]; author: number[]; lines: number[] };
   };
 }
 
