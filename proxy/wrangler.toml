@@ -1,0 +1,8 @@
+# Deployed in build step 5 with `npx wrangler deploy` from this folder.
+name = "palimpsest-git-proxy"
+main = "src/proxy.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Set to the site's origin when deploying, e.g. "https://palimpsest.pages.dev".
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173"

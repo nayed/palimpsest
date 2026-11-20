@@ -1023,6 +1023,156 @@
   min-width: 0;
 }
 
+/* A pasted repository: loading, too big, failures */
+
+.loading-upper,
+.failure-upper {
+  height: auto;
+  min-height: 0;
+  gap: 20px 48px;
+  padding: 20px var(--page-padding) 28px;
+}
+
+.loading-main,
+.failure-main {
+  flex: 3 1 520px;
+  gap: 8px;
+}
+
+.loading-steps {
+  flex: 2 1 340px;
+  gap: 16px;
+}
+
+.failure-side {
+  flex: 3 1 460px;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 54px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.failure-main .display {
+  max-width: 12em;
+  margin-bottom: 8px;
+}
+
+.caption-strong {
+  color: var(--mute);
+  font-size: 15px;
+}
+
+.failure-text {
+  max-width: 34em;
+  font-size: 16px;
+}
+
+.progress {
+  height: 12px;
+  margin: 18px 0 14px;
+  border-radius: 2px;
+  background: var(--well);
+  overflow: hidden;
+}
+
+.progress-done {
+  height: 100%;
+  background: var(--fg);
+  transition: width 0.2s linear;
+}
+
+.loading-actions {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-top: 8px;
+}
+
+.outlined-button {
+  min-height: var(--control-height);
+  padding: 0 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-size: 15px;
+}
+
+.text-link {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 15px;
+}
+
+.steps {
+  border-top: 1px solid var(--line);
+}
+
+.step {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--mute);
+  font-size: 15px;
+}
+
+.step.active {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.step-state {
+  font-weight: 400;
+}
+
+.step-state.highlight {
+  padding: 2px 6px;
+  border-radius: var(--radius-chip);
+  background: var(--now);
+  color: var(--on-now);
+  font-weight: 600;
+}
+
+.icon-button:disabled {
+  color: var(--disabled);
+  cursor: default;
+}
+
+.icon-button:disabled:hover {
+  background: transparent;
+}
+
+.play-button.disabled {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--disabled);
+  cursor: default;
+}
+
+.empty-lower {
+  gap: 8px;
+  padding: 36px var(--page-padding);
+}
+
+.empty-lower .caption {
+  margin-bottom: 4px;
+}
+
+.empty-row {
+  height: 30px;
+  border: 1px dashed var(--line-dashed);
+  border-radius: var(--radius-clip);
+}
+
 .message {
   padding: 40px var(--page-padding);
 }

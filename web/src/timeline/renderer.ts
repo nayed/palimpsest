@@ -74,6 +74,9 @@ export interface Frame {
   /** Bottom of the last row, in content coordinates. */
   contentBottom: number;
   markers: Marker[];
+  /** While a repository is still being read: the oldest time read so far.
+      Before it, the timeline is a dashed "Not read yet" area. */
+  readFrom?: number | null;
   /** Month boundaries for silhouettes. */
   monthStarts?: number[];
 }
@@ -297,6 +300,25 @@ export function draw(ctx: CanvasRenderingContext2D, f: Frame, theme: CanvasTheme
     ctx.fillText(text, lx + dateWidth + 5, ly);
     labelsEnd = lx + dateWidth + 5 + ctx.measureText(text).width + 8;
     ctx.font = theme.fontClip;
+  }
+
+  // The part of history not read yet: a dashed outline over the rows.
+  if (f.readFrom != null) {
+    const rx = Math.round(timeToX(f.scale, f.readFrom));
+    if (rx > 2) {
+      ctx.save();
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = theme.lineDashed;
+      ctx.lineWidth = 1;
+      roundRect(ctx, 0.5, top - 4.5, rx - 4, Math.max(0, bottom - top + 8), 4);
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = theme.mute;
+      ctx.font = theme.fontMarker;
+      ctx.textAlign = "right";
+      ctx.fillText("Not read yet", rx - 10, top - f.markerSpace / 2 - 1);
+      ctx.font = theme.fontClip;
+    }
   }
 
   // The future is veiled: it exists, but you are not there yet.

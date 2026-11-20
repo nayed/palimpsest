@@ -5,7 +5,9 @@ import { AuthorChip, UntouchedChip } from "./AuthorChip";
 export function Legend({ history, short = false }: { history: History; short?: boolean }) {
   return (
     <div className="legend">
-      {!short && <span className="legend-title">Colored by who was writing</span>}
+      {!short && (
+        <span className="legend-title">{history.provisional ? "Authors found so far" : "Colored by who was writing"}</span>
+      )}
       {history.rankedAuthors().map((a) => (
         <span key={a} className="legend-item">
           <AuthorChip history={history} author={a} />

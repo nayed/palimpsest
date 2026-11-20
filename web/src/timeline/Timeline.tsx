@@ -47,8 +47,19 @@ const GUTTER_GAP = 12;
 const DRAG_THRESHOLD = 3;
 
 export function Timeline(props: TimelineProps) {
-  const { playback, heights, gap, gutter, labelAbove = 0, markerSpace = 0 } = props;
+  const { playback, heights, gap, gutter, labelAbove = 0 } = props;
   const h = playback.history;
+  // While a repository is read, newest first, mark how far back it has got.
+  const readFrom = h.readFrom;
+  const markerSpace = readFrom !== null ? Math.max(24, props.markerSpace ?? 0) : (props.markerSpace ?? 0);
+  const markers = useMemo((): Marker[] => {
+    const own = props.markers ?? [];
+    if (readFrom === null) return own;
+    const date = formatDate(readFrom).split(" ").slice(1).join(" ").toUpperCase();
+    return [...own.filter((m) => m.time > readFrom), { time: readFrom, date, text: "read back to here" }];
+  }, [props.markers, readFrom]);
+  const markersRef = useRef(markers);
+  markersRef.current = markers;
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -163,7 +174,8 @@ export function Timeline(props: TimelineProps) {
           markerSpace,
           scrollTop: scrollTopRef.current,
           contentBottom: layoutRef.current.bottom,
-          markers: p.markers ?? [],
+          markers: markersRef.current,
+          readFrom,
           monthStarts: p.monthStarts,
         },
         themeRef.current!,
@@ -182,7 +194,7 @@ export function Timeline(props: TimelineProps) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = 0;
     };
-  }, [playback, h, trackWidth, size.height, heights, markerSpace, props.content, props.markers]);
+  }, [playback, h, trackWidth, size.height, heights, markerSpace, props.content, markers, readFrom]);
   const redrawRef = useRef<() => void>(() => {});
 
   // Dragging anywhere scrubs; a click on a row selects it; a click on the

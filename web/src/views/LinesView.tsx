@@ -136,22 +136,26 @@ export function LinesView({ session }: { session: Session }) {
 
   return (
     <>
-      <main className="upper lines-upper">
-        <section className="panel panel-date">
-          <DateDisplay playback={playback} />
-          {file >= 0 && (
-            <button type="button" className="back-button" onClick={() => store.set({ view: "tracks" })}>
-              <ChevronLeftIcon />
-              <span className="mono">{path}</span>
-            </button>
-          )}
-        </section>
-        <section className="panel panel-wide">
-          {lines && line >= 0 && <LineHistoryPanel history={h} lines={lines} line={line} commit={commit} columns />}
-          {lines === null && <p className="caption">This file has no line history: it is binary or vendored.</p>}
-          {file < 0 && <p className="caption">Pick a file in Tracks to see its lines.</p>}
-        </section>
-      </main>
+      {session.upper ?? (
+        <>
+          <main className="upper lines-upper">
+            <section className="panel panel-date">
+              <DateDisplay playback={playback} />
+              {file >= 0 && (
+                <button type="button" className="back-button" onClick={() => store.set({ view: "tracks" })}>
+                  <ChevronLeftIcon />
+                  <span className="mono">{path}</span>
+                </button>
+              )}
+            </section>
+            <section className="panel panel-wide">
+              {lines && line >= 0 && <LineHistoryPanel history={h} lines={lines} line={line} commit={commit} columns />}
+              {lines === null && <p className="caption">This file has no line history: it is binary or vendored.</p>}
+              {file < 0 && <p className="caption">Pick a file in Tracks to see its lines.</p>}
+            </section>
+          </main>
+        </>
+      )}
       <Transport playback={playback} />
       <div className="lower">
         <Legend history={h} />

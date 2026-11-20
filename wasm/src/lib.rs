@@ -28,14 +28,6 @@ fn open(pack: Vec<u8>, head: &str, progress: &js_sys::Function) -> Result<PackSo
     PackSource::new(pack, oid_from_hex(head).map_err(js)?).map_err(js)
 }
 
-/// Counts the first-parent commits in a commits-only pack (fetched with
-/// `filter tree:0`), to check the size of a repository before downloading it.
-#[wasm_bindgen(js_name = countCommits)]
-pub fn count_commits(pack: Vec<u8>, head: &str) -> Result<u32, JsError> {
-    let src = open(pack, head, &js_sys::Function::new_no_args(""))?;
-    Ok(first_parent_chain(&src).map_err(js)?.len() as u32)
-}
-
 #[wasm_bindgen]
 pub struct Reader {
     opts: Options,
@@ -45,7 +37,11 @@ pub struct Reader {
     diffs: Vec<Vec<FileChange>>,
     /// Index of the oldest commit read so far (`chain.len()` before any).
     first_read: usize,
-    output: Option<Output>,
+    /// The last snapshot, and the index of the oldest commit it covers:
+    /// reading may have gone further back since.
+    output: Option<(Output, usize)>,
+    /// Commits whose line history is worked out, oldest first.
+    lines_done: usize,
 }
 
 #[wasm_bindgen]
@@ -64,6 +60,7 @@ impl Reader {
             diffs: Vec::new(),
             first_read: 0,
             output: None,
+            lines_done: 0,
         }
     }
 
@@ -120,41 +117,44 @@ impl Reader {
             repo.start = repo.start.min(self.chain[0].time);
         }
         let json = serde_json::to_string(&out.data).map_err(js)?;
-        self.output = Some(out);
+        self.output = Some((out, k));
         Ok(json)
     }
 
     /// One file's line history as JSON, worked out now, or undefined when it
     /// has none (binary or vendored).
     pub fn lines(&self, file: u32) -> Result<Option<String>, JsError> {
-        let (Some(src), Some(out)) = (&self.src, &self.output) else {
+        let (Some(src), Some((out, k))) = (&self.src, &self.output) else {
             return Ok(None);
         };
-        let k = self.first_read;
-        let lf = line_file(src, &self.diffs[k..], out, file, &self.opts).map_err(js)?;
+        // File ids are those of the last snapshot, so use its commits.
+        let lf = line_file(src, &self.diffs[*k..], out, file, &self.opts).map_err(js)?;
         lf.map(|lf| serde_json::to_string(&lf).map_err(js))
             .transpose()
     }
 
-    /// Works out every line's history, for who wrote the code that exists on
-    /// each day, then returns the complete data file as JSON. Call it once
-    /// every commit has been read. `progress(done, total)` counts commits.
-    #[wasm_bindgen(js_name = lineHistory)]
-    pub fn line_history(&mut self, progress: &js_sys::Function) -> Result<String, JsError> {
+    /// Works out the line history of up to `n` more commits, for who wrote
+    /// the code that exists on each day. Returns how many commits are done;
+    /// call [`Reader::finish_lines`] when that reaches the commit count.
+    #[wasm_bindgen(js_name = workLines)]
+    pub fn work_lines(&mut self, n: u32) -> Result<u32, JsError> {
         let src = self
             .src
             .as_ref()
             .ok_or_else(|| JsError::new("nothing loaded"))?;
-        let total = self.diffs.len();
-        for (i, diff) in self.diffs.iter_mut().enumerate() {
+        let end = (self.lines_done + n as usize).min(self.diffs.len());
+        for diff in &mut self.diffs[self.lines_done..end] {
             for ch in diff.iter_mut().filter(|c| c.lines.is_none()) {
                 ch.lines = line_edit_for(src, ch, &self.opts).map_err(js)?;
             }
-            if i % 50 == 0 {
-                report(progress, i, total);
-            }
         }
-        report(progress, total, total);
+        self.lines_done = end;
+        Ok(end as u32)
+    }
+
+    /// The complete data file, with line history, as JSON.
+    #[wasm_bindgen(js_name = finishLines)]
+    pub fn finish_lines(&mut self) -> Result<String, JsError> {
         self.opts.line_history = true;
         self.snapshot()
     }

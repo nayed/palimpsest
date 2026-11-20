@@ -28,6 +28,8 @@ export interface PlayState {
   lineNumber: number | null;
   /** Overview's selected folder row, or -1. */
   selectedRow: number;
+  /** Counts histories set with setHistory. */
+  historyVersion: number;
   /** True while the user drags the playhead. */
   scrubbing: boolean;
 }
@@ -47,12 +49,12 @@ export function historyRate(history: History, speed: Speed): number {
 
 export class Playback {
   readonly store: Store<PlayState>;
-  readonly history: History;
+  private current: History;
   private frame = 0;
   private last = 0;
 
   constructor(history: History, initial: Partial<PlayState> = {}) {
-    this.history = history;
+    this.current = history;
     this.store = new Store<PlayState>({
       view: "tracks",
       time: history.start,
@@ -63,8 +65,36 @@ export class Playback {
       selectedLine: -1,
       selectedRow: -1,
       lineNumber: null,
+      historyVersion: 0,
       scrubbing: false,
       ...initial,
+    });
+  }
+
+  get history(): History {
+    return this.current;
+  }
+
+  /**
+   * Replaces the history with a newer reading of the same repository (a
+   * pasted repository arrives in several snapshots). File ids can change
+   * between snapshots, so the selected file is found again by its path.
+   */
+  setHistory(next: History): void {
+    const prev = this.current;
+    const s = this.state;
+    const commit = prev.commitAt(s.time);
+    let file = -1;
+    if (s.selectedFile >= 0 && s.selectedFile < prev.fileCount) {
+      const path = prev.pathAt(s.selectedFile, Math.max(commit, prev.born(s.selectedFile)));
+      for (let f = 0; f < next.fileCount && file < 0; f++) if (next.pathsOf(f).some((p) => p.path === path)) file = f;
+    }
+    this.current = next;
+    this.store.set({
+      selectedFile: file,
+      selectedLine: file === s.selectedFile ? s.selectedLine : -1,
+      historyVersion: s.historyVersion + 1,
+      time: Math.min(next.end, Math.max(next.start, s.time)),
     });
   }
 

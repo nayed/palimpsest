@@ -178,3 +178,16 @@ export function loadLines(h: History, base: string, file: number): Promise<LineH
   }
   return p;
 }
+
+/** Where a repository's line histories come from. */
+export interface LinesSource {
+  /** Loads a file's line history, or null when it has none. */
+  load(file: number): Promise<LineHistory | null>;
+  /** The line history if it has already loaded. */
+  peek(file: number): LineHistory | null | undefined;
+}
+
+/** Line histories of a precomputed repository, in <base>/lines/. */
+export function precomputedLines(h: History, base: string): LinesSource {
+  return { load: (file) => loadLines(h, base, file), peek: (file) => peekLines(h, base, file) };
+}

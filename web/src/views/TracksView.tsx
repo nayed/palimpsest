@@ -173,33 +173,37 @@ export function TracksView({ session }: { session: Session }) {
 
   return (
     <>
-      <main className="upper">
-        {playing || selected < 0 ? (
-          <CommitFeed history={h} commit={commit} />
-        ) : (
-          <section className="panel panel-main">
-            <div className="panel-head">
-              <h2 className="panel-title mono">{h.pathAt(selected, Math.max(commit, h.born(selected)))}</h2>
-              <span className="caption">The file exactly as it was at the playhead</span>
-            </div>
-            <CodeViewer
-              history={h}
-              lines={lines}
-              commit={commit}
-              line={line}
-              onSelect={(id) => store.set({ selectedLine: id })}
-            />
-          </section>
-        )}
-        <section className="panel panel-side">
-          <DateDisplay playback={playback} />
-          {!playing && lines && line >= 0 ? (
-            <LineHistoryPanel history={h} lines={lines} line={line} commit={commit} />
-          ) : (
-            !playing && <CurrentCommit history={h} commit={commit} />
-          )}
-        </section>
-      </main>
+      {session.upper ?? (
+        <>
+          <main className="upper">
+            {playing || selected < 0 ? (
+              <CommitFeed history={h} commit={commit} />
+            ) : (
+              <section className="panel panel-main">
+                <div className="panel-head">
+                  <h2 className="panel-title mono">{h.pathAt(selected, Math.max(commit, h.born(selected)))}</h2>
+                  <span className="caption">The file exactly as it was at the playhead</span>
+                </div>
+                <CodeViewer
+                  history={h}
+                  lines={lines}
+                  commit={commit}
+                  line={line}
+                  onSelect={(id) => store.set({ selectedLine: id })}
+                />
+              </section>
+            )}
+            <section className="panel panel-side">
+              <DateDisplay playback={playback} />
+              {!playing && lines && line >= 0 ? (
+                <LineHistoryPanel history={h} lines={lines} line={line} commit={commit} />
+              ) : (
+                !playing && <CurrentCommit history={h} commit={commit} />
+              )}
+            </section>
+          </main>
+        </>
+      )}
       <Transport playback={playback} />
       <div className="lower">
         <Legend history={h} />

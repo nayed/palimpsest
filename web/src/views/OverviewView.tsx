@@ -93,7 +93,9 @@ function ShareBar({ history: h, time }: { history: History; time: number }) {
             </div>
           );
         })}
-        {parts.length === 0 && <div className="share-empty">No code yet.</div>}
+        {parts.length === 0 && (
+          <div className="share-empty">{h.data.repo.lineHistory ? "No code yet." : "Working it out…"}</div>
+        )}
       </div>
     </div>
   );
@@ -228,13 +230,17 @@ export function OverviewView({ session }: { session: Session }) {
 
   return (
     <>
-      <main className="upper overview-upper">
-        <section className="panel panel-date">
-          <DateDisplay playback={playback} />
-          <ShareBar history={h} time={day + 86_399} />
-        </section>
-        <CommitFiles session={session} commit={commit} />
-      </main>
+      {session.upper ?? (
+        <>
+          <main className="upper overview-upper">
+            <section className="panel panel-date">
+              <DateDisplay playback={playback} />
+              <ShareBar history={h} time={day + 86_399} />
+            </section>
+            <CommitFiles session={session} commit={commit} />
+          </main>
+        </>
+      )}
       <Transport playback={playback} />
       <div className="lower">
         <Legend history={h} />

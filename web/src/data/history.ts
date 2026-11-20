@@ -129,9 +129,32 @@ export class History {
     return out;
   }
 
+  /**
+   * While a repository is still being read, ranks are not known yet, so
+   * every author is drawn in the Others gray until reading finishes.
+   */
+  get provisional(): boolean {
+    return this.data.repo.partial !== undefined;
+  }
+
+  /** Time of the oldest commit read so far, while reading; otherwise null. */
+  get readFrom(): number | null {
+    return this.data.repo.partial?.readFrom ?? null;
+  }
+
+  /** Commits in the whole history, read or not. */
+  get totalCommits(): number {
+    return this.data.repo.partial?.totalCommits ?? this.commitCount;
+  }
+
+  /** Number of the first commit read, minus one: for "Commit n of m". */
+  get commitOffset(): number {
+    return this.totalCommits - this.commitCount;
+  }
+
   /** The author's rank: 1 to 5, or 0 for Others (sixth place down, and bots). */
   rank(author: number): number {
-    return this.data.authors.rank[author] ?? 0;
+    return this.provisional ? 0 : (this.data.authors.rank[author] ?? 0);
   }
 
   initials(author: number): string {
@@ -154,6 +177,7 @@ export class History {
 
   /** Whether any commit is by someone drawn as Others. */
   hasOthers(): boolean {
+    if (this.provisional) return false;
     return this.data.authors.rank.some((rank, id) => rank === 0 && this.data.authors.commits[id]! > 0);
   }
 

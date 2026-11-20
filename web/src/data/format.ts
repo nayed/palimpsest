@@ -8,7 +8,17 @@ export const VERSION = 1;
 export interface Data {
   format: string;
   version: number;
-  repo: { name: string; head: string; commitCount: number; start: number; end: number };
+  repo: {
+    name: string;
+    head: string;
+    commitCount: number;
+    start: number;
+    end: number;
+    /** Whether line history and overview.share are worked out. */
+    lineHistory: boolean;
+    /** Set while a repository is still being read, newest first. */
+    partial?: { readFrom: number; totalCommits: number };
+  };
   authors: {
     name: string[];
     initials: string[];

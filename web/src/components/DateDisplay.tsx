@@ -15,10 +15,10 @@ export function DateDisplay({ playback }: { playback: Playback }) {
       </div>
       <div className="commit-count">
         {commit < 0 ? (
-          "Before the first commit"
+          h.readFrom !== null ? "Not read yet" : "Before the first commit"
         ) : (
           <>
-            Commit {formatCount(commit + 1)} of {formatCount(h.commitCount)} ·{" "}
+            Commit {formatCount(h.commitOffset + commit + 1)} of {formatCount(h.totalCommits)} ·{" "}
             <span className="mono">{h.data.commits.hash[commit]}</span>
           </>
         )}

@@ -107,10 +107,20 @@ pub fn is_bot(name: &str, email: &str) -> bool {
         "mergify",
         "snyk-bot",
     ];
+    // Merge bots named without a "[bot]" suffix, matched exactly.
+    const EXACT: &[&str] = &[
+        "bors",
+        "homu",
+        "bors-servo",
+        "k8s-ci-robot",
+        "copybara-service",
+        "gitster-bot",
+    ];
     let name = name.to_lowercase();
     let email = email.to_lowercase();
     name.ends_with("[bot]")
         || email.contains("[bot]@")
+        || EXACT.contains(&name.as_str())
         || KNOWN
             .iter()
             .any(|k| name.starts_with(k) || email.starts_with(k))
@@ -185,6 +195,8 @@ mod tests {
             "49699333+dependabot[bot]@users.noreply.github.com"
         ));
         assert!(is_bot("renovate-bot", "bot@renovateapp.com"));
+        assert!(is_bot("bors", "bors@rust-lang.org"));
+        assert!(!is_bot("Borsuk", "b@example.com"));
         assert!(!is_bot("Robert", "rob@example.com"));
     }
 }

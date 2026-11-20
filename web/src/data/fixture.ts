@@ -15,7 +15,7 @@ export function fixture(): Data {
   return {
     format: "palimpsest",
     version: 1,
-    repo: { name: "test/repo", head: "f".repeat(40), commitCount: 4, start: day(0), end: day(800) },
+    repo: { name: "test/repo", head: "f".repeat(40), commitCount: 4, start: day(0), end: day(800), lineHistory: true },
     authors: {
       name: ["Ann Lee", "Bo Kim"],
       initials: ["AL", "BK"],

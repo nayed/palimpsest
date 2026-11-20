@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "pnpm wasm && tsc --noEmit && vite build",
+    "wasm": "../scripts/build-wasm.sh",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

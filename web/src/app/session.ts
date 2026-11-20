@@ -1,15 +1,16 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { History } from "../data/history";
-import { loadLines, type LineHistory } from "../data/lines";
+import type { LineHistory, LinesSource } from "../data/lines";
 import type { Playback } from "../store/playback";
 
-/** One open repository: its history, playback, and where its files live. */
+/** One open repository: its history, playback, and where its lines come from. */
 export interface Session {
   playback: Playback;
   history: History;
-  /** URL of the folder holding history.json and lines/. */
-  base: string;
+  lines: LinesSource;
   phone: boolean;
+  /** Replaces the views' upper half (the loading panel of a pasted repository). */
+  upper?: ReactNode;
 }
 
 /** A file's line history: undefined while loading, null when it has none. */
@@ -21,7 +22,7 @@ export function useLineHistory(session: Session, file: number): LineHistory | nu
   useEffect(() => {
     if (file < 0) return;
     let live = true;
-    loadLines(session.history, session.base, file).then(
+    session.lines.load(file).then(
       (lines) => {
         if (!live) return;
         // A line number from the URL becomes a line once the lines are in.
@@ -38,7 +39,7 @@ export function useLineHistory(session: Session, file: number): LineHistory | nu
     return () => {
       live = false;
     };
-  }, [session.history, session.base, session.playback, file]);
+  }, [session.history, session.lines, session.playback, file]);
   return state.file === file ? state.lines : undefined;
 }
 
