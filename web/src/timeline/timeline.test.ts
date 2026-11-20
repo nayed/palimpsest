@@ -3,7 +3,7 @@ import { shortenPath } from "../app/format";
 import { day, fixture } from "../data/fixture";
 import { History } from "../data/history";
 import { clipTexts, spanText } from "./notes";
-import { rowAt, rowTop } from "./renderer";
+import { rowHeights, shareAt } from "../views/OverviewView";
 import { timeToX, xToTime, yearSegments } from "./scale";
 
 describe("scale", () => {
@@ -27,13 +27,23 @@ describe("scale", () => {
   });
 });
 
-describe("rows", () => {
-  it("hits rows but not the gaps between them", () => {
-    expect(rowAt(rowTop(0) + 1, 3)).toBe(0);
-    expect(rowAt(rowTop(2) + 29, 3)).toBe(2);
-    expect(rowAt(rowTop(1) - 2, 3)).toBe(-1);
-    expect(rowAt(rowTop(3) + 1, 3)).toBe(-1);
-    expect(rowAt(0, 3)).toBe(-1);
+describe("overview rows", () => {
+  it("are proportional to size, never under 44px", () => {
+    const h = rowHeights([800, 150, 50, 0], 600);
+    expect(h.every((x) => x >= 44)).toBe(true);
+    expect(h[0]).toBeGreaterThan(h[1]!);
+    expect(h[3]).toBe(44);
+    expect(h.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(600);
+  });
+
+  it("splits who wrote the code alive in a month, Others last", () => {
+    const data = fixture();
+    data.authors.rank = [1, 0];
+    data.overview.share = { start: [0, 2], author: [1, 0], lines: [25, 75] };
+    expect(shareAt(new History(data), 0)).toEqual([
+      { author: 0, rank: 1, share: 0.75 },
+      { author: null, rank: 0, share: 0.25 },
+    ]);
   });
 });
 

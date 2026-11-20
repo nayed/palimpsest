@@ -2,20 +2,28 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { shortenPath } from "../app/format";
+import { useViewKeys } from "../app/keys";
+import { useLineHistory, type Session } from "../app/session";
+import { AuthorChip } from "../components/AuthorChip";
 import { DateDisplay } from "../components/DateDisplay";
 import { Legend } from "../components/Legend";
 import { Transport } from "../components/Transport";
 import type { History } from "../data/history";
-import type { Playback } from "../store/playback";
 import { useStore } from "../store/store";
 import { clipTexts } from "../timeline/notes";
-import type { TrackRow } from "../timeline/renderer";
-import { Timeline } from "../timeline/Timeline";
+import type { RowContent } from "../timeline/renderer";
+import { Timeline, rowsThatFit } from "../timeline/Timeline";
 import { CommitFeed } from "./CommitFeed";
 import { CurrentCommit } from "./CurrentCommit";
-import { FileHistory } from "./FileHistory";
+import { CodeViewer, LineHistoryPanel, effectiveLine } from "./LinePanels";
 
-/** Characters of a 12px monospace path that fit in the 168px gutter. */
+const ROW = { desktop: 30, phone: 28 };
+const GAP = { desktop: 4, phone: 8 };
+const LABEL_ABOVE = 22;
+const GUTTER = 168;
+/** The hint under the tracks on a phone. */
+const FOOTER = 48;
+/** Characters of a 12px monospace path that fit in the gutter. */
 const LABEL_CHARS = 21;
 
 function relativeTo(folder: string, path: string): string {
@@ -23,10 +31,8 @@ function relativeTo(folder: string, path: string): string {
   return prefix && path.startsWith(prefix) ? path.slice(prefix.length) : path;
 }
 
-type StaticRow = Omit<TrackRow, "bornNow" | "dot">;
-
 /** The parts of each file's track that do not depend on the playhead. */
-export function fileTracks(h: History, files: number[]): StaticRow[] {
+export function fileTracks(h: History, files: number[]): RowContent[] {
   return files.map((file) => {
     const clips = h.clipsOf(file).map((c) => ({
       ...c,
@@ -36,6 +42,7 @@ export function fileTracks(h: History, files: number[]): StaticRow[] {
     const died = h.died(file);
     const last = clips[clips.length - 1];
     return {
+      style: "clips",
       clips,
       died: died >= 0 ? h.commitTime(died) : null,
       deathNoted: died >= 0 && last !== undefined && last.author < 0,
@@ -43,29 +50,17 @@ export function fileTracks(h: History, files: number[]): StaticRow[] {
   });
 }
 
-/** Adds what the current commit changes: a birth label, a dot while playing. */
-export function fileRows(
-  h: History,
-  files: number[],
-  tracks: StaticRow[],
-  commit: number,
-  playing: boolean,
-): TrackRow[] {
-  const changed = new Set(h.changesIn(commit).map((c) => c.file));
-  return tracks.map((t, i) => ({
-    ...t,
-    bornNow: h.born(files[i]!) === commit,
-    dot: playing && changed.has(files[i]!),
-  }));
-}
-
-export function TracksView({ playback }: { playback: Playback }) {
-  const h = playback.history;
-  const commit = useStore(playback.store, (s) => h.commitAt(s.time));
-  const playing = useStore(playback.store, (s) => s.playing);
-  const folder = useStore(playback.store, (s) => s.folder);
-  const selected = useStore(playback.store, (s) => s.selectedFile);
+export function TracksView({ session }: { session: Session }) {
+  const { playback, history: h, phone } = session;
+  const store = playback.store;
+  const commit = useStore(store, (s) => h.commitAt(s.time));
+  const playing = useStore(store, (s) => s.playing);
+  const folder = useStore(store, (s) => s.folder);
+  const selected = useStore(store, (s) => s.selectedFile);
+  const selectedLine = useStore(store, (s) => s.selectedLine);
   const [fit, setFit] = useState(0);
+  const row = phone ? ROW.phone : ROW.desktop;
+  const gap = phone ? GAP.phone : GAP.desktop;
 
   const files = useMemo(() => (fit ? h.pickFiles(folder, fit) : []), [h, folder, fit]);
 
@@ -73,28 +68,108 @@ export function TracksView({ playback }: { playback: Playback }) {
   useEffect(() => {
     if (!files.length || files.includes(selected)) return;
     const busiest = [...files].sort((a, b) => h.data.files.commits[b]! - h.data.files.commits[a]!)[0]!;
-    playback.store.set({ selectedFile: busiest });
-  }, [files, selected, h, playback]);
+    store.set({ selectedFile: busiest, selectedLine: -1 });
+  }, [files, selected, h, store]);
 
   const tracks = useMemo(() => fileTracks(h, files), [h, files]);
-  const buildRows = useCallback(
-    (c: number, isPlaying: boolean) => fileRows(h, files, tracks, c, isPlaying),
+  const changed = useMemo(() => new Set(h.changesIn(commit).map((c) => c.file)), [h, commit]);
+  const content = useCallback(
+    (i: number, c: number, isPlaying: boolean): RowContent => {
+      const file = files[i]!;
+      const now = isPlaying && h.changesIn(c).some((ch) => ch.file === file);
+      return { ...tracks[i]!, bornNow: h.born(file) === c, dot: now };
+    },
     [h, files, tracks],
   );
 
-  const changed = new Set(h.changesIn(commit).map((c) => c.file));
-  const labels = files.map((file) => {
+  const select = (file: number) => {
+    // A second click, or a tap on a phone, opens the file's lines.
+    if (file === selected || phone) store.set({ selectedFile: file, view: "lines", selectedLine: -1 });
+    else store.set({ selectedFile: file, selectedLine: -1 });
+  };
+
+  useViewKeys((e) => {
+    const i = files.indexOf(selected);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      const next = files[Math.min(files.length - 1, Math.max(0, i + (e.key === "ArrowDown" ? 1 : -1)))];
+      if (next !== undefined) store.set({ selectedFile: next, selectedLine: -1 });
+      return true;
+    }
+    if (e.key === "Enter" && selected >= 0) {
+      store.set({ view: "lines" });
+      return true;
+    }
+    return false;
+  });
+
+  const lines = useLineHistory(session, phone || playing ? -1 : selected);
+  const line = lines ? effectiveLine(lines, selectedLine, commit) : -1;
+
+  const label = (i: number) => {
+    const file = files[i]!;
     const path = h.pathAt(file, Math.max(commit, h.born(file)));
     const classes = ["path-label"];
     if (file === selected && !playing) classes.push("selected");
     if (playing && changed.has(file)) classes.push("changed");
     if (!h.existsAt(file, commit)) classes.push("absent");
+    const status = !phone
+      ? ""
+      : h.died(file) >= 0 && h.died(file) <= commit
+        ? ", deleted"
+        : h.born(file) === commit
+          ? ", new"
+          : "";
+    const shown = phone ? relativeTo(folder, path) : shortenPath(relativeTo(folder, path), LABEL_CHARS);
     return (
       <span className={classes.join(" ")} title={path}>
-        {shortenPath(relativeTo(folder, path), LABEL_CHARS)}
+        {shown}
+        {status}
       </span>
     );
-  });
+  };
+
+  const timeline = (
+    <Timeline
+      playback={playback}
+      heights={files.map(() => row)}
+      gap={gap}
+      gutter={phone ? 0 : GUTTER}
+      labelAbove={phone ? LABEL_ABOVE : 0}
+      label={label}
+      content={content}
+      onRowClick={(i) => {
+        const file = files[i];
+        if (file !== undefined) select(file);
+      }}
+      onSize={(_, height) => setFit(rowsThatFit(height - (phone ? FOOTER : 0), row, gap, phone ? LABEL_ABOVE : 0))}
+      revealRow={files.indexOf(selected)}
+      shortYears={phone}
+      name="Files over time"
+      footer={phone ? <p className="caption">Drag the timeline to scrub. Tap a track to see its lines.</p> : undefined}
+    />
+  );
+
+  if (phone) {
+    const c = h.data.commits;
+    return (
+      <>
+        <section className="phone-upper">
+          <DateDisplay playback={playback} />
+          {commit >= 0 && (
+            <div className="phone-commit">
+              <AuthorChip history={h} author={c.author[commit]!} />
+              <span>{c.subject[commit]}</span>
+            </div>
+          )}
+        </section>
+        <div className="lower tracks-lower">
+          <Legend history={h} short />
+          {timeline}
+        </div>
+        <Transport playback={playback} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -102,27 +177,33 @@ export function TracksView({ playback }: { playback: Playback }) {
         {playing || selected < 0 ? (
           <CommitFeed history={h} commit={commit} />
         ) : (
-          <FileHistory history={h} file={selected} commit={commit} />
+          <section className="panel panel-main">
+            <div className="panel-head">
+              <h2 className="panel-title mono">{h.pathAt(selected, Math.max(commit, h.born(selected)))}</h2>
+              <span className="caption">The file exactly as it was at the playhead</span>
+            </div>
+            <CodeViewer
+              history={h}
+              lines={lines}
+              commit={commit}
+              line={line}
+              onSelect={(id) => store.set({ selectedLine: id })}
+            />
+          </section>
         )}
         <section className="panel panel-side">
           <DateDisplay playback={playback} />
-          {!playing && <CurrentCommit history={h} commit={commit} />}
+          {!playing && lines && line >= 0 ? (
+            <LineHistoryPanel history={h} lines={lines} line={line} commit={commit} />
+          ) : (
+            !playing && <CurrentCommit history={h} commit={commit} />
+          )}
         </section>
       </main>
       <Transport playback={playback} />
       <div className="lower">
         <Legend history={h} />
-        <Timeline
-          playback={playback}
-          labels={labels}
-          buildRows={buildRows}
-          onRowClick={(row) => {
-            const file = files[row];
-            if (file !== undefined) playback.store.set({ selectedFile: file });
-          }}
-          onFit={setFit}
-          label="Files over time"
-        />
+        {timeline}
       </div>
     </>
   );

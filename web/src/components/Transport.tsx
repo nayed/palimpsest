@@ -20,16 +20,17 @@ export function Transport({ playback }: { playback: Playback }) {
     };
     const escape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
         setMenuOpen(false);
         buttonRef.current?.focus();
       }
     };
     document.addEventListener("pointerdown", close);
-    document.addEventListener("keydown", escape);
+    document.addEventListener("keydown", escape, true);
     menuRef.current?.querySelector<HTMLButtonElement>("[aria-pressed=true]")?.focus();
     return () => {
       document.removeEventListener("pointerdown", close);
-      document.removeEventListener("keydown", escape);
+      document.removeEventListener("keydown", escape, true);
     };
   }, [menuOpen]);
 
@@ -58,7 +59,7 @@ export function Transport({ playback }: { playback: Playback }) {
           aria-controls="speed-menu"
           onClick={() => setMenuOpen((o) => !o)}
         >
-          {speed}× speed
+          {speed}×<span className="speed-word"> speed</span>
         </button>
         {menuOpen && (
           <div id="speed-menu" ref={menuRef} className="menu speed-menu" role="group" aria-label="Playback speed">

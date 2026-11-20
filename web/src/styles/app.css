@@ -450,22 +450,69 @@
   flex: 1;
   min-height: 0;
   display: flex;
-  gap: 12px;
   padding: 0 var(--page-padding);
 }
 
-.timeline-gutter {
-  flex: 0 0 var(--gutter-width);
+.timeline-area {
+  position: relative;
+  flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--track-gap);
+  touch-action: pan-y;
+}
+
+.timeline-area canvas {
+  position: absolute;
+  top: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.timeline-scroll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.timeline-content {
+  position: relative;
 }
 
 .row-label {
-  height: var(--track-height);
+  position: absolute;
+  left: 0;
   display: flex;
   align-items: center;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.row-label.above {
+  align-items: flex-start;
+}
+
+.timeline-caption {
+  position: absolute;
+  left: 0;
+  height: 22px;
+  display: flex;
+  align-items: flex-end;
+  color: var(--mute);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.timeline-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.timeline-message {
+  padding: 26px var(--page-padding);
+  color: var(--mute);
 }
 
 .path-label {
@@ -478,6 +525,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.row-label.above .path-label {
+  font-size: 13px;
 }
 
 .path-label.absent {
@@ -493,31 +544,16 @@
   color: var(--highlight-fg);
 }
 
-.timeline-tracks {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  touch-action: none;
-}
-
-.timeline-tracks:focus-visible {
-  outline-offset: -2px;
-}
-
-.timeline-tracks canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-}
-
 .ruler {
   position: absolute;
-  left: 0;
-  right: 0;
   font-family: var(--font-display);
   font-weight: 500;
   font-size: 14px;
   color: var(--mute);
+}
+
+.ruler:focus-visible {
+  outline-offset: 4px;
 }
 
 .year {
@@ -531,6 +567,460 @@
 
 .year.tick {
   border-left: 1px solid var(--line-strong);
+}
+
+/* Folder rows (Overview) */
+
+.folder-label {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 10px;
+}
+
+.folder-label .mono {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folder-label.selected .mono {
+  color: var(--now);
+}
+
+/* Line rows (Lines) */
+
+.line-label {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 6px;
+  border-left: 4px solid transparent;
+  height: 100%;
+  border-radius: var(--radius-chip);
+  font-family: var(--font-code);
+  font-size: 13px;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.line-label.selected {
+  background: var(--selected-row-on-panel);
+  border-left-color: var(--selected-mark);
+}
+
+.line-label .code-number {
+  min-width: 3.5ch;
+  text-align: right;
+  color: var(--mute);
+}
+
+.line-label.absent .code-text {
+  color: var(--mute);
+}
+
+.code-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.code-text.struck {
+  text-decoration: line-through;
+}
+
+.line-note {
+  font-family: var(--font-ui);
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+/* The file at the playhead (Tracks) */
+
+.code {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.code.empty {
+  padding: 14px 16px;
+  color: var(--mute);
+}
+
+.code-lines {
+  position: relative;
+  margin: 12px 0;
+}
+
+.code-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 27px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 16px;
+  border-left: 4px solid transparent;
+  font-family: var(--font-code);
+  font-size: 13px;
+  white-space: pre;
+  cursor: pointer;
+}
+
+.code-row.selected {
+  background: var(--selected-row);
+  border-left-color: var(--selected-mark);
+}
+
+.code-row .code-number {
+  text-align: right;
+  color: var(--mute);
+}
+
+/* Upper halves of Overview and Lines */
+
+.overview-upper,
+.lines-upper {
+  height: auto;
+  max-height: 42vh;
+  gap: 20px 48px;
+  padding: 20px var(--page-padding);
+}
+
+.panel-date {
+  flex: 2 1 340px;
+  gap: 16px;
+}
+
+.panel-wide {
+  flex: 3 1 460px;
+  gap: 12px;
+  overflow: auto;
+}
+
+.share {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.share-bar {
+  display: flex;
+  gap: 2px;
+  height: var(--control-height);
+}
+
+.share-part {
+  flex: 1 1 0;
+  min-width: 2px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: var(--radius-clip);
+  color: var(--on-author);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.share-empty {
+  color: var(--mute);
+  align-self: center;
+}
+
+.current-commit.plain {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.history-subject.large {
+  font-size: 15px;
+}
+
+.commit-files {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-row {
+  width: 100%;
+  min-height: var(--control-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+}
+
+.commit-files li:last-child .file-row {
+  border-bottom: 1px solid var(--line);
+}
+
+.file-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-row.deleted {
+  color: var(--mute);
+}
+
+.file-row.deleted .file-path {
+  text-decoration: line-through;
+}
+
+.file-note {
+  flex: 0 0 auto;
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.file-note.highlight {
+  padding: 2px 6px;
+  border-radius: var(--radius-chip);
+  background: var(--highlight-bg);
+  color: var(--highlight-fg);
+  font-weight: 500;
+}
+
+.file-more {
+  padding-top: 10px;
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.back-button {
+  align-self: flex-start;
+  min-height: var(--control-height);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+}
+
+.history-list.columns {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+}
+
+.history-list.columns .history-item {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.line-history {
+  overflow: auto;
+}
+
+/* The repository menu */
+
+.repo-field {
+  position: relative;
+}
+
+.repo-menu {
+  top: calc(100% + 10px);
+  left: 0;
+  width: min(640px, calc(100vw - 2 * var(--page-padding)));
+}
+
+.repo-field:not(.phone) .repo-menu {
+  left: -96px;
+}
+
+.menu-group {
+  padding: 10px 12px 6px;
+  color: var(--mute);
+}
+
+.menu-row {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  text-align: left;
+}
+
+.menu-row .mono {
+  font-size: 14px;
+}
+
+.menu-row:hover,
+.menu-row.active {
+  background: var(--selected-row);
+}
+
+.menu-note {
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--line);
+}
+
+.menu-hint {
+  padding: 10px 12px;
+}
+
+.menu-hint.error {
+  color: var(--highlight-fg);
+}
+
+.repo-button {
+  min-height: var(--control-height);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--line-input);
+  border-radius: var(--radius-control);
+  background: var(--well);
+}
+
+.repo-input {
+  height: var(--control-height);
+  margin: 4px 4px 2px;
+  padding: 0 12px;
+  border: 1px solid var(--line-input);
+  border-radius: var(--radius-clip);
+  background: var(--bg);
+  font-family: var(--font-code);
+  font-size: 13px;
+}
+
+/* Phone: Tracks rearranges; Overview and Lines scroll sideways. */
+
+.app.phone {
+  min-height: 0;
+  height: 100dvh;
+}
+
+.app.phone .header {
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.app.phone .tabs {
+  flex: 1 1 100%;
+}
+
+.app.phone .repo-field.phone {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.app.phone .repo-button .mono {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app.phone .tab {
+  flex: 1;
+  justify-content: center;
+}
+
+.app.phone .wordmark {
+  flex: 0 0 auto;
+}
+
+.app.phone .repo-menu {
+  position: fixed;
+  top: 64px;
+  left: 16px;
+  right: 16px;
+  width: auto;
+}
+
+.phone-upper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.app.phone .date {
+  font-size: 44px;
+}
+
+.phone-commit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.app.phone .legend {
+  padding: 14px 16px 0;
+}
+
+.app.phone .timeline {
+  padding: 0 16px;
+}
+
+.app.phone .transport {
+  gap: 24px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  border-bottom: 0;
+}
+
+.app.phone .play-button {
+  width: 96px;
+  height: 48px;
+}
+
+.app.phone .speed-button .speed-word {
+  display: none;
+}
+
+.app.phone .upper.overview-upper,
+.app.phone .upper.lines-upper {
+  height: auto;
+  max-height: 46vh;
+  overflow: auto;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+}
+
+.app.phone .lower:has(.timeline-area) .timeline {
+  overflow-x: auto;
+}
+
+.app.phone .lower .timeline-area {
+  min-width: 900px;
+}
+
+.app.phone .tracks-lower .timeline-area {
+  min-width: 0;
 }
 
 .message {

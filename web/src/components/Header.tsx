@@ -1,4 +1,5 @@
-export type View = "overview" | "tracks" | "lines";
+import type { View } from "../store/playback";
+import { RepoField } from "./RepoField";
 
 const VIEWS: { id: View; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -6,32 +7,38 @@ const VIEWS: { id: View; label: string }[] = [
   { id: "lines", label: "Lines" },
 ];
 
-/**
- * Wordmark, repository field and view tabs. Overview and Lines, and opening
- * other repositories, come in the next build step; until then their controls
- * are shown but inactive.
- */
-export function Header({ repo, view }: { repo: string; view: View }) {
+/** Wordmark, repository field and view tabs. The tabs are links. */
+export function Header(props: {
+  repo: string;
+  view: View | null;
+  phone: boolean;
+  href: (view: View) => string;
+  onView: (view: View) => void;
+  onOpenRepo: (name: string) => void;
+}) {
   return (
     <header className="header">
       <div className="wordmark">Palimpsest</div>
-      <div className="repo-field">
-        <label htmlFor="repo">Repository</label>
-        <input id="repo" type="text" value={`github.com/${repo}`} readOnly spellCheck={false} />
-      </div>
-      <nav className="tabs" aria-label="Views">
-        {VIEWS.map((v) =>
-          v.id === view ? (
-            <a key={v.id} href="/" aria-current="page" className="tab">
+      <RepoField repo={props.repo} phone={props.phone} onOpen={props.onOpenRepo} />
+      {props.view && (
+        <nav className="tabs" aria-label="Views">
+          {VIEWS.map((v) => (
+            <a
+              key={v.id}
+              href={props.href(v.id)}
+              aria-current={v.id === props.view ? "page" : undefined}
+              className="tab"
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                e.preventDefault();
+                props.onView(v.id);
+              }}
+            >
               {v.label}
             </a>
-          ) : (
-            <span key={v.id} className="tab" aria-disabled="true" title="Coming soon">
-              {v.label}
-            </span>
-          ),
-        )}
-      </nav>
+          ))}
+        </nav>
+      )}
     </header>
   );
 }

@@ -17,6 +17,9 @@ export interface CanvasTheme {
   nowOutline: string;
   panel: string;
   fontClip: string;
+  fontChip: string;
+  fontMarker: string;
+  fontMarkerDate: string;
 }
 
 export function readTheme(el: Element): CanvasTheme {
@@ -38,5 +41,8 @@ export function readTheme(el: Element): CanvasTheme {
     nowOutline: v("--now-outline"),
     panel: v("--panel"),
     fontClip: `500 14px ${v("--font-display")}`,
+    fontChip: `600 12px ${v("--font-display")}`,
+    fontMarker: `400 13px ${v("--font-ui")}`,
+    fontMarkerDate: `600 14px ${v("--font-display")}`,
   };
 }

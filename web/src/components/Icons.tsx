@@ -41,3 +41,27 @@ export function NextCommitIcon() {
     </svg>
   );
 }
+
+export function ChevronLeftIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" {...stroke} aria-hidden="true">
+      <path d="M11 4 6 9l5 5" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" {...stroke} aria-hidden="true">
+      <path d="M7 4l5 5-5 5" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" {...stroke} aria-hidden="true">
+      <path d="M4 7l5 5 5-5" />
+    </svg>
+  );
+}

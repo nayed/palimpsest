@@ -1,14 +1,15 @@
 import type { History } from "../data/history";
 import { AuthorChip, UntouchedChip } from "./AuthorChip";
 
-export function Legend({ history }: { history: History }) {
+/** `short` is the phone version: first names, no title. */
+export function Legend({ history, short = false }: { history: History; short?: boolean }) {
   return (
     <div className="legend">
-      <span className="legend-title">Colored by who was writing</span>
+      {!short && <span className="legend-title">Colored by who was writing</span>}
       {history.rankedAuthors().map((a) => (
         <span key={a} className="legend-item">
           <AuthorChip history={history} author={a} />
-          {history.authorName(a)}
+          {short ? history.authorName(a).split(" ")[0] : history.authorName(a)}
         </span>
       ))}
       {history.hasOthers() && (
@@ -17,10 +18,12 @@ export function Legend({ history }: { history: History }) {
           Others
         </span>
       )}
-      <span className="legend-item">
-        <UntouchedChip />
-        Untouched
-      </span>
+      {!short && (
+        <span className="legend-item">
+          <UntouchedChip />
+          Untouched
+        </span>
+      )}
     </div>
   );
 }
