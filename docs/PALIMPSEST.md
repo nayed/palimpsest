@@ -86,6 +86,7 @@ The one idea that holds the product together: **the playhead is shared**. The da
 Three things to verify before relying on them. They were written from general knowledge during design and were not checked against current documentation:
 
 1. **Fetching a repository from inside WebAssembly.** Parsing git data in WebAssembly is well-trodden; doing the network fetch from inside it may not be supported by gitoxide today. Settle this with a one-day experiment at the start of build step 4. The safe fallback is to let JavaScript download the pack file (a small hand-written smart-HTTP fetch, or isomorphic-git for transport only) and hand the bytes to Rust to parse.
+   **Settled in step 4:** gitoxide does not compile for `wasm32-unknown-unknown` with its network features (gix-sec needs Unix file APIs). JavaScript downloads the pack with a small hand-written git protocol v2 client (`web/src/git`), and the core reads it with its own pack reader (`core/src/pack.rs`), so gitoxide is used natively only.
 2. **WebAssembly build tooling.** The Rust and WebAssembly tooling was reorganized in the last couple of years. Look up the currently recommended way to build with wasm-bindgen and bundle with Vite; do not follow an older tutorial.
 3. **Crate and package versions.** Before adding each dependency, check that it is still maintained and pick the current version.
 
@@ -246,7 +247,7 @@ Reading a pasted repository happens in two passes, which is why the loading scre
 ### Too big, and other failures (`07-too-big`)
 
 - When a repository has more commits than the limit: the heading "Too big for one browser tab", then "This repository has <n> commits. Palimpsest reads history inside your browser, and it stops at <limit> so the tab stays responsive.", and a "Back to the demo repo" link. The play controls are disabled and the track area shows empty dashed rows with "Nothing is loaded yet. Tracks will appear here."
-- **The limit is 50,000 commits (Decided).** Keep it in one constant; if measurements show a tab cannot handle it comfortably, tell the author.
+- **The limit is 50,000 commits (Decided).** Keep it in one constant; if measurements show a tab cannot handle it comfortably, tell the author. It counts every commit the default branch reaches, as GitHub's commit count does, read from the header of a commits-only pack, so a huge repository is refused in under a second without downloading it.
 - The two partial-load options in the mockup (the last 2 years, one folder) are later features. Leave room for them in the layout.
 - Reuse the same layout for the other failures, with one sentence each: the URL is not a repository, the repository is private or does not exist, the network or the proxy failed. Each offers the way back to the demo repository. Write these messages in the same plain voice.
 
