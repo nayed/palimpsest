@@ -153,15 +153,17 @@ export function TracksView({ session }: { session: Session }) {
     const c = h.data.commits;
     return (
       <>
-        <section className="phone-upper">
-          <DateDisplay playback={playback} />
-          {commit >= 0 && (
-            <div className="phone-commit">
-              <AuthorChip history={h} author={c.author[commit]!} />
-              <span>{c.subject[commit]}</span>
-            </div>
-          )}
-        </section>
+        {session.upper ?? (
+          <section className="phone-upper">
+            <DateDisplay playback={playback} />
+            {commit >= 0 && (
+              <div className="phone-commit">
+                <AuthorChip history={h} author={c.author[commit]!} />
+                <span>{c.subject[commit]}</span>
+              </div>
+            )}
+          </section>
+        )}
         <div className="lower tracks-lower">
           <Legend history={h} short />
           {timeline}

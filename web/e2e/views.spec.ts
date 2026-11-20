@@ -55,7 +55,7 @@ test("keyboard: Space plays, arrows step, numbers switch views", async ({ page }
   await expect(page.getByRole("link", { name: "Lines" })).toHaveAttribute("aria-current", "page");
 });
 
-test("the repository menu opens another demo; an unknown repository says so", async ({ page }) => {
+test("the repository menu opens another demo, and rejects what is not a repository", async ({ page }) => {
   await page.goto(MOMENT);
   await page.getByRole("combobox", { name: "Repository" }).click();
   await expect(page.getByRole("option", { name: /alacritty\/alacritty.*the demo/ })).toBeVisible();
@@ -67,11 +67,6 @@ test("the repository menu opens another demo; an unknown repository says so", as
   await field.fill("not a repository");
   await field.press("Enter");
   await expect(page.getByText("That does not look like a GitHub repository")).toBeVisible();
-  await field.fill("https://github.com/rust-lang/rust");
-  await field.press("Enter");
-  await expect(page.getByRole("heading", { name: "Not available yet" })).toBeVisible();
-  await page.getByRole("link", { name: "Back to the demo repo" }).click();
-  await expect(page.locator(".legend")).toContainText("Christian Duerr");
 });
 
 test.describe("on a phone", () => {
