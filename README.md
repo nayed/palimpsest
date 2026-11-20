@@ -7,6 +7,8 @@ In the Middle Ages, parchment was too precious to throw away, so scribes **scrap
 
 **Palimpsest** is a git time machine for the web: open a public repository, then scrub through its history like a video. Every file is a track, colored by who was writing it, so you can watch code be born, change hands, move and disappear, then zoom in on any single line to see who wrote it, when, and why.
 
+**Try it: [palimpsest.nayed-saidali.workers.dev](https://palimpsest.nayed-saidali.workers.dev)**
+
 ![Palimpsest playing the history of alacritty: tracks of files colored by author, with commits going by](./docs/images/palimpsest.gif)
 
 Tools like [Gource](https://gource.io) animate a repository as a tree of files. Palimpsest shows it as tracks you can scrub, and goes down to the single line.
@@ -63,7 +65,12 @@ pnpm build                        # production build in web/dist
 
 ### Deploying
 
-The site is static and goes to Cloudflare Pages; the proxy is a Cloudflare Worker. Deploy the proxy with the site's origin allowed, then build the site with `VITE_GIT_PROXY` set to the proxy's address. See [`proxy/README.md`](proxy/README.md).
+Both parts run on Cloudflare: the site as static files (Workers static assets, which Cloudflare Pages is now part of, configured in `web/wrangler.jsonc`) and the proxy as a Worker (`proxy/wrangler.toml`, which lists the origins allowed to use it). After `wrangler login`:
+
+```sh
+cd proxy && ../web/node_modules/.bin/wrangler deploy   # the git proxy
+cd web && pnpm ship                                    # build with the proxy's address, then deploy
+```
 
 ## Credits
 

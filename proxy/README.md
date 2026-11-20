@@ -7,10 +7,12 @@ read-only smart-HTTP requests, and nothing else, to github.com:
     GET  /<owner>/<repo>.git/info/refs?service=git-upload-pack
     POST /<owner>/<repo>.git/git-upload-pack
 
-Deploy it with the site's origin allowed:
+Deploy it from this folder; `ALLOWED_ORIGINS` in `wrangler.toml` lists the
+site origins allowed to use it:
 
-    npx wrangler@4.165.0 deploy --var ALLOWED_ORIGINS:https://palimpsest.pages.dev
+    ../web/node_modules/.bin/wrangler deploy
 
-Then build the site with `VITE_GIT_PROXY` set to the Worker's address.
+The site is built with `VITE_GIT_PROXY` set to the Worker's address
+(`pnpm ship` in `web/` does both).
 Tests run with the web app's (`web/src/proxy/proxy.test.ts`); in development,
 Vite serves the same code at `/git-proxy`.

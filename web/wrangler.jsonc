@@ -1,0 +1,15 @@
+// The site: static files only, served by Cloudflare (Workers static assets,
+// which Cloudflare Pages is now part of). Unknown paths such as
+// /owner/repo get index.html, where the app reads the address.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "palimpsest",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  // Preview deployments would get other origins, which the git proxy refuses.
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
