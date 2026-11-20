@@ -1,0 +1,6 @@
+# Dependencies whose install scripts may run. Both come from wrangler and are
+# not needed to deploy (esbuild works from its platform package; workerd's
+# script only matters for `wrangler dev`), so neither runs.
+allowBuilds:
+  esbuild: false
+  workerd: false
