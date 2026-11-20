@@ -44,6 +44,22 @@ pub struct Repo {
     /// Time of the first and the last commit.
     pub start: i64,
     pub end: i64,
+    /// Whether line history and `overview.share` are worked out. A repository
+    /// read in the browser gets them in the background after its commits.
+    pub line_history: bool,
+    /// Set while a repository is still being read, newest first: only the
+    /// commits from `read_from` on are in the file so far.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partial: Option<Partial>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Partial {
+    /// Time of the oldest commit read so far.
+    pub read_from: i64,
+    /// Commits in the whole first-parent history.
+    pub total_commits: u32,
 }
 
 /// Indexed by author id.

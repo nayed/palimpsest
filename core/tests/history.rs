@@ -411,3 +411,50 @@ fn line_history_replays_to_the_file_contents() {
     );
     assert!(share(4).is_empty());
 }
+
+#[test]
+fn line_history_on_demand_matches_the_full_pass() {
+    let mut fx = Fixture::new();
+    fx.write("a.rs", "fn a() {\n    one();\n}\n")
+        .write("b.bin", "\0x")
+        .commit("Ann Lee", 0, "Add");
+    fx.write("a.rs", "// header\nfn a() {\n    one(1);\n}\n")
+        .commit("Bo Kim", 40, "Edit");
+    fx.mv("a.rs", "src/a.rs").commit("Bo Kim", 80, "Move");
+    fx.remove("src/a.rs").commit("Ann Lee", 140, "Delete");
+
+    let full = palimpsest_core::build_all(&fx.repo, &Options::default(), &mut |_, _| {}).unwrap();
+    // Without line history: same tracks, line files worked out per file.
+    let opts = Options {
+        line_history: false,
+        ..Options::default()
+    };
+    let chain = palimpsest_core::build::first_parent_chain(&fx.repo).unwrap();
+    let diffs: Vec<_> = (0..chain.len())
+        .map(|i| {
+            let parent = (i > 0).then(|| chain[i - 1].tree);
+            palimpsest_core::diff::diff_commit(&fx.repo, parent, chain[i].tree, &opts).unwrap()
+        })
+        .collect();
+    let lazy = palimpsest_core::assemble_all(&chain, &diffs, &opts);
+    assert!(!lazy.data.repo.line_history && full.data.repo.line_history);
+    assert_eq!(
+        lazy.data.files,
+        palimpsest_core::format::Files {
+            has_lines: vec![false; 2],
+            ..full.data.files.clone()
+        }
+    );
+
+    let a = full.lines.iter().find(|l| l.file == 0).unwrap();
+    assert_eq!(
+        palimpsest_core::line_file(&fx.repo, &diffs, &lazy, 0, &opts)
+            .unwrap()
+            .as_ref(),
+        Some(a)
+    );
+    assert_eq!(
+        palimpsest_core::line_file(&fx.repo, &diffs, &lazy, 1, &opts).unwrap(),
+        None
+    );
+}

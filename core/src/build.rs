@@ -9,7 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use crate::clips::{Clip, Touch, clips};
-use crate::diff::{ChangeKind, FileChange, diff_commit};
+use crate::diff::{ChangeKind, FileChange, diff_commit, line_edit_for};
 use crate::format::{
     self, Changes, Clips, Commits, Data, Files, LineFile, Moment, Overview, OverviewRow, Repo,
     Share,
@@ -24,6 +24,8 @@ use crate::{Options, authors};
 pub struct Output {
     pub data: Data,
     pub lines: Vec<LineFile>,
+    /// For each entry of `data.changes`: (commit, index in that commit's diff).
+    pub change_refs: Vec<(u32, u32)>,
 }
 
 /// Reads the whole first-parent history of `src` and builds the data file.
@@ -123,6 +125,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
         return Output {
             data,
             lines: vec![],
+            change_refs: vec![],
         };
     }
 
@@ -143,6 +146,8 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
         commit_count: commits.len() as u32,
         start,
         end,
+        line_history: opts.line_history,
+        partial: None,
     };
 
     data.commits = Commits::default();
@@ -177,9 +182,10 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
     let mut owned = vec![0i64; data.authors.name.len()];
     let mut share_months: Vec<Option<Vec<(u32, u32)>>> = vec![None; month_count];
 
+    let mut change_refs = Vec::new();
     for (i, diff) in diffs.iter().enumerate() {
         let ci = i as u32;
-        for ch in diff {
+        for (j, ch) in diff.iter().enumerate() {
             let mut new_file = |files: &mut Vec<FileAcc>, paths: &mut Vec<String>| {
                 files.push(FileAcc {
                     born: ci,
@@ -287,6 +293,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
                 }
             }
 
+            change_refs.push((ci, j as u32));
             changes.file.push(id as u32);
             changes.kind.push(ch.kind as u8);
             changes.added.push(ch.added);
@@ -372,7 +379,56 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
     data.overview.share = share;
 
     let lines = files.into_iter().filter_map(|f| f.lines_file).collect();
-    Output { data, lines }
+    Output {
+        data,
+        lines,
+        change_refs,
+    }
+}
+
+/// One file's line history, working out any line edits not known yet (a
+/// repository read in the browser computes them only when a file is opened).
+/// `diffs` and `out` must come from the same [`assemble_all`].
+pub fn line_file(
+    src: &dyn Source,
+    diffs: &[Vec<FileChange>],
+    out: &Output,
+    file: u32,
+    opts: &Options,
+) -> Result<Option<LineFile>> {
+    let mut lf = LineFile {
+        format: format::LINES_FORMAT.into(),
+        version: format::VERSION,
+        file,
+        ops_start: vec![0],
+        ..Default::default()
+    };
+    for (k, &f) in out.data.changes.file.iter().enumerate() {
+        if f != file {
+            continue;
+        }
+        let (i, j) = out.change_refs[k];
+        let ch = &diffs[i as usize][j as usize];
+        let edit = match &ch.lines {
+            Some(e) => Some(e.clone()),
+            None => line_edit_for(src, ch, opts)?,
+        };
+        let Some(edit) = edit else {
+            // Binary, or it became binary: no line history, as in assemble.
+            if lf.commits.is_empty() {
+                continue;
+            }
+            return Ok(None);
+        };
+        lf.commits.push(i);
+        for &(op, n) in &edit.ops {
+            lf.ops.push(op as u32);
+            lf.ops.push(n);
+        }
+        lf.ops_start.push(lf.ops.len() as u32);
+        lf.texts.extend(edit.texts);
+    }
+    Ok((!lf.commits.is_empty()).then_some(lf))
 }
 
 fn push_clips(out: &mut Clips, clips: &[Clip]) {

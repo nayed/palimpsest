@@ -1,0 +1,161 @@
+//! Palimpsest's history logic for the browser. A Web Worker downloads a
+//! repository's pack through the proxy and hands it here; this reads the
+//! history newest first, a batch at a time, so the app can draw what has been
+//! read while the rest is still coming. Same core as the command-line tool.
+
+use palimpsest_core::build::{first_parent_chain, line_file};
+use palimpsest_core::diff::{FileChange, diff_commit, line_edit_for};
+use palimpsest_core::format::Partial;
+use palimpsest_core::pack::{Pack, PackSource, oid_from_hex};
+use palimpsest_core::source::RawCommit;
+use palimpsest_core::{Options, Output, assemble_all};
+use wasm_bindgen::prelude::*;
+
+fn js<E: std::fmt::Display>(e: E) -> JsError {
+    JsError::new(&e.to_string())
+}
+
+fn report(progress: &js_sys::Function, done: usize, total: usize) {
+    let _ = progress.call2(
+        &JsValue::NULL,
+        &(done as f64).into(),
+        &(total as f64).into(),
+    );
+}
+
+fn open(pack: Vec<u8>, head: &str, progress: &js_sys::Function) -> Result<PackSource, JsError> {
+    let pack = Pack::index(pack, &mut |d, t| report(progress, d, t)).map_err(js)?;
+    PackSource::new(pack, oid_from_hex(head).map_err(js)?).map_err(js)
+}
+
+/// Counts the first-parent commits in a commits-only pack (fetched with
+/// `filter tree:0`), to check the size of a repository before downloading it.
+#[wasm_bindgen(js_name = countCommits)]
+pub fn count_commits(pack: Vec<u8>, head: &str) -> Result<u32, JsError> {
+    let src = open(pack, head, &js_sys::Function::new_no_args(""))?;
+    Ok(first_parent_chain(&src).map_err(js)?.len() as u32)
+}
+
+#[wasm_bindgen]
+pub struct Reader {
+    opts: Options,
+    src: Option<PackSource>,
+    /// First-parent commits, oldest first.
+    chain: Vec<RawCommit>,
+    diffs: Vec<Vec<FileChange>>,
+    /// Index of the oldest commit read so far (`chain.len()` before any).
+    first_read: usize,
+    output: Option<Output>,
+}
+
+#[wasm_bindgen]
+impl Reader {
+    /// `name` is "owner/repo".
+    #[wasm_bindgen(constructor)]
+    pub fn new(name: String) -> Reader {
+        Reader {
+            opts: Options {
+                name,
+                line_history: false,
+                ..Options::default()
+            },
+            src: None,
+            chain: Vec::new(),
+            diffs: Vec::new(),
+            first_read: 0,
+            output: None,
+        }
+    }
+
+    /// Indexes the repository's pack and lists its first-parent commits.
+    /// Returns how many there are. `progress(done, total)` follows indexing.
+    pub fn load(
+        &mut self,
+        pack: Vec<u8>,
+        head: &str,
+        progress: &js_sys::Function,
+    ) -> Result<u32, JsError> {
+        let src = open(pack, head, progress)?;
+        self.chain = first_parent_chain(&src).map_err(js)?;
+        self.diffs = vec![Vec::new(); self.chain.len()];
+        self.first_read = self.chain.len();
+        self.src = Some(src);
+        Ok(self.chain.len() as u32)
+    }
+
+    /// Reads up to `n` more commits, newest first. Returns how many have
+    /// been read in all.
+    pub fn read(&mut self, n: u32) -> Result<u32, JsError> {
+        let src = self
+            .src
+            .as_ref()
+            .ok_or_else(|| JsError::new("nothing loaded"))?;
+        for _ in 0..n {
+            if self.first_read == 0 {
+                break;
+            }
+            let i = self.first_read - 1;
+            let parent = (i > 0).then(|| self.chain[i - 1].tree);
+            self.diffs[i] = diff_commit(src, parent, self.chain[i].tree, &self.opts).map_err(js)?;
+            self.first_read = i;
+        }
+        Ok((self.chain.len() - self.first_read) as u32)
+    }
+
+    /// The data file for the commits read so far, as JSON.
+    pub fn snapshot(&mut self) -> Result<String, JsError> {
+        let k = self.first_read;
+        if k == self.chain.len() {
+            return Err(JsError::new("no commits read yet"));
+        }
+        let mut out = assemble_all(&self.chain[k..], &self.diffs[k..], &self.opts);
+        let repo = &mut out.data.repo;
+        if k > 0 {
+            // The timeline still spans the whole history; the part before
+            // `read_from` is drawn as not read yet.
+            repo.partial = Some(Partial {
+                read_from: repo.start,
+                total_commits: self.chain.len() as u32,
+            });
+            repo.start = repo.start.min(self.chain[0].time);
+        }
+        let json = serde_json::to_string(&out.data).map_err(js)?;
+        self.output = Some(out);
+        Ok(json)
+    }
+
+    /// One file's line history as JSON, worked out now, or undefined when it
+    /// has none (binary or vendored).
+    pub fn lines(&self, file: u32) -> Result<Option<String>, JsError> {
+        let (Some(src), Some(out)) = (&self.src, &self.output) else {
+            return Ok(None);
+        };
+        let k = self.first_read;
+        let lf = line_file(src, &self.diffs[k..], out, file, &self.opts).map_err(js)?;
+        lf.map(|lf| serde_json::to_string(&lf).map_err(js))
+            .transpose()
+    }
+
+    /// Works out every line's history, for who wrote the code that exists on
+    /// each day, then returns the complete data file as JSON. Call it once
+    /// every commit has been read. `progress(done, total)` counts commits.
+    #[wasm_bindgen(js_name = lineHistory)]
+    pub fn line_history(&mut self, progress: &js_sys::Function) -> Result<String, JsError> {
+        let src = self
+            .src
+            .as_ref()
+            .ok_or_else(|| JsError::new("nothing loaded"))?;
+        let total = self.diffs.len();
+        for (i, diff) in self.diffs.iter_mut().enumerate() {
+            for ch in diff.iter_mut().filter(|c| c.lines.is_none()) {
+                ch.lines = line_edit_for(src, ch, &self.opts).map_err(js)?;
+            }
+            if i % 50 == 0 {
+                report(progress, i, total);
+            }
+        }
+        report(progress, total, total);
+        self.opts.line_history = true;
+        self.snapshot()
+    }
+}

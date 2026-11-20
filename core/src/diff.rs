@@ -34,8 +34,11 @@ pub struct FileChange {
     pub lines_before: u32,
     pub lines_after: u32,
     /// What happened to each line, for line history. `None` for binary and
-    /// vendored files, or when line history is off.
+    /// vendored files, or when line history is off or not worked out yet.
     pub lines: Option<LineEdit>,
+    /// The file's content before and after, to work out line history later.
+    pub old_blob: Option<Oid>,
+    pub new_blob: Option<Oid>,
 }
 
 enum Delta {
@@ -62,10 +65,6 @@ pub fn diff_commit(
         match delta {
             Delta::Modified { path, old, new } => {
                 let (a, d) = blobs.diff_counts(old, new)?;
-                let lines = tracked(&path, opts)
-                    .then(|| blobs.line_edit(Some(old), new, opts))
-                    .transpose()?
-                    .flatten();
                 out.push(FileChange {
                     kind: ChangeKind::Modified,
                     old_path: None,
@@ -73,7 +72,9 @@ pub fn diff_commit(
                     deleted: d,
                     lines_before: blobs.lines(old)?,
                     lines_after: blobs.lines(new)?,
-                    lines,
+                    lines: None,
+                    old_blob: Some(old),
+                    new_blob: Some(new),
                     path,
                 });
             }
@@ -90,16 +91,11 @@ pub fn diff_commit(
         } else {
             blobs.diff_counts(*old_id, *new_id)?
         };
-        let lines = if !tracked(new_path, opts) {
-            None
-        } else if old_id == new_id {
-            (!text::is_binary(blobs.get(*new_id)?)).then(LineEdit::default)
-        } else {
-            blobs.line_edit(Some(*old_id), *new_id, opts)?
-        };
         out.push(FileChange {
             kind: ChangeKind::Renamed,
-            lines,
+            lines: None,
+            old_blob: Some(*old_id),
+            new_blob: Some(*new_id),
             path: new_path.clone(),
             old_path: Some(old_path.clone()),
             added: a,
@@ -112,13 +108,11 @@ pub fn diff_commit(
     }
     for (path, id) in added.into_iter().filter(|(p, _)| !p.is_empty()) {
         let lines = blobs.lines(id)?;
-        let lines_edit = tracked(&path, opts)
-            .then(|| blobs.line_edit(None, id, opts))
-            .transpose()?
-            .flatten();
         out.push(FileChange {
             kind: ChangeKind::Added,
-            lines: lines_edit,
+            lines: None,
+            old_blob: None,
+            new_blob: Some(id),
             path,
             old_path: None,
             added: lines,
@@ -129,10 +123,11 @@ pub fn diff_commit(
     }
     for (path, id) in deleted.into_iter().filter(|(p, _)| !p.is_empty()) {
         let lines = blobs.lines(id)?;
-        let binary = text::is_binary(blobs.get(id)?);
         out.push(FileChange {
             kind: ChangeKind::Deleted,
-            lines: (tracked(&path, opts) && !binary).then(|| LineEdit::delete_all(lines)),
+            lines: None,
+            old_blob: Some(id),
+            new_blob: None,
             path,
             old_path: None,
             added: 0,
@@ -142,7 +137,38 @@ pub fn diff_commit(
         });
     }
     out.sort_by(|a, b| a.path.cmp(&b.path));
+    if opts.line_history {
+        for ch in &mut out {
+            ch.lines = edit_for(&mut blobs, ch, opts)?;
+        }
+    }
     Ok(out)
+}
+
+/// What a change did to each line of its file, worked out from its blobs.
+/// `None` for binary and vendored files.
+pub fn line_edit_for(
+    src: &dyn Source,
+    ch: &FileChange,
+    opts: &Options,
+) -> Result<Option<LineEdit>> {
+    edit_for(&mut BlobCache::new(src), ch, opts)
+}
+
+fn edit_for(blobs: &mut BlobCache, ch: &FileChange, opts: &Options) -> Result<Option<LineEdit>> {
+    if is_vendored(&ch.path) {
+        return Ok(None);
+    }
+    match (ch.old_blob, ch.new_blob) {
+        (Some(old), None) => {
+            Ok((!text::is_binary(blobs.get(old)?)).then(|| LineEdit::delete_all(ch.lines_before)))
+        }
+        (Some(old), Some(new)) if old == new => {
+            Ok((!text::is_binary(blobs.get(new)?)).then(LineEdit::default))
+        }
+        (old, Some(new)) => blobs.line_edit(old, new, opts),
+        (None, None) => Ok(None),
+    }
 }
 
 /// Pairs deleted and added files that are the same file moved. Exact content
@@ -219,11 +245,6 @@ fn pair_renames(
         }
     }
     Ok(pairs)
-}
-
-/// Whether a path gets line history.
-fn tracked(path: &str, opts: &Options) -> bool {
-    opts.line_history && !is_vendored(path)
 }
 
 fn file_name(path: &str) -> &str {

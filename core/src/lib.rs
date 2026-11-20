@@ -20,7 +20,7 @@ pub mod vendored;
 #[cfg(feature = "git")]
 pub mod git;
 
-pub use build::{Output, assemble, assemble_all, build, build_all};
+pub use build::{Output, assemble, assemble_all, build, build_all, line_file};
 pub use format::Data;
 pub use source::Source;
 
