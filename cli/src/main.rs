@@ -54,15 +54,31 @@ enum Command {
 
 fn main() -> Result<()> {
     match Cli::parse().command {
-        Command::BuildFromPack { pack, head, out, name } => {
+        Command::BuildFromPack {
+            pack,
+            head,
+            out,
+            name,
+        } => {
             let started = Instant::now();
             let bytes = std::fs::read(&pack)?;
-            let pack = palimpsest_core::pack::Pack::index(bytes, &mut |_, _| {}).map_err(anyhow::Error::from_boxed)?;
-            eprintln!("Indexed {} objects in {:.1?}", pack.len(), started.elapsed());
-            let head = palimpsest_core::pack::oid_from_hex(&head).map_err(anyhow::Error::from_boxed)?;
-            let src = palimpsest_core::pack::PackSource::new(pack, head).map_err(anyhow::Error::from_boxed)?;
-            let opts = Options { name, ..Default::default() };
-            let output = build_all(&src, &opts, &mut |_, _| {}).map_err(anyhow::Error::from_boxed)?;
+            let pack = palimpsest_core::pack::Pack::index(bytes, &mut |_, _| {})
+                .map_err(anyhow::Error::from_boxed)?;
+            eprintln!(
+                "Indexed {} objects in {:.1?}",
+                pack.len(),
+                started.elapsed()
+            );
+            let head =
+                palimpsest_core::pack::oid_from_hex(&head).map_err(anyhow::Error::from_boxed)?;
+            let src = palimpsest_core::pack::PackSource::new(pack, head)
+                .map_err(anyhow::Error::from_boxed)?;
+            let opts = Options {
+                name,
+                ..Default::default()
+            };
+            let output =
+                build_all(&src, &opts, &mut |_, _| {}).map_err(anyhow::Error::from_boxed)?;
             std::fs::write(&out, serde_json::to_vec(&output.data)?)?;
             eprintln!("Wrote {} in {:.1?}", out.display(), started.elapsed());
             Ok(())
