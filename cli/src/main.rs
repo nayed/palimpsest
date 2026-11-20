@@ -21,6 +21,18 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Build the data file from a pack file, as the browser does.
+    #[command(hide = true)]
+    BuildFromPack {
+        pack: PathBuf,
+        /// The newest commit's id.
+        #[arg(long)]
+        head: String,
+        #[arg(short, long)]
+        out: PathBuf,
+        #[arg(long)]
+        name: String,
+    },
     /// Read a local clone's first-parent history and write the data file.
     BuildData {
         /// Path to a local clone.
@@ -42,6 +54,19 @@ enum Command {
 
 fn main() -> Result<()> {
     match Cli::parse().command {
+        Command::BuildFromPack { pack, head, out, name } => {
+            let started = Instant::now();
+            let bytes = std::fs::read(&pack)?;
+            let pack = palimpsest_core::pack::Pack::index(bytes, &mut |_, _| {}).map_err(anyhow::Error::from_boxed)?;
+            eprintln!("Indexed {} objects in {:.1?}", pack.len(), started.elapsed());
+            let head = palimpsest_core::pack::oid_from_hex(&head).map_err(anyhow::Error::from_boxed)?;
+            let src = palimpsest_core::pack::PackSource::new(pack, head).map_err(anyhow::Error::from_boxed)?;
+            let opts = Options { name, ..Default::default() };
+            let output = build_all(&src, &opts, &mut |_, _| {}).map_err(anyhow::Error::from_boxed)?;
+            std::fs::write(&out, serde_json::to_vec(&output.data)?)?;
+            eprintln!("Wrote {} in {:.1?}", out.display(), started.elapsed());
+            Ok(())
+        }
         Command::BuildData {
             repo,
             out,

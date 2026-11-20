@@ -11,6 +11,7 @@ pub mod diff;
 pub mod format;
 pub mod lines;
 pub mod mem;
+pub mod pack;
 pub mod source;
 pub mod text;
 pub mod time;

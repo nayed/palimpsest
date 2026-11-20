@@ -12,6 +12,8 @@ git = ["dep:gix"]
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
 imara-diff = "0.2.0"
+miniz_oxide = "0.9.1"
+sha1_smol = "1.0.1"
 gix = { version = "0.90.0", default-features = false, features = ["sha1", "mailmap"], optional = true }
 
 [dev-dependencies]
