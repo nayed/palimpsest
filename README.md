@@ -65,7 +65,7 @@ pnpm build                        # production build in web/dist
 
 ### Deploying
 
-Both parts run on Cloudflare: the site as static files (Workers static assets, which Cloudflare Pages is now part of, configured in `web/wrangler.jsonc`) and the proxy as a Worker (`proxy/wrangler.toml`, which lists the origins allowed to use it). After `wrangler login`:
+Every push to `main` is tested and, if the tests pass, deployed by GitHub Actions (`.github/workflows/deploy.yml`, which needs a `CLOUDFLARE_API_TOKEN` secret). To deploy by hand: both parts run on Cloudflare: the site as static files (Workers static assets, which Cloudflare Pages is now part of, configured in `web/wrangler.jsonc`) and the proxy as a Worker (`proxy/wrangler.toml`, which lists the origins allowed to use it). After `wrangler login`:
 
 ```sh
 cd proxy && ../web/node_modules/.bin/wrangler deploy   # the git proxy
