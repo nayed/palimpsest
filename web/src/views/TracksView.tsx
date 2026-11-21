@@ -1,6 +1,6 @@
 // Tracks, the home screen: one track per file, colored by who was writing.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { shortenPath } from "../app/format";
 import { useViewKeys } from "../app/keys";
 import { useLineHistory, type Session } from "../app/session";
@@ -64,12 +64,18 @@ export function TracksView({ session }: { session: Session }) {
 
   const files = useMemo(() => (fit ? h.pickFiles(folder, fit) : []), [h, folder, fit]);
 
-  // Select the most-committed file when nothing shown is selected.
+  // With nothing shown selected, select the most-committed file that exists at
+  // the playhead. A file picked this way, not by the person, is picked again
+  // when playback stops or the playhead moves where it does not exist.
+  const autoPicked = useRef(false);
   useEffect(() => {
-    if (!files.length || files.includes(selected)) return;
-    const busiest = [...files].sort((a, b) => h.data.files.commits[b]! - h.data.files.commits[a]!)[0]!;
-    store.set({ selectedFile: busiest, selectedLine: -1 });
-  }, [files, selected, h, store]);
+    if (!files.length) return;
+    if (files.includes(selected) && (playing || !autoPicked.current || h.existsAt(selected, commit))) return;
+    const byCommits = [...files].sort((a, b) => h.data.files.commits[b]! - h.data.files.commits[a]!);
+    const pick = byCommits.find((f) => h.existsAt(f, commit)) ?? byCommits[0]!;
+    autoPicked.current = true;
+    if (pick !== selected) store.set({ selectedFile: pick, selectedLine: -1 });
+  }, [files, selected, h, store, playing, commit]);
 
   const tracks = useMemo(() => fileTracks(h, files), [h, files]);
   const heights = useMemo(() => files.map(() => row), [files, row]);
@@ -84,6 +90,7 @@ export function TracksView({ session }: { session: Session }) {
   );
 
   const select = (file: number) => {
+    autoPicked.current = false;
     // A second click, or a tap on a phone, opens the file's lines.
     if (file === selected || phone) store.set({ selectedFile: file, view: "lines", selectedLine: -1 });
     else store.set({ selectedFile: file, selectedLine: -1 });
@@ -93,7 +100,10 @@ export function TracksView({ session }: { session: Session }) {
     const i = files.indexOf(selected);
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       const next = files[Math.min(files.length - 1, Math.max(0, i + (e.key === "ArrowDown" ? 1 : -1)))];
-      if (next !== undefined) store.set({ selectedFile: next, selectedLine: -1 });
+      if (next !== undefined) {
+        autoPicked.current = false;
+        store.set({ selectedFile: next, selectedLine: -1 });
+      }
       return true;
     }
     if (e.key === "Enter" && selected >= 0) {

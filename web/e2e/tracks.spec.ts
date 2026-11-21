@@ -29,6 +29,22 @@ test("pausing shows the selected file as it was; steps move one commit", async (
   expect(await n()).toBe(before);
 });
 
+test("the file selected for you exists at the moment shown", async ({ page }) => {
+  // CHANGELOG.md is the most-committed file but only appears in 2018.
+  await page.goto("/alacritty/alacritty?at=2016-03-01");
+  const selected = page.locator(".path-label.selected");
+  await expect(selected).toHaveText("src/main.rs");
+  await page.keyboard.press(" ");
+  await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
+  await page.keyboard.press(" ");
+  await expect(selected).toHaveText("src/main.rs");
+  await expect(page.getByText("The file has no lines at this moment.")).toHaveCount(0);
+
+  // A file named in the address is kept, even before it exists.
+  await page.goto("/alacritty/alacritty?at=2016-03-01&file=CHANGELOG.md");
+  await expect(selected).toHaveText("CHANGELOG.md");
+});
+
 test("dragging scrubs, and clicking a track selects its file", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Pause" }).click();
