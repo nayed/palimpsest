@@ -68,6 +68,30 @@ test("dragging scrubs, and clicking a track selects its file", async ({ page }) 
   await expect(page.locator(".panel-title.mono")).toHaveText(path!);
 });
 
+test("resting the mouse on a clip shows who, when and how many commits", async ({ page }) => {
+  await page.goto("/alacritty/alacritty?at=2021-06-01&file=alacritty/src/main.rs");
+  const label = page.locator(".row-label").first();
+  const labelBox = (await label.boundingBox())!;
+  const box = (await page.locator(".timeline-area").boundingBox())!;
+  const y = labelBox.y + labelBox.height / 2;
+
+  // Early on, alacritty/src/main.rs was Joe Wilm's.
+  await page.mouse.move(box.x + 200, y);
+  const card = page.getByRole("tooltip");
+  await expect(card).toContainText("Joe Wilm");
+  await expect(card).toContainText(/\d+ commits, \d+ by Joe/);
+  await expect(card).toContainText(/[A-Z][a-z]{2} \d{4} – [A-Z][a-z]{2} \d{4}/);
+
+  // Off the tracks, or pressing to scrub, hides it.
+  await page.mouse.move(box.x + 40, y);
+  await expect(card).toHaveCount(0);
+  await page.mouse.move(box.x + 200, y);
+  await expect(card).toBeVisible();
+  await page.mouse.down();
+  await expect(card).toHaveCount(0);
+  await page.mouse.up();
+});
+
 test("the speed menu changes speed and closes with Escape", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "4× speed" }).click();

@@ -418,7 +418,7 @@ The dark theme comes along from step 2. Light is not built for now.
 Do not build these now.
 
 - **Loading part of a big repository:** the last 2 years, or one folder with all of its history (`07-too-big`).
-- **Hover details** on a clip: who, which dates, how many commits.
+- ~~**Hover details** on a clip: who, which dates, how many commits.~~ Built after the MVP: a card beside the mouse in Tracks and Lines (not on phones). In Lines it also gives the reason of the commit that wrote the line.
 - **An about panel** in the header: one sentence on what this is, a link to the source and to the author.
 - **Bespoke phone layouts** for Overview and Lines.
 - **Pinning and searching files** in Tracks beyond the basic pin.

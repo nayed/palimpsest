@@ -32,6 +32,8 @@ export interface TimelineProps {
   caption?: ReactNode;
   monthStarts?: number[];
   onRowClick?: (row: number) => void;
+  /** What a mouse resting on a row at a time shows: details of the clip there. */
+  hoverCard?: (row: number, time: number) => ReactNode;
   /** Reports the size available to the timeline. */
   onSize?: (width: number, height: number) => void;
   /** Keeps this row in view. */
@@ -45,6 +47,8 @@ export interface TimelineProps {
 
 const GUTTER_GAP = 12;
 const DRAG_THRESHOLD = 3;
+/** Space between the pointer and the hover card. */
+const CARD_OFFSET = 14;
 
 export function Timeline(props: TimelineProps) {
   const { playback, heights, gap, gutter, labelAbove = 0 } = props;
@@ -223,17 +227,30 @@ export function Timeline(props: TimelineProps) {
     const rect = wrapRef.current!.getBoundingClientRect();
     return xToTime(scaleRef.current, clientX - rect.left - left);
   };
-  const rowAt = (clientY: number): number => {
+  /** The row at a height; with `trackOnly`, not counting a label above it. */
+  const rowAt = (clientY: number, trackOnly = false): number => {
     const rect = wrapRef.current!.getBoundingClientRect();
     const y = clientY - rect.top - top + scrollTopRef.current;
     const { ys } = layoutRef.current;
     for (let i = 0; i < ys.length; i++) {
-      if (y >= ys[i]! - labelAbove && y <= ys[i]! + heights[i]!) return i;
+      if (y >= ys[i]! - (trackOnly ? 0 : labelAbove) && y <= ys[i]! + heights[i]!) return i;
       if (ys[i]! > y) break;
     }
     return -1;
   };
+  // A mouse resting on a track shows a card about the clip under it.
+  const [hover, setHover] = useState<{ x: number; y: number; row: number; time: number } | null>(null);
+  const hoverAt = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!propsRef.current.hoverCard || e.pointerType !== "mouse" || press.current) return setHover(null);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const row = x >= left && x < rect.width - size.scrollbar && y >= top ? rowAt(e.clientY, true) : -1;
+    setHover(row < 0 ? null : { x, y, row, time: timeAt(e.clientX) });
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    setHover(null);
     if (e.button !== 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -249,6 +266,7 @@ export function Timeline(props: TimelineProps) {
     }
   };
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    hoverAt(e);
     const p = press.current;
     if (!p || !p.onTracks) return;
     if (!p.dragging && Math.abs(e.clientX - p.x) > DRAG_THRESHOLD) {
@@ -288,6 +306,16 @@ export function Timeline(props: TimelineProps) {
     );
   }
 
+  const card = hover && props.hoverCard?.(hover.row, hover.time);
+  // Beside the pointer, flipped left or up near the far edges.
+  const cardStyle = hover && {
+    left: hover.x,
+    top: hover.y,
+    transform: `translate(${hover.x > size.width * 0.6 ? `calc(-100% - ${CARD_OFFSET}px)` : `${CARD_OFFSET}px`}, ${
+      hover.y > size.height * 0.5 ? `calc(-100% - ${CARD_OFFSET}px)` : `${CARD_OFFSET}px`
+    })`,
+  };
+
   return (
     <section className="timeline" aria-label={props.name}>
       <div
@@ -297,6 +325,7 @@ export function Timeline(props: TimelineProps) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={() => setHover(null)}
       >
         <canvas ref={canvasRef} style={{ left, width: trackWidth, height: size.height }} />
         <div
@@ -327,6 +356,7 @@ export function Timeline(props: TimelineProps) {
           style={{ top }}
           onScroll={(e) => {
             scrollTopRef.current = e.currentTarget.scrollTop;
+            setHover(null);
             setScrollTop(e.currentTarget.scrollTop);
             redrawRef.current();
           }}
@@ -340,6 +370,11 @@ export function Timeline(props: TimelineProps) {
             )}
           </div>
         </div>
+        {card && cardStyle && (
+          <div className="hover-card" role="tooltip" style={cardStyle}>
+            {card}
+          </div>
+        )}
       </div>
     </section>
   );

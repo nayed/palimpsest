@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { shortenPath } from "../app/format";
 import { day, fixture } from "../data/fixture";
 import { History } from "../data/history";
-import { clipTexts, spanText } from "./notes";
+import { LineHistory } from "../data/lines";
+import { lineClipDetails, lineClips } from "../views/LinesView";
+import { clipAt, clipDates, clipTexts, fileClipDetails, spanText } from "./notes";
 import { rowHeights, shareAt } from "../views/OverviewView";
 import { timeToX, xToTime, yearSegments } from "./scale";
 
@@ -68,5 +70,43 @@ describe("clip notes", () => {
   it("shortens paths from the left", () => {
     expect(shortenPath("a/b.rs", 20)).toBe("a/b.rs");
     expect(shortenPath("alacritty_terminal/src/term/mod.rs", 21)).toBe("…/src/term/mod.rs");
+  });
+});
+
+describe("hover cards", () => {
+  const h = new History(fixture());
+
+  it("find the clip under the pointer", () => {
+    const clips = h.clipsOf(0);
+    expect(clipAt(clips, day(10))).toBe(clips[0]);
+    expect(clipAt(clips, day(31))).toBe(clips[1]);
+    expect(clipAt(clips, day(800))).toBe(clips[1]);
+    expect(clipAt(clips, day(900))).toBeUndefined();
+  });
+
+  it("give a clip's months", () => {
+    expect(clipDates(h.clipsOf(0)[0]!)).toBe("Jan 2020");
+    expect(clipDates(h.clipsOf(1)[0]!)).toBe("Jan 2020 – Mar 2022");
+  });
+
+  it("count a file's commits in the clip, and note a move", () => {
+    expect(fileClipDetails(h, 1, h.clipsOf(1)[0]!)).toEqual(["2 commits, 1 by Bo", "Moved to src/parser/"]);
+    expect(fileClipDetails(h, 0, h.clipsOf(0)[0]!)).toEqual(["1 commit"]);
+    expect(fileClipDetails(h, 0, h.clipsOf(0)[1]!)).toEqual(["No commits for 2 years, then deleted"]);
+  });
+
+  it("say who wrote or rewrote a line, and why", () => {
+    const lines = new LineHistory({
+      format: "palimpsest-lines",
+      version: 1,
+      file: 1,
+      commits: [0, 2, 3],
+      opsStart: [0, 2, 10, 14],
+      ops: [2, 3, 0, 1, 3, 1, 1, 1, 2, 1, 1, 1, 0, 2],
+      texts: ["a", "b", "c", "b2", "d"],
+    });
+    const [written, rewritten] = lineClips(h, lines, 1);
+    expect(lineClipDetails(h, lines, 1, written!)).toEqual(["Wrote the line", "“Start”"]);
+    expect(lineClipDetails(h, lines, 1, rewritten!)).toEqual(["Rewrote the line", "“Move lexer”"]);
   });
 });

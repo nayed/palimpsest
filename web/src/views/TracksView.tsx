@@ -10,7 +10,8 @@ import { Legend } from "../components/Legend";
 import { Transport } from "../components/Transport";
 import type { History } from "../data/history";
 import { useStore } from "../store/store";
-import { clipTexts } from "../timeline/notes";
+import { ClipCard } from "../components/ClipCard";
+import { clipAt, clipTexts, fileClipDetails } from "../timeline/notes";
 import type { RowContent } from "../timeline/renderer";
 import { Timeline, rowsThatFit } from "../timeline/Timeline";
 import { CommitFeed } from "./CommitFeed";
@@ -89,6 +90,11 @@ export function TracksView({ session }: { session: Session }) {
     [h, files, tracks],
   );
 
+  const hoverCard = (i: number, time: number) => {
+    const clip = clipAt(tracks[i]!.clips, time);
+    return clip ? <ClipCard history={h} clip={clip} details={fileClipDetails(h, files[i]!, clip)} /> : null;
+  };
+
   const select = (file: number) => {
     autoPicked.current = false;
     // A second click, or a tap on a phone, opens the file's lines.
@@ -148,6 +154,7 @@ export function TracksView({ session }: { session: Session }) {
       labelAbove={phone ? LABEL_ABOVE : 0}
       label={label}
       content={content}
+      hoverCard={phone ? undefined : hoverCard}
       onRowClick={(i) => {
         const file = files[i];
         if (file !== undefined) select(file);

@@ -9,10 +9,11 @@ import { DateDisplay } from "../components/DateDisplay";
 import { ChevronLeftIcon } from "../components/Icons";
 import { Legend } from "../components/Legend";
 import { Transport } from "../components/Transport";
-import type { History } from "../data/history";
+import type { Clip, History } from "../data/history";
 import type { LineHistory } from "../data/lines";
 import { useStore } from "../store/store";
-import { dirOf } from "../timeline/notes";
+import { ClipCard } from "../components/ClipCard";
+import { clipAt, commitsInClip, dirOf } from "../timeline/notes";
 import type { Marker, RowContent, TrackClip } from "../timeline/renderer";
 import { Timeline } from "../timeline/Timeline";
 import { LineHistoryPanel, effectiveLine, lineAuthor } from "./LinePanels";
@@ -35,6 +36,22 @@ export function lineClips(h: History, lines: LineHistory, line: number): TrackCl
     else out.push({ from, to, author, rank: h.rank(author), texts: [] });
   });
   return out.filter((c) => c.to > c.from || c.to === end);
+}
+
+/** What the hover card says about a line's clip: its commits and why the first was made. */
+export function lineClipDetails(h: History, lines: LineHistory, line: number, clip: Clip): string[] {
+  const commits = commitsInClip(h, lines.versionCommits[line]!, clip);
+  const first = commits[0];
+  if (first === undefined) return [];
+  const born = first === lines.versionCommits[line]![0];
+  const out = [
+    commits.length === 1
+      ? born ? "Wrote the line" : "Rewrote the line"
+      : `${born ? "Wrote" : "Rewrote"} the line, then edited it ${commits.length === 2 ? "once" : `${commits.length - 1} times`}`,
+  ];
+  const subject = h.data.commits.subject[first];
+  if (subject) out.push(`“${subject}”`);
+  return out;
 }
 
 /** Moves of the file, as dashed markers. */
@@ -75,6 +92,12 @@ function LinesTimeline({ session, lines }: { session: Session; lines: LineHistor
     return false;
   });
 
+  const hoverCard = (i: number, time: number) => {
+    const id = lines.order[i]!;
+    const clip = clipAt(clips[i]!, time);
+    return clip ? <ClipCard history={h} clip={clip} details={lineClipDetails(h, lines, id, clip)} /> : null;
+  };
+
   const label = (i: number) => {
     const id = lines.order[i]!;
     const born = lines.born[id]!;
@@ -114,6 +137,7 @@ function LinesTimeline({ session, lines }: { session: Session; lines: LineHistor
       gutter={Math.round(width * 0.44)}
       label={label}
       content={content}
+      hoverCard={hoverCard}
       markers={markers}
       markerSpace={markers.length ? 24 : 18}
       caption="One track per line. The color changes where someone rewrote it."

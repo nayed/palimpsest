@@ -378,6 +378,56 @@
   box-shadow: var(--shadow-menu);
 }
 
+/* The card beside the pointer, about the clip under it */
+
+.hover-card {
+  position: absolute;
+  z-index: 10;
+  width: max-content;
+  max-width: 300px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-menu);
+  background: var(--well);
+  box-shadow: var(--shadow-menu);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.hover-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hover-card-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.hover-card-dates {
+  color: var(--mute);
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hover-card-detail {
+  margin: 0;
+}
+
+.hover-card-detail.quote {
+  color: var(--mute);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .speed-menu {
   bottom: 52px;
   left: 0;
