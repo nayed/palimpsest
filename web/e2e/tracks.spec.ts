@@ -92,6 +92,34 @@ test("resting the mouse on a clip shows who, when and how many commits", async (
   await page.mouse.up();
 });
 
+test("any file can be found, pinned to the top and unpinned", async ({ page }) => {
+  await page.goto("/alacritty/alacritty?at=2021-06-01");
+  const first = page.locator(".row-label").first();
+  await expect(first).toBeVisible();
+  const date = await page.locator(".date").textContent();
+
+  await page.keyboard.press("/");
+  await expect(page.getByRole("combobox", { name: "Find a file" })).toBeFocused();
+  await page.keyboard.type("grid/mod");
+  const option = page.getByRole("option", { name: /alacritty_terminal\/src\/grid\/mod\.rs/ });
+  await option.click();
+
+  // Pinned first and selected; picking did not scrub the tracks under the list.
+  await expect(first.locator(".path-label")).toHaveAttribute("title", "alacritty_terminal/src/grid/mod.rs");
+  await expect(first.locator(".path-label")).toHaveClass(/selected/);
+  await expect(page.locator(".panel-title.mono")).toHaveText("alacritty_terminal/src/grid/mod.rs");
+  await expect(page).toHaveURL(/file=alacritty_terminal%2Fsrc%2Fgrid%2Fmod\.rs|file=alacritty_terminal\/src\/grid\/mod\.rs/);
+  expect(await page.locator(".date").textContent()).toBe(date);
+
+  // The address keeps it pinned.
+  await page.reload();
+  await expect(first.locator(".path-label")).toHaveAttribute("title", "alacritty_terminal/src/grid/mod.rs");
+
+  await page.getByRole("button", { name: "Unpin alacritty_terminal/src/grid/mod.rs" }).click();
+  await expect(page.locator('.path-label[title="alacritty_terminal/src/grid/mod.rs"]')).toHaveCount(0);
+  expect(await page.locator(".date").textContent()).toBe(date);
+});
+
 test("the speed menu changes speed and closes with Escape", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "4× speed" }).click();

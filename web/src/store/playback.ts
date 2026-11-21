@@ -22,6 +22,8 @@ export interface PlayState {
   /** Folder shown in Tracks: "" for the whole repository. */
   folder: string;
   selectedFile: number;
+  /** Files kept in Tracks whatever the folder, first, in the order pinned. */
+  pinned: number[];
   /** A line of the selected file, by its line-history id, or -1. */
   selectedLine: number;
   /** A line number from the URL, resolved once the file's lines load. */
@@ -62,6 +64,7 @@ export class Playback {
       speed: DEFAULT_SPEED,
       folder: "",
       selectedFile: 0,
+      pinned: [],
       selectedLine: -1,
       selectedRow: -1,
       lineNumber: null,
@@ -78,20 +81,24 @@ export class Playback {
   /**
    * Replaces the history with a newer reading of the same repository (a
    * pasted repository arrives in several snapshots). File ids can change
-   * between snapshots, so the selected file is found again by its path.
+   * between snapshots, so the selected and pinned files are found again by
+   * their paths.
    */
   setHistory(next: History): void {
     const prev = this.current;
     const s = this.state;
     const commit = prev.commitAt(s.time);
-    let file = -1;
-    if (s.selectedFile >= 0 && s.selectedFile < prev.fileCount) {
-      const path = prev.pathAt(s.selectedFile, Math.max(commit, prev.born(s.selectedFile)));
-      for (let f = 0; f < next.fileCount && file < 0; f++) if (next.pathsOf(f).some((p) => p.path === path)) file = f;
-    }
+    const find = (old: number): number => {
+      if (old < 0 || old >= prev.fileCount) return -1;
+      const path = prev.pathAt(old, Math.max(commit, prev.born(old)));
+      for (let f = 0; f < next.fileCount; f++) if (next.pathsOf(f).some((p) => p.path === path)) return f;
+      return -1;
+    };
+    const file = find(s.selectedFile);
     this.current = next;
     this.store.set({
       selectedFile: file,
+      pinned: s.pinned.map(find).filter((f) => f >= 0),
       selectedLine: file === s.selectedFile ? s.selectedLine : -1,
       historyVersion: s.historyVersion + 1,
       time: Math.min(next.end, Math.max(next.start, s.time)),

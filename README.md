@@ -18,7 +18,7 @@ Tools like [Gource](https://gource.io) animate a repository as a tree of files. 
 ## Three views of one moment
 
 - **Overview**: one track per folder, taller for bigger folders, with who wrote the code that exists on the day you are looking at.
-- **Tracks**: one track per file, and the selected file exactly as it was at the playhead.
+- **Tracks**: one track per file, and the selected file exactly as it was at the playhead. The busiest files are shown; find any other by name (press /) to pin it.
 - **Lines**: one track per line of a file, changing color where someone rewrote it, with each line's story: who touched it, when, and the reason they gave.
 
 The playhead is shared: the date stays the same as you move between views. Every moment has its own address, so any point in any repository is a link you can share.

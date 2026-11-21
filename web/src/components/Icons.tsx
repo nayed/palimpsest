@@ -65,3 +65,12 @@ export function ChevronDownIcon() {
     </svg>
   );
 }
+
+/** A pushpin, for pinned files. */
+export function PinIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" {...stroke} strokeWidth={1.4} aria-hidden="true">
+      <path d="M5 1.5h4M5.6 1.5 5 6 3 8h8L9 6l-.6-4.5M7 8v4.5" />
+    </svg>
+  );
+}

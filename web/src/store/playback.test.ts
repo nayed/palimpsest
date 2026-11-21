@@ -53,4 +53,14 @@ describe("Playback", () => {
     p.seek(day(10));
     expect(calls).toBe(1);
   });
+
+  it("finds the selected and pinned files again in a new reading", () => {
+    const p = new Playback(h, { selectedFile: 1, pinned: [1, 0] });
+    // The next reading lists the files the other way round.
+    const data = fixture();
+    const next = new History({ ...data, files: { ...data.files, pathStart: [0, 2, 3, 4], path: [1, 2, 0, 3], born: [0, 0, 3], died: [-1, 3, -1] } });
+    p.setHistory(next);
+    expect(next.latestPath(p.state.selectedFile)).toBe("src/parser/lexer.rs");
+    expect(p.state.pinned.map((f) => next.latestPath(f))).toEqual(["src/parser/lexer.rs", "a.rs"]);
+  });
 });

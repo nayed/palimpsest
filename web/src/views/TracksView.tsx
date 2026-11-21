@@ -6,6 +6,8 @@ import { useViewKeys } from "../app/keys";
 import { useLineHistory, type Session } from "../app/session";
 import { AuthorChip } from "../components/AuthorChip";
 import { DateDisplay } from "../components/DateDisplay";
+import { FileFinder } from "../components/FileFinder";
+import { PinIcon } from "../components/Icons";
 import { Legend } from "../components/Legend";
 import { Transport } from "../components/Transport";
 import type { History } from "../data/history";
@@ -63,14 +65,29 @@ export function TracksView({ session }: { session: Session }) {
   const row = phone ? ROW.phone : ROW.desktop;
   const gap = phone ? GAP.phone : GAP.desktop;
 
-  const files = useMemo(() => (fit ? h.pickFiles(folder, fit) : []), [h, folder, fit]);
+  const pinned = useStore(store, (s) => s.pinned);
+  const picked = useMemo(() => (fit ? h.pickFiles(folder, fit) : []), [h, folder, fit]);
+  // Pinned files first, then the busiest of the folder in the rows left.
+  const files = useMemo(() => {
+    if (!fit) return [];
+    const pins = pinned.filter((f) => f >= 0 && f < h.fileCount);
+    return [...pins, ...picked.filter((f) => !pins.includes(f))].slice(0, Math.max(fit, pins.length));
+  }, [h, fit, pinned, picked]);
+  const finderRef = useRef<HTMLInputElement>(null);
+
+  // A file chosen elsewhere (an address, a search) that is not shown is pinned.
+  const autoPicked = useRef(false);
+  useEffect(() => {
+    if (!files.length || selected < 0 || selected >= h.fileCount || files.includes(selected) || autoPicked.current) return;
+    store.set({ pinned: [...store.get().pinned, selected] });
+  }, [files, selected, h, store]);
 
   // With nothing shown selected, select the most-committed file that exists at
   // the playhead. A file picked this way, not by the person, is picked again
   // when playback stops or the playhead moves where it does not exist.
-  const autoPicked = useRef(false);
   useEffect(() => {
     if (!files.length) return;
+    if (selected >= 0 && !autoPicked.current && !files.includes(selected)) return; // being pinned
     if (files.includes(selected) && (playing || !autoPicked.current || h.existsAt(selected, commit))) return;
     const byCommits = [...files].sort((a, b) => h.data.files.commits[b]! - h.data.files.commits[a]!);
     const pick = byCommits.find((f) => h.existsAt(f, commit)) ?? byCommits[0]!;
@@ -95,6 +112,21 @@ export function TracksView({ session }: { session: Session }) {
     return clip ? <ClipCard history={h} clip={clip} details={fileClipDetails(h, files[i]!, clip)} /> : null;
   };
 
+  const find = (file: number) => {
+    autoPicked.current = false;
+    playback.pause();
+    const pins = store.get().pinned;
+    const add = !pins.includes(file) && !picked.includes(file);
+    store.set({ selectedFile: file, selectedLine: -1, ...(add ? { pinned: [...pins, file] } : {}) });
+  };
+  const unpin = (file: number) => {
+    const pins = store.get().pinned.filter((f) => f !== file);
+    // An unpinned selection that leaves the list goes back to the default.
+    const leaves = file === store.get().selectedFile && !picked.includes(file);
+    if (leaves) autoPicked.current = true;
+    store.set({ pinned: pins, ...(leaves ? { selectedFile: -1, selectedLine: -1 } : {}) });
+  };
+
   const select = (file: number) => {
     autoPicked.current = false;
     // A second click, or a tap on a phone, opens the file's lines.
@@ -110,6 +142,10 @@ export function TracksView({ session }: { session: Session }) {
         autoPicked.current = false;
         store.set({ selectedFile: next, selectedLine: -1 });
       }
+      return true;
+    }
+    if (e.key === "/" && !phone) {
+      finderRef.current?.focus();
       return true;
     }
     if (e.key === "Enter" && selected >= 0) {
@@ -136,12 +172,28 @@ export function TracksView({ session }: { session: Session }) {
         : h.born(file) === commit
           ? ", new"
           : "";
-    const shown = phone ? relativeTo(folder, path) : shortenPath(relativeTo(folder, path), LABEL_CHARS);
+    const isPinned = pinned.includes(file);
+    const shown = phone ? relativeTo(folder, path) : shortenPath(relativeTo(folder, path), LABEL_CHARS - (isPinned ? 3 : 0));
     return (
-      <span className={classes.join(" ")} title={path}>
-        {shown}
-        {status}
-      </span>
+      <>
+        <span className={classes.join(" ")} title={path}>
+          {shown}
+          {status}
+        </span>
+        {isPinned && (
+          <button
+            type="button"
+            className="unpin"
+            aria-label={`Unpin ${path}`}
+            title="Pinned. Click to unpin"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onClick={() => unpin(file)}
+          >
+            <PinIcon />
+          </button>
+        )}
+      </>
     );
   };
 
@@ -155,6 +207,7 @@ export function TracksView({ session }: { session: Session }) {
       label={label}
       content={content}
       hoverCard={phone ? undefined : hoverCard}
+      caption={<FileFinder ref={finderRef} history={h} onPick={find} />}
       onRowClick={(i) => {
         const file = files[i];
         if (file !== undefined) select(file);

@@ -573,6 +573,101 @@
   color: var(--mute);
 }
 
+/* Find a file, over the Tracks file names */
+
+.file-finder {
+  position: relative;
+  width: 100%;
+}
+
+.file-finder-input {
+  width: 100%;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--line-input);
+  border-radius: var(--radius-chip);
+  background: var(--well);
+  font-family: var(--font-code);
+  font-size: 12px;
+}
+
+.file-finder-input::placeholder {
+  color: var(--mute);
+}
+
+.file-finder-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.file-finder-list {
+  top: calc(100% + 6px);
+  left: 0;
+  width: 420px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  list-style: none;
+  z-index: 20;
+  white-space: normal;
+}
+
+.file-finder-list.up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.file-finder-option {
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-radius: var(--radius-chip);
+  cursor: pointer;
+}
+
+.file-finder-option.active {
+  background: var(--selected-row);
+}
+
+.file-finder-path {
+  color: var(--fg);
+  font-family: var(--font-code);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.file-finder-path mark,
+.file-finder-meta mark {
+  background: none;
+  color: var(--now);
+}
+
+.file-finder-meta,
+.file-finder-empty {
+  color: var(--mute);
+  font-size: 12px;
+}
+
+.file-finder-empty {
+  padding: 6px 8px;
+}
+
+.unpin {
+  flex: 0 0 auto;
+  margin-left: 4px;
+  padding: 3px;
+  display: flex;
+  border: none;
+  border-radius: var(--radius-chip);
+  background: none;
+  color: var(--mute);
+}
+
+.unpin:hover {
+  background: var(--well);
+  color: var(--fg);
+}
+
 .path-label {
   max-width: 100%;
   padding: 2px 5px;

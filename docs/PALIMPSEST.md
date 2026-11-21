@@ -268,6 +268,7 @@ Reading a pasted repository happens in two passes, which is why the loading scre
 | ↑ ↓ | Move the selection between rows |
 | Enter | Open the selected folder or file in the next view down |
 | Escape | Go back up one view, or close a menu |
+| / | Find a file (Tracks, added after the MVP) |
 
 Shortcuts are ignored while a text field has focus. Everything is also reachable with Tab, with a visible focus ring.
 
@@ -421,7 +422,7 @@ Do not build these now.
 - ~~**Hover details** on a clip: who, which dates, how many commits.~~ Built after the MVP: a card beside the mouse in Tracks and Lines (not on phones). In Lines it also gives the reason of the commit that wrote the line.
 - **An about panel** in the header: one sentence on what this is, a link to the source and to the author.
 - **Bespoke phone layouts** for Overview and Lines.
-- **Pinning and searching files** in Tracks beyond the basic pin.
+- ~~**Pinning and searching files** in Tracks beyond the basic pin.~~ Built after the MVP: a "Find a file" field over the file names (press /) matches any path a file ever had, busiest first, with file-name matches counting more. Picking one pauses, selects it and pins it to the top of the list, whatever the folder; a pin button on its label unpins it. A file named in the address that is not among the busiest is pinned the same way. Pins are kept while the tab is open, not in the address. Not on phones yet.
 - **Other colorings.** An early design had a "Color by" switch (age, author, churn). Only author survived; the renderer should not make another one impossible.
 - **Release tags** as markers on the ruler.
 - **Hosts other than GitHub**, and private repositories.

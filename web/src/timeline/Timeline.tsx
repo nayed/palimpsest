@@ -241,7 +241,8 @@ export function Timeline(props: TimelineProps) {
   // A mouse resting on a track shows a card about the clip under it.
   const [hover, setHover] = useState<{ x: number; y: number; row: number; time: number } | null>(null);
   const hoverAt = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!propsRef.current.hoverCard || e.pointerType !== "mouse" || press.current) return setHover(null);
+    const overCaption = (e.target as HTMLElement).closest(".timeline-caption");
+    if (!propsRef.current.hoverCard || e.pointerType !== "mouse" || press.current || overCaption) return setHover(null);
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
