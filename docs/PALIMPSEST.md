@@ -426,7 +426,7 @@ Do not build these now.
 - **Release tags** as markers on the ruler.
 - **Hosts other than GitHub**, and private repositories.
 - **Merge-aware history** instead of first-parent only.
-- **A logo mark and favicon**, once designed.
+- ~~**A logo mark and favicon**, once designed.~~ Built after the MVP: the files are in `docs/logo/` (its README gives the geometry), the icons and web app manifest in `web/public/`, and the mark sits before the live-text wordmark in the header. Only the dark version exists.
 - **The light theme** and the sun and moon switch, as in `design/screens/light/`.
 
 ---

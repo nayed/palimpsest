@@ -1,4 +1,4 @@
-# Palimpsest
+# <img src="./docs/logo/logo-mark.svg" width="40" height="40" alt="" align="top"> Palimpsest
 [![Test and deploy](https://github.com/nayed/palimpsest/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/nayed/palimpsest/actions/workflows/deploy.yml)
 
 ![The Archimedes Palimpsest](./docs/images/The_Archimedes_Palimpsest.jpg "The Archimedes Palimpsest")
