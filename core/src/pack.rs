@@ -189,9 +189,27 @@ fn object_id(kind: Kind, data: &[u8]) -> Oid {
     Oid(h.digest().bytes())
 }
 
-impl Pack {
-    /// Indexes a pack. `progress` is called with (entries done, entries).
-    pub fn index(data: Vec<u8>, progress: &mut dyn FnMut(usize, usize)) -> Result<Pack> {
+/// Indexes a pack a step at a time, so a caller with other work (the
+/// browser's worker, answering messages) can do it in slices. Two passes over
+/// the entries: their headers, then resolving each object for its id.
+pub struct PackIndexer {
+    pack: Pack,
+    count: usize,
+    /// Pass 1: the next entry, where its header starts, and entries by offset.
+    next: usize,
+    pos: usize,
+    by_offset: HashMap<usize, u32>,
+    /// Pass 2: entries left to resolve, the next one, those whose base (named
+    /// by id) was not indexed yet, and how many are resolved.
+    pending: Vec<u32>,
+    cursor: usize,
+    left: Vec<u32>,
+    resolved: usize,
+    done: bool,
+}
+
+impl PackIndexer {
+    pub fn new(data: Vec<u8>) -> Result<PackIndexer> {
         if data.len() < 12 || &data[..4] != b"PACK" {
             return Err(err("not a pack file"));
         }
@@ -200,102 +218,172 @@ impl Pack {
             return Err(err(format!("unsupported pack version {version}")));
         }
         let count = u32::from_be_bytes(data[8..12].try_into().unwrap()) as usize;
+        Ok(PackIndexer {
+            pack: Pack {
+                data,
+                entries: Vec::with_capacity(count),
+                ids: HashMap::with_capacity(count),
+                cache: RefCell::default(),
+            },
+            count,
+            next: 0,
+            pos: 12,
+            by_offset: HashMap::with_capacity(count),
+            pending: Vec::new(),
+            cursor: 0,
+            left: Vec::new(),
+            resolved: 0,
+            done: count == 0,
+        })
+    }
 
-        // Pass 1: entry headers and where each one's data starts.
-        let mut entries = Vec::with_capacity(count);
-        let mut by_offset: HashMap<usize, u32> = HashMap::with_capacity(count);
-        let mut pos = 12;
-        for i in 0..count {
-            let start = pos;
-            let mut b = *data.get(pos).ok_or_else(|| err("truncated pack"))?;
-            pos += 1;
-            let kind = (b >> 4) & 7;
-            let mut size = (b & 0x0f) as usize;
-            let mut shift = 4;
-            while b & 0x80 != 0 {
-                b = *data.get(pos).ok_or_else(|| err("truncated pack"))?;
-                pos += 1;
-                size |= ((b & 0x7f) as usize) << shift;
-                shift += 7;
+    /// (steps done, steps in all): each entry counts twice, once per pass.
+    pub fn progress(&self) -> (usize, usize) {
+        (self.next + self.resolved, self.count * 2)
+    }
+
+    pub fn is_done(&self) -> bool {
+        self.done
+    }
+
+    /// Indexes up to `n` more entries. Returns whether indexing is finished.
+    pub fn step(&mut self, n: usize) -> Result<bool> {
+        for _ in 0..n {
+            if self.done {
+                break;
             }
-            let (kind, base) = match kind {
-                1 => (Some(Kind::Commit), Base::None),
-                2 => (Some(Kind::Tree), Base::None),
-                3 => (Some(Kind::Blob), Base::None),
-                4 => (Some(Kind::Tag), Base::None),
-                6 => {
-                    let mut b = *data.get(pos).ok_or_else(|| err("truncated pack"))?;
-                    pos += 1;
-                    let mut back = (b & 0x7f) as usize;
-                    while b & 0x80 != 0 {
-                        b = *data.get(pos).ok_or_else(|| err("truncated pack"))?;
-                        pos += 1;
-                        back = ((back + 1) << 7) | (b & 0x7f) as usize;
-                    }
-                    let base_at = start
-                        .checked_sub(back)
-                        .ok_or_else(|| err("delta base before the pack"))?;
-                    let base = *by_offset
-                        .get(&base_at)
-                        .ok_or_else(|| err("delta base not found"))?;
-                    (None, Base::Entry(base))
-                }
-                7 => {
-                    let id = data
-                        .get(pos..pos + 20)
-                        .ok_or_else(|| err("truncated pack"))?;
-                    pos += 20;
-                    (None, Base::Id(Oid(id.try_into().unwrap())))
-                }
-                k => return Err(err(format!("unknown pack entry type {k}"))),
-            };
-            // Skip the compressed data by inflating it.
-            let (_, used) = inflate(&data[pos..], size)?;
-            entries.push(Entry {
-                data: pos as u32,
-                size: size as u32,
-                kind,
-                base,
-            });
-            by_offset.insert(start, i as u32);
-            pos += used;
-            if i % 512 == 0 {
-                progress(i, count * 2);
+            if self.next < self.count {
+                self.header()?;
+            } else {
+                self.resolve_next()?;
             }
         }
+        Ok(self.done)
+    }
 
-        let mut pack = Pack {
-            data,
-            entries,
-            ids: HashMap::with_capacity(count),
-            cache: RefCell::default(),
-        };
+    /// The indexed pack. Call once [`PackIndexer::step`] says it is finished.
+    pub fn finish(self) -> Result<Pack> {
+        if !self.done {
+            return Err(err("the pack is not indexed yet"));
+        }
+        Ok(self.pack)
+    }
 
-        // Pass 2: resolve every object to learn its kind and id. Bases named
-        // by id may come later in the pack, so repeat until nothing changes.
-        let mut pending: Vec<u32> = (0..count as u32).collect();
-        while !pending.is_empty() {
-            let mut left = Vec::new();
-            for &e in &pending {
-                match pack.resolve(e) {
-                    Ok((kind, obj)) => {
-                        pack.entries[e as usize].kind = Some(kind);
-                        pack.ids.insert(object_id(kind, &obj), e);
-                    }
-                    Err(_) if matches!(pack.entries[e as usize].base, Base::Id(_)) => left.push(e),
-                    Err(e) => return Err(e),
+    /// Pass 1, one entry: its header, and where its data starts and ends.
+    fn header(&mut self) -> Result<()> {
+        let data = &self.pack.data;
+        let i = self.next;
+        let start = self.pos;
+        let mut pos = self.pos;
+        let mut b = *data.get(pos).ok_or_else(|| err("truncated pack"))?;
+        pos += 1;
+        let kind = (b >> 4) & 7;
+        let mut size = (b & 0x0f) as usize;
+        let mut shift = 4;
+        while b & 0x80 != 0 {
+            b = *data.get(pos).ok_or_else(|| err("truncated pack"))?;
+            pos += 1;
+            size |= ((b & 0x7f) as usize) << shift;
+            shift += 7;
+        }
+        let (kind, base) = match kind {
+            1 => (Some(Kind::Commit), Base::None),
+            2 => (Some(Kind::Tree), Base::None),
+            3 => (Some(Kind::Blob), Base::None),
+            4 => (Some(Kind::Tag), Base::None),
+            6 => {
+                let mut b = *data.get(pos).ok_or_else(|| err("truncated pack"))?;
+                pos += 1;
+                let mut back = (b & 0x7f) as usize;
+                while b & 0x80 != 0 {
+                    b = *data.get(pos).ok_or_else(|| err("truncated pack"))?;
+                    pos += 1;
+                    back = ((back + 1) << 7) | (b & 0x7f) as usize;
                 }
-                if e % 512 == 0 {
-                    progress(count + e as usize, count * 2);
-                }
+                let base_at = start
+                    .checked_sub(back)
+                    .ok_or_else(|| err("delta base before the pack"))?;
+                let base = *self
+                    .by_offset
+                    .get(&base_at)
+                    .ok_or_else(|| err("delta base not found"))?;
+                (None, Base::Entry(base))
             }
-            if left.len() == pending.len() {
+            7 => {
+                let id = data
+                    .get(pos..pos + 20)
+                    .ok_or_else(|| err("truncated pack"))?;
+                pos += 20;
+                (None, Base::Id(Oid(id.try_into().unwrap())))
+            }
+            k => return Err(err(format!("unknown pack entry type {k}"))),
+        };
+        // Skip the compressed data by inflating it.
+        let (_, used) = inflate(&data[pos..], size)?;
+        self.pack.entries.push(Entry {
+            data: pos as u32,
+            size: size as u32,
+            kind,
+            base,
+        });
+        self.by_offset.insert(start, i as u32);
+        self.pos = pos + used;
+        self.next += 1;
+        if self.next == self.count {
+            // On to pass 2.
+            self.by_offset = HashMap::new();
+            self.pending = (0..self.count as u32).collect();
+        }
+        Ok(())
+    }
+
+    /// Pass 2, one entry: resolve it to learn its kind and id. Bases named by
+    /// id may come later in the pack, so entries left go round again until
+    /// nothing changes.
+    fn resolve_next(&mut self) -> Result<()> {
+        if self.cursor == self.pending.len() {
+            if self.left.is_empty() {
+                self.done = true;
+                return Ok(());
+            }
+            if self.left.len() == self.pending.len() {
                 return Err(err("a delta's base is missing from the pack"));
             }
-            pending = left;
+            self.pending = std::mem::take(&mut self.left);
+            self.cursor = 0;
         }
-        progress(count * 2, count * 2);
-        Ok(pack)
+        let e = self.pending[self.cursor];
+        self.cursor += 1;
+        match self.pack.resolve(e) {
+            Ok((kind, obj)) => {
+                self.pack.entries[e as usize].kind = Some(kind);
+                self.pack.ids.insert(object_id(kind, &obj), e);
+                self.resolved += 1;
+            }
+            Err(_) if matches!(self.pack.entries[e as usize].base, Base::Id(_)) => {
+                self.left.push(e)
+            }
+            Err(e) => return Err(e),
+        }
+        if self.cursor == self.pending.len() && self.left.is_empty() {
+            self.done = true;
+        }
+        Ok(())
+    }
+}
+
+impl Pack {
+    /// Indexes a pack in one go. `progress` is called with (steps done,
+    /// steps in all). [`PackIndexer`] does the same a step at a time.
+    pub fn index(data: Vec<u8>, progress: &mut dyn FnMut(usize, usize)) -> Result<Pack> {
+        let mut ix = PackIndexer::new(data)?;
+        while !ix.step(512)? {
+            let (done, all) = ix.progress();
+            progress(done, all);
+        }
+        let (_, all) = ix.progress();
+        progress(all, all);
+        ix.finish()
     }
 
     pub fn len(&self) -> usize {

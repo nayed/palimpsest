@@ -8,7 +8,9 @@ use palimpsest_core::diff::{FileChange, diff_commit, line_edit_for};
 use palimpsest_core::format::Partial;
 use std::collections::HashMap;
 
-use palimpsest_core::pack::{Kind, Mailmap, Pack, PackSource, oid_from_hex, parse_commit};
+use palimpsest_core::pack::{
+    Kind, Mailmap, Pack, PackIndexer, PackSource, oid_from_hex, parse_commit,
+};
 use palimpsest_core::source::{Oid, RawCommit, Source};
 use palimpsest_core::tags::{RawTag, release_commits, releases};
 use palimpsest_core::{Options, Output, assemble_all};
@@ -16,19 +18,6 @@ use wasm_bindgen::prelude::*;
 
 fn js<E: std::fmt::Display>(e: E) -> JsError {
     JsError::new(&e.to_string())
-}
-
-fn report(progress: &js_sys::Function, done: usize, total: usize) {
-    let _ = progress.call2(
-        &JsValue::NULL,
-        &(done as f64).into(),
-        &(total as f64).into(),
-    );
-}
-
-fn open(pack: Vec<u8>, head: &str, progress: &js_sys::Function) -> Result<PackSource, JsError> {
-    let pack = Pack::index(pack, &mut |d, t| report(progress, d, t)).map_err(js)?;
-    PackSource::new(pack, oid_from_hex(head).map_err(js)?).map_err(js)
 }
 
 #[wasm_bindgen]
@@ -48,6 +37,9 @@ pub struct Reader {
     /// The repository's tags, and the times of their commits found so far.
     tags: Vec<RawTag>,
     tag_times: HashMap<Oid, i64>,
+    /// While the pack is being indexed, a step at a time: the indexer and the
+    /// newest commit's id.
+    indexing: Option<(PackIndexer, Oid)>,
 }
 
 #[wasm_bindgen]
@@ -69,21 +61,22 @@ impl Reader {
             lines_done: 0,
             tags: Vec::new(),
             tag_times: HashMap::new(),
+            indexing: None,
         }
     }
 
-    /// Indexes the repository's pack and lists its first-parent commits.
-    /// Returns how many there are. `progress(done, total)` follows indexing.
-    /// `tag_names` and `tag_commits` (hex ids, peeled) are the repository's tags.
-    pub fn load(
+    /// Starts loading the repository's pack: call [`Reader::index`] until it
+    /// is done. `tag_names` and `tag_commits` (hex ids, peeled) are the
+    /// repository's tags.
+    pub fn begin(
         &mut self,
         pack: Vec<u8>,
         head: &str,
         tag_names: Vec<String>,
         tag_commits: Vec<String>,
-        progress: &js_sys::Function,
-    ) -> Result<u32, JsError> {
-        let src = open(pack, head, progress)?;
+    ) -> Result<(), JsError> {
+        let head = oid_from_hex(head).map_err(js)?;
+        self.indexing = Some((PackIndexer::new(pack).map_err(js)?, head));
         self.tags = tag_names
             .into_iter()
             .zip(tag_commits)
@@ -96,6 +89,23 @@ impl Reader {
                 })
             })
             .collect();
+        Ok(())
+    }
+
+    /// Indexes up to `n` more pack entries. Returns the share done, 0 to 1;
+    /// at 1 the pack is indexed and its first-parent commits listed (see
+    /// [`Reader::commit_count`]). Done in steps so the worker can answer
+    /// messages in between: a big pack takes tens of seconds.
+    pub fn index(&mut self, n: u32) -> Result<f64, JsError> {
+        let Some((ix, _)) = self.indexing.as_mut() else {
+            return Ok(1.0);
+        };
+        if !ix.step(n as usize).map_err(js)? {
+            let (done, all) = ix.progress();
+            return Ok(done as f64 / all.max(1) as f64);
+        }
+        let (ix, head) = self.indexing.take().unwrap();
+        let src = PackSource::new(ix.finish().map_err(js)?, head).map_err(js)?;
         for id in release_commits(&self.tags) {
             if let Ok(c) = src.commit(id) {
                 self.tag_times.insert(id, c.time);
@@ -107,7 +117,13 @@ impl Reader {
         self.diffs = vec![Vec::new(); self.chain.len()];
         self.first_read = self.chain.len();
         self.src = Some(src);
-        Ok(self.chain.len() as u32)
+        Ok(1.0)
+    }
+
+    /// First-parent commits in the history, once the pack is indexed.
+    #[wasm_bindgen(js_name = commitCount)]
+    pub fn commit_count(&self) -> u32 {
+        self.chain.len() as u32
     }
 
     /// Reads up to `n` more commits, newest first. Returns how many have

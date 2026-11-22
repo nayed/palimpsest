@@ -8,7 +8,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 
 use palimpsest_core::git::GitSource;
-use palimpsest_core::pack::{Pack, PackSource, oid_from_hex};
+use palimpsest_core::pack::{Pack, PackIndexer, PackSource, oid_from_hex};
 use palimpsest_core::{Options, build_all};
 
 fn git(dir: &Path, args: &[&str], day: u32) -> String {
@@ -93,4 +93,21 @@ fn a_pack_reads_like_the_repository() {
     assert_eq!(from_pack.data, from_disk.data);
     assert_eq!(from_pack.lines, from_disk.lines);
     assert!(from_pack.data.authors.name.contains(&"Bo Kim".to_string()));
+
+    // Indexed a few entries at a time, as the browser does, it is the same.
+    let mut ix = PackIndexer::new(pack_of(dir)).unwrap();
+    let mut steps = 0;
+    let mut last = 0;
+    while !ix.step(3).unwrap() {
+        let (done, all) = ix.progress();
+        assert!(done > last && done <= all, "progress moves forward");
+        last = done;
+        steps += 1;
+    }
+    assert!(steps > 10, "indexed in many steps");
+    let stepped = PackSource::new(ix.finish().unwrap(), oid_from_hex(&head).unwrap()).unwrap();
+    assert_eq!(
+        build_all(&stepped, &opts, &mut |_, _| {}).unwrap().data,
+        from_disk.data
+    );
 }
