@@ -249,7 +249,8 @@ Reading a pasted repository happens in two passes, which is why the loading scre
 
 - When a repository has more commits than the limit: the heading "Too big for one browser tab", then "This repository has <n> commits. Palimpsest reads history inside your browser, and it stops at <limit> so the tab stays responsive.", and a "Back to the demo repo" link. The play controls are disabled and the track area shows empty dashed rows with "Nothing is loaded yet. Tracks will appear here."
 - **The limit is 50,000 commits (Decided).** Keep it in one constant; if measurements show a tab cannot handle it comfortably, tell the author. It counts every commit the default branch reaches, as GitHub's commit count does, read from the header of a commits-only pack, so a huge repository is refused in under a second without downloading it.
-- The two partial-load options in the mockup (the last 2 years, one folder) are later features. Leave room for them in the layout.
+- **Loading part of it (built after the MVP).** Beside the message, "Load part of it instead" offers windows of recent history: the longest of 2 years, 1 year, 6 months, 3 months or 1 month that fits under the limit (the main, yellow button), and the last 3 months as a quicker second choice. Each says roughly how many commits it holds and when it starts ("About 36,000 commits, back to November 2025"); each count is one header-only shallow request (`deepen-since` with `filter tree:0`). If even the last month is over the limit, only the message is shown. The mockup's "one folder, all of its history" was dropped: GitHub refuses folder filters (`sparse:oid`), so it would mean downloading every commit and folder listing of the whole repository, the very thing the limit avoids.
+- A window is downloaded as a shallow pack (`deepen-since`), and the address carries it (`since=2025-11-22`), so a window can be shared and reloaded. The core stops the first-parent walk where the window's commits end; the window's first commit stands for the code already there, credited to a stand-in author drawn in its own color (`--author-earlier`, faded parchment) and named "Before Nov 2025" in the legend, the who-wrote bar and hover cards. That commit is shown as "The loaded history starts here", and its lines as "Already there when the loaded history starts".
 - Reuse the same layout for the other failures, with one sentence each: the URL is not a repository, the repository is private or does not exist, the network or the proxy failed. Each offers the way back to the demo repository. Write these messages in the same plain voice.
 
 ### Phone (`08-phone-tracks`)
@@ -282,7 +283,7 @@ Shortcuts are ignored while a text field has focus. Everything is also reachable
 
 `/` alone is the demo repository at its latest commit, in Tracks, playing. Update the address as the state changes, without adding a history entry for every frame of a scrub.
 
-While playing, the moment keeps moving, so the address leaves out `at`, `line` and, in Overview and Tracks, `file`. Lines keeps its `file`, since it shows nothing without one: reloading a playing Lines plays that file from the start.
+A window of a repository too big to read whole adds `since=YYYY-MM-DD`. While playing, the moment keeps moving, so the address leaves out `at`, `line` and, in Overview and Tracks, `file`. Lines keeps its `file`, since it shows nothing without one: reloading a playing Lines plays that file from the start.
 
 ---
 
@@ -298,6 +299,7 @@ While playing, the moment keeps moving, so the address leaves out `at`, `line` a
 | 4th | Apricot | `#e3975a` | `#d0792a` |
 | 5th | Pink | `#d078a0` | `#fd9ac6` |
 | Others | Gray | `#6a676f` | `#8b857f` |
+| Before a loaded window | Faded parchment | `#8a7e68` | `#b3a284` |
 | Untouched | Hatched gray | see `--untouched` | see `--untouched` |
 | Now | Yellow-green | `#e4f26b` | `#e4f26b` |
 
@@ -422,7 +424,7 @@ The dark theme comes along from step 2. Light is not built for now.
 
 Do not build these now.
 
-- **Loading part of a big repository:** the last 2 years, or one folder with all of its history (`07-too-big`).
+- ~~**Loading part of a big repository:** the last 2 years, or one folder with all of its history (`07-too-big`).~~ Built after the MVP as windows of recent history; the folder option proved impossible (see Too big).
 - ~~**Hover details** on a clip: who, which dates, how many commits.~~ Built after the MVP: a card beside the mouse in Tracks and Lines (not on phones). In Lines it also gives the reason of the commit that wrote the line.
 - ~~**An about panel** in the header: one sentence on what this is, a link to the source and to the author.~~ Built after the MVP: an "About" button at the far right of the header (where the theme switch was designed), an "i" icon beside the repository button on phones. Its panel opens under it like the repository menu: one sentence, how to read the timeline (colors, Others, hatching, release ticks, the veil), the keyboard shortcuts (not on phones), and a footer saying everything runs in the browser, with the author linked to their GitHub profile and the source. Escape or a click elsewhere closes it.
 - ~~**Bespoke phone layouts** for Overview and Lines.~~ Built after the MVP: see Phone above.
