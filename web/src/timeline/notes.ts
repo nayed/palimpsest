@@ -89,7 +89,7 @@ export function fileClipDetails(history: History, file: number, clip: Clip): str
       ...(later ? [`then ${later === 1 ? "1 commit" : `${later.toLocaleString("en-US")} commits`}`] : []),
     ];
   }
-  const theirs = commits.filter((c) => history.data.commits.author[c] === clip.author).length;
+  const theirs = commits.filter((c) => history.changeAuthor(file, c) === clip.author).length;
   const first = history.authorName(clip.author).split(" ")[0];
   const count = commits.length === 1 ? "1 commit" : `${commits.length.toLocaleString("en-US")} commits`;
   const out = [

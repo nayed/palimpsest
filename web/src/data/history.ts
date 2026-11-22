@@ -9,6 +9,8 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 export interface FileChange {
   commit: number;
   file: number;
+  /** Who wrote it: for a merge, whoever last changed the file on the merged branches. */
+  author: number;
   kind: number;
   added: number;
   deleted: number;
@@ -70,9 +72,30 @@ export class History {
     const out: FileChange[] = [];
     if (commit < 0) return out;
     for (let k = c.start[commit]!; k < c.start[commit + 1]!; k++) {
-      out.push({ commit, file: c.file[k]!, kind: c.kind[k]!, added: c.added[k]!, deleted: c.deleted[k]! });
+      out.push({
+        commit,
+        file: c.file[k]!,
+        author: c.author?.[k] ?? this.data.commits.author[commit]!,
+        kind: c.kind[k]!,
+        added: c.added[k]!,
+        deleted: c.deleted[k]!,
+      });
     }
     return out;
+  }
+
+  /**
+   * Who wrote what a commit did to a file: for a merge, whoever last changed
+   * it on the merged branches (a rollup's file goes to its pull request's
+   * author); otherwise, and for a commit that did not change it, the commit's author.
+   */
+  changeAuthor(file: number, commit: number): number {
+    // Straight from the columns: called for every line of a big file.
+    const c = this.data.changes;
+    if (c.author && commit >= 0) {
+      for (let k = c.start[commit]!; k < c.start[commit + 1]!; k++) if (c.file[k] === file) return c.author[k]!;
+    }
+    return this.data.commits.author[commit]!;
   }
 
   /** Commits that changed `file`, oldest first. */

@@ -57,6 +57,9 @@ export interface Data {
     /** 0 added, 1 modified, 2 deleted, 3 renamed. */
     kind: number[];
     added: number[];
+    /** Who wrote each change: for a merge, whoever last changed the file on
+        the merged branches. Missing from older files: the commit's author. */
+    author?: number[];
     deleted: number[];
   };
   clips: Clips;

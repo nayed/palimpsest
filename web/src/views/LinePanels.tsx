@@ -20,7 +20,7 @@ export function effectiveLine(lines: LineHistory, selected: number, commit: numb
 /** The author of a line's version at a commit. */
 export function lineAuthor(h: History, lines: LineHistory, line: number, commit: number): number {
   const c = lines.versionCommits[line]![lines.versionAt(line, commit)]!;
-  return h.data.commits.author[c]!;
+  return h.changeAuthor(lines.file, c);
 }
 
 export function CodeViewer(props: {
@@ -140,7 +140,7 @@ export function LineHistoryPanel(props: {
       <ol className={props.columns ? "history-list columns" : "history-list"}>
         {events.map((e) => (
           <li key={`${e.commit}-${e.kind}`} className="history-item">
-            <AuthorChip history={h} author={c.author[e.commit]!} />
+            <AuthorChip history={h} author={h.changeAuthor(lines.file, e.commit)} />
             <div>
               <div className="history-subject">{h.commitSubject(e.commit)}</div>
               <div className="history-detail">{detail(e)}</div>

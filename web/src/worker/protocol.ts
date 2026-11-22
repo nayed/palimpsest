@@ -20,7 +20,17 @@ export const SHORT_WINDOW_MONTHS = 3;
 
 export interface LoadStatus {
   /** What is happening now. */
-  step: "connecting" | "counting" | "downloading" | "indexing" | "reading" | "lines" | "done" | "stopped" | "failed";
+  step:
+    | "connecting"
+    | "counting"
+    | "downloading"
+    | "indexing"
+    | "reading"
+    | "crediting"
+    | "lines"
+    | "done"
+    | "stopped"
+    | "failed";
   /** Bytes downloaded so far, and whether the download is finished. */
   bytes: number;
   downloaded: boolean;
@@ -28,6 +38,8 @@ export interface LoadStatus {
   fromCache: boolean;
   /** Share of the pack unpacked (indexed), 0 to 1. */
   unpacked: number;
+  /** Share of the history whose merges are credited file by file, 0 to 1. */
+  credited: number;
   /** Commits counted when there are too many to read: windows are being tried. */
   over: number | null;
   /** Commits on the default branch, once known, and how many are read. */
@@ -49,6 +61,7 @@ export const INITIAL_STATUS: LoadStatus = {
   downloaded: false,
   fromCache: false,
   unpacked: 0,
+  credited: 0,
   over: null,
   total: null,
   read: 0,

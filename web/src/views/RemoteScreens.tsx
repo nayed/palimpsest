@@ -20,7 +20,7 @@ const mb = formatBytes;
 
 /** Still loading: anything before reading has finished. */
 export function isLoading(s: LoadStatus): boolean {
-  return ["connecting", "counting", "downloading", "indexing", "reading"].includes(s.step);
+  return ["connecting", "counting", "downloading", "indexing", "reading", "crediting"].includes(s.step);
 }
 
 function BackToDemo({ onBack }: { onBack: () => void }) {
@@ -66,11 +66,13 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
         ? "Counting commits"
         : s.step === "indexing"
           ? "Unpacking"
-          : s.total === null
-            ? "Downloading"
-            : s.step === "reading"
-              ? `${formatCount(s.read)} of ${formatCount(s.total)} commits`
-              : `${formatCount(s.total)} commits`;
+          : s.step === "crediting"
+            ? "Crediting merged work"
+            : s.total === null
+              ? "Downloading"
+              : s.step === "reading"
+                ? `${formatCount(s.read)} of ${formatCount(s.total)} commits`
+                : `${formatCount(s.total)} commits`;
   const detail =
     s.step === "connecting"
       ? "Asking GitHub for the repository."
@@ -84,10 +86,19 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
             : `Downloading the repository: ${mb(s.bytes)} so far.`
           : s.step === "indexing"
             ? `Unpacking the download: ${Math.floor(s.unpacked * 100)}%.`
+            : s.step === "crediting"
+              ? `Finding who wrote each file the merges brought in: ${Math.floor(s.credited * 100)}%.`
             : readFrom !== null
               ? `Reading history newest first. Back to ${monthYear(readFrom)} so far.`
               : "Reading history newest first.";
-  const progress = s.step === "reading" && s.total ? s.read / s.total : s.step === "indexing" ? s.unpacked : 0;
+  const progress =
+    s.step === "reading" && s.total
+      ? s.read / s.total
+      : s.step === "indexing"
+        ? s.unpacked
+        : s.step === "crediting"
+          ? s.credited
+          : 0;
   const reading = s.step === "reading";
 
   const steps: { label: string; state: string; active: boolean }[] = [
@@ -106,8 +117,15 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
     },
     {
       label: "Read every commit",
-      state: reading && s.total ? `${Math.floor((100 * s.read) / s.total)}%` : s.step === "indexing" ? "starting" : "",
-      active: reading || s.step === "indexing",
+      state:
+        s.step === "crediting"
+          ? "crediting merges"
+          : reading && s.total
+            ? `${Math.floor((100 * s.read) / s.total)}%`
+            : s.step === "indexing"
+              ? "starting"
+              : "",
+      active: reading || s.step === "indexing" || s.step === "crediting",
     },
     { label: "Work out line history", state: "when you open a file", active: false },
   ];

@@ -33,7 +33,7 @@ export function lineClips(h: History, lines: LineHistory, line: number): TrackCl
   const end = died >= 0 ? h.commitTime(died) : h.end;
   const out: TrackClip[] = [];
   commits.forEach((c, v) => {
-    const author = h.data.commits.author[c]!;
+    const author = h.changeAuthor(lines.file, c);
     const from = h.commitTime(c);
     const to = v + 1 < commits.length ? h.commitTime(commits[v + 1]!) : end;
     const last = out[out.length - 1];

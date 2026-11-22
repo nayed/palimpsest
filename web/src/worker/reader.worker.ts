@@ -56,6 +56,22 @@ function finish(json: string) {
   if (kept) void writeData(kept.repo, kept.key, core, json);
 }
 
+/**
+ * Credits the work merges bring in, file by file (a rollup's files to each
+ * of its pull requests' authors), in slices of about 50 ms.
+ */
+async function creditMerges(onProgress?: (share: number) => void) {
+  let n = 20;
+  for (;;) {
+    const t = performance.now();
+    const share = reader!.creditMerges(n);
+    if (share >= 1 || stopped) return;
+    n = Math.max(1, Math.min(5000, Math.round(n * (50 / Math.max(1, performance.now() - t)))));
+    onProgress?.(share);
+    await tick();
+  }
+}
+
 /** Works out every line's history, in steps, then sends the finished data. */
 async function workLines(total: number) {
   // Who wrote the code that exists: needs every line's history. Worked out
@@ -131,6 +147,7 @@ async function rebuild(repo: string, pack: Uint8Array, head: string, tags: Tag[]
   if (reader.fileCount() !== files) {
     // Line histories kept for the old numbering no longer fit.
     if (kept) await clearLines(kept.repo, kept.key, core);
+    await creditMerges();
     await workLines(total);
   }
 }
@@ -287,6 +304,11 @@ async function open(repo: string, proxy: string, limit: number, since: number | 
       lastSnapshot = performance.now();
     }
     await tick();
+  }
+  if (!stopped) {
+    status({ step: "crediting", read: total, credited: 0 });
+    const creditDue = every(150);
+    await creditMerges((share) => creditDue() && status({ credited: share }));
   }
   snapshot();
   if (stopped) {

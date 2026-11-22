@@ -110,3 +110,16 @@ describe("a window of history", () => {
     expect(new History(fixture()).isWindowStart(0)).toBe(false);
   });
 });
+
+describe("who wrote a change", () => {
+  it("is the change's own author when the data has one, else the commit's", () => {
+    const d = fixture();
+    expect(new History(d).changeAuthor(1, 2)).toBe(1);
+    // Commit 2 (by Bo) moved file 1; say a merge credited Ann with it.
+    d.changes.author = d.changes.file.map((_, k) => (k === 3 ? 0 : d.commits.author[d.changes.start.findIndex((s) => s > k) - 1]!));
+    const h = new History(d);
+    expect(h.changeAuthor(1, 2)).toBe(0);
+    expect(h.changesIn(2)[0]!.author).toBe(0);
+    expect(h.changeAuthor(0, 0)).toBe(0);
+  });
+});
