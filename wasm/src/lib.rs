@@ -6,8 +6,11 @@
 use palimpsest_core::build::{first_parent_chain, line_file};
 use palimpsest_core::diff::{FileChange, diff_commit, line_edit_for};
 use palimpsest_core::format::Partial;
-use palimpsest_core::pack::{Pack, PackSource, oid_from_hex};
-use palimpsest_core::source::RawCommit;
+use std::collections::HashMap;
+
+use palimpsest_core::pack::{Kind, Mailmap, Pack, PackSource, oid_from_hex, parse_commit};
+use palimpsest_core::source::{Oid, RawCommit, Source};
+use palimpsest_core::tags::{RawTag, release_commits, releases};
 use palimpsest_core::{Options, Output, assemble_all};
 use wasm_bindgen::prelude::*;
 
@@ -42,6 +45,9 @@ pub struct Reader {
     output: Option<(Output, usize)>,
     /// Commits whose line history is worked out, oldest first.
     lines_done: usize,
+    /// The repository's tags, and the times of their commits found so far.
+    tags: Vec<RawTag>,
+    tag_times: HashMap<Oid, i64>,
 }
 
 #[wasm_bindgen]
@@ -61,18 +67,36 @@ impl Reader {
             first_read: 0,
             output: None,
             lines_done: 0,
+            tags: Vec::new(),
+            tag_times: HashMap::new(),
         }
     }
 
     /// Indexes the repository's pack and lists its first-parent commits.
     /// Returns how many there are. `progress(done, total)` follows indexing.
+    /// `tag_names` and `tag_commits` (hex ids, peeled) are the repository's tags.
     pub fn load(
         &mut self,
         pack: Vec<u8>,
         head: &str,
+        tag_names: Vec<String>,
+        tag_commits: Vec<String>,
         progress: &js_sys::Function,
     ) -> Result<u32, JsError> {
         let src = open(pack, head, progress)?;
+        self.tags = tag_names
+            .into_iter()
+            .zip(tag_commits)
+            .filter_map(|(name, hex)| {
+                let commit = oid_from_hex(&hex).ok()?;
+                Some(RawTag { name, commit, time: None })
+            })
+            .collect();
+        for id in release_commits(&self.tags) {
+            if let Ok(c) = src.commit(id) {
+                self.tag_times.insert(id, c.time);
+            }
+        }
         self.chain = first_parent_chain(&src).map_err(js)?;
         self.diffs = vec![Vec::new(); self.chain.len()];
         self.first_read = self.chain.len();
@@ -116,9 +140,37 @@ impl Reader {
             });
             repo.start = repo.start.min(self.chain[0].time);
         }
+        let (start, end) = (repo.start, repo.end);
+        out.data.tags = releases(&self.tags, &mut |id| self.tag_times.get(&id).copied(), start, end);
         let json = serde_json::to_string(&out.data).map_err(js)?;
         self.output = Some((out, k));
         Ok(json)
+    }
+
+    /// Release tag commits the pack does not hold (tagged on a branch that was
+    /// never merged), as hex ids, to fetch with [`Reader::add_tag_commits`].
+    #[wasm_bindgen(js_name = missingTagCommits)]
+    pub fn missing_tag_commits(&self) -> Vec<String> {
+        release_commits(&self.tags)
+            .into_iter()
+            .filter(|id| !self.tag_times.contains_key(id))
+            .map(|id| id.to_hex())
+            .collect()
+    }
+
+    /// Reads the times of tag commits from a pack of commits.
+    #[wasm_bindgen(js_name = addTagCommits)]
+    pub fn add_tag_commits(&mut self, pack: Vec<u8>) -> Result<(), JsError> {
+        let pack = Pack::index(pack, &mut |_, _| {}).map_err(js)?;
+        let mailmap = Mailmap::default();
+        for id in release_commits(&self.tags) {
+            if let Ok((Kind::Commit, data)) = pack.get(&id)
+                && let Ok(c) = parse_commit(id, &data, &mailmap)
+            {
+                self.tag_times.insert(id, c.time);
+            }
+        }
+        Ok(())
     }
 
     /// One file's line history as JSON, worked out now, or undefined when it

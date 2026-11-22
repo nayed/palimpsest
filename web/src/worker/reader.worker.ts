@@ -34,10 +34,29 @@ function snapshot() {
   post({ type: "data", json: reader!.snapshot(), version });
 }
 
+/** The proxy's limit on a request body is 64 KB; a want line is 46 bytes. */
+const MAX_TAG_WANTS = 500;
+
+/**
+ * Release tags made on a branch that was never merged point to commits the
+ * pack does not hold. Fetch just those commits, without their files, for the
+ * tags' dates. Best effort: without them those tags are left out.
+ */
+async function fetchTagCommits(repo: string, proxy: string, head: string) {
+  const missing = reader!.missingTagCommits().slice(0, MAX_TAG_WANTS);
+  if (!missing.length) return;
+  try {
+    const pack = await fetchPack(proxy, repo, missing, { filter: "tree:0", haves: [head], signal: abort.signal });
+    reader!.addTagCommits(pack);
+  } catch {
+    // Stopped, or GitHub would not send them: the tags just go without.
+  }
+}
+
 async function open(repo: string, proxy: string, limit: number) {
   await init();
   status({ step: "connecting" });
-  const { head } = await lsRefs(proxy, repo, abort.signal);
+  const { head, tags } = await lsRefs(proxy, repo, abort.signal);
 
   let pack = await readPack(repo, head);
   if (pack) {
@@ -64,8 +83,16 @@ async function open(repo: string, proxy: string, limit: number) {
   if (stopped) return status({ step: "stopped" });
 
   reader = new Reader(repo);
-  const total = reader.load(pack, head, () => {});
+  const total = reader.load(
+    pack,
+    head,
+    tags.map((t) => t.name),
+    tags.map((t) => t.commit),
+    () => {},
+  );
   pack = null;
+  await fetchTagCommits(repo, proxy, head);
+  if (stopped) return status({ step: "stopped" });
   status({ step: "reading", total, read: 0 });
 
   // Read in batches of about 50 ms, sending a data file now and then; less

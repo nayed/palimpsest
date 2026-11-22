@@ -48,9 +48,38 @@ describe("talking to GitHub", () => {
   it("finds the head of the default branch", async () => {
     const head = "43fc97d43a4c61d65e7d74d4110c8480fe42ea5b";
     const calls = serve(concat([pkt(`${head} HEAD symref-target:refs/heads/master\n`), enc.encode("0000")]));
-    expect(await lsRefs("/git-proxy", "BurntSushi/ripgrep")).toEqual({ head, ref: "refs/heads/master" });
+    expect(await lsRefs("/git-proxy", "BurntSushi/ripgrep")).toEqual({ head, ref: "refs/heads/master", tags: [] });
     expect(calls).toHaveLength(2);
     expect(new Headers(calls[1]!.headers).get("Git-Protocol")).toBe("version=2");
+  });
+
+  it("lists tags with the commits they point to", async () => {
+    const [head, tagObject, commit, light] = ["a", "b", "c", "d"].map((c) => c.repeat(40));
+    const calls = serve(
+      concat([
+        pkt(`${head} HEAD symref-target:refs/heads/main\n`),
+        pkt(`${tagObject} refs/tags/v1.0.0 peeled:${commit}\n`),
+        pkt(`${light} refs/tags/0.9\n`),
+        enc.encode("0000"),
+      ]),
+    );
+    const refs = await lsRefs("/p", "a/b");
+    expect(refs.tags).toEqual([
+      { name: "v1.0.0", commit },
+      { name: "0.9", commit: light },
+    ]);
+    const body = text(calls[1]!.body as Uint8Array);
+    expect(body).toContain("ref-prefix refs/tags/");
+    expect(body).toContain("peel");
+  });
+
+  it("asks for several commits short of what it has", async () => {
+    const calls = serve(concat([pkt("packfile\n"), pkt(concat([Uint8Array.of(1), enc.encode("PACK")])), enc.encode("0000")]));
+    await fetchPack("/p", "a/b", ["1".repeat(40), "2".repeat(40)], { filter: "tree:0", haves: ["3".repeat(40)] });
+    const body = text(calls[0]!.body as Uint8Array);
+    expect(body).toContain(`want ${"1".repeat(40)}`);
+    expect(body).toContain(`want ${"2".repeat(40)}`);
+    expect(body).toContain(`have ${"3".repeat(40)}`);
   });
 
   it("keeps only the pack from the side band", async () => {

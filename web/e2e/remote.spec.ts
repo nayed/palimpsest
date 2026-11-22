@@ -19,6 +19,18 @@ function packHeader(n: number): Buffer {
   return Buffer.concat([pkt(Buffer.from("packfile\n")), pkt(Buffer.concat([Buffer.from([1]), header]))]);
 }
 
+/**
+ * The recorded ls-refs answer with two release tags added: one on walkdir's
+ * head, one on a commit the pack does not hold (as for a release branch).
+ */
+function lsRefsWithTags(): Buffer {
+  const recorded = fixture("ls-refs.bin");
+  const head = /([0-9a-f]{40}) HEAD/.exec(recorded.toString("latin1"))![1]!;
+  const tags = [`${head} refs/tags/9.9.0\n`, `${"e".repeat(40)} refs/tags/9.8.0\n`].map((l) => pkt(Buffer.from(l)));
+  // Before the final flush.
+  return Buffer.concat([recorded.subarray(0, recorded.length - 4), ...tags, Buffer.from("0000")]);
+}
+
 /** Answers the app's git requests like GitHub would for walkdir. */
 async function fakeGitHub(
   context: BrowserContext,
@@ -30,7 +42,7 @@ async function fakeGitHub(
     if (req.method() === "GET") return route.fulfill({ status: 200, body: "" });
     const body = req.postDataBuffer()?.toString("latin1") ?? "";
     const type = "application/x-git-upload-pack-result";
-    if (body.includes("command=ls-refs")) return route.fulfill({ contentType: type, body: fixture("ls-refs.bin") });
+    if (body.includes("command=ls-refs")) return route.fulfill({ contentType: type, body: lsRefsWithTags() });
     if (body.includes("filter tree:0")) {
       return route.fulfill({ contentType: type, body: opts.commits ? packHeader(opts.commits) : fixture("commits.bin") });
     }
@@ -41,10 +53,18 @@ async function fakeGitHub(
 
 test("a pasted repository is read in the browser", async ({ page, context }) => {
   await fakeGitHub(context);
+  let tagRequests = 0;
+  page.on("request", (r) => {
+    if ((r.postDataBuffer()?.toString("latin1") ?? "").includes(`want ${"e".repeat(40)}`)) tagRequests++;
+  });
   await page.goto("/BurntSushi/walkdir");
   await expect(page.locator(".legend")).toContainText("Andrew Gallant", { timeout: 15_000 });
   await expect(page.locator(".legend")).toContainText("Colored by who was writing");
   await expect(page.locator(".commit-count")).toContainText("Commit 185 of 185");
+  // The release tag on the head is placed; the one on an unknown commit was
+  // asked for and, not found, left out.
+  await expect(page.getByRole("slider", { name: "Playhead" })).toHaveAttribute("aria-valuetext", /release 9\.9\.0$/);
+  expect(tagRequests).toBe(1);
   // The code at the playhead comes from line history worked out on demand.
   await expect(page.locator(".code-row").first()).toBeVisible();
   await page.keyboard.press("1");

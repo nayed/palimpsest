@@ -88,8 +88,18 @@ async function post(proxy: string, repo: string, body: Uint8Array, signal?: Abor
   return res;
 }
 
-/** The commit at the tip of the default branch. */
-export async function lsRefs(proxy: string, repo: string, signal?: AbortSignal): Promise<{ head: string; ref: string }> {
+export interface Tag {
+  name: string;
+  /** The commit it points to, through any annotated tag object. */
+  commit: string;
+}
+
+/** The commit at the tip of the default branch, and the repository's tags. */
+export async function lsRefs(
+  proxy: string,
+  repo: string,
+  signal?: AbortSignal,
+): Promise<{ head: string; ref: string; tags: Tag[] }> {
   // Ask for the capabilities first, as git does: GitHub answers this at once,
   // while a POST about a missing repository takes it several seconds.
   let probe: Response;
@@ -111,31 +121,58 @@ export async function lsRefs(proxy: string, repo: string, signal?: AbortSignal):
   const res = await post(
     proxy,
     repo,
-    encodeRequest(["command=ls-refs", "object-format=sha1", DELIM, "symrefs", "ref-prefix HEAD", FLUSH]),
+    encodeRequest([
+      "command=ls-refs",
+      "object-format=sha1",
+      DELIM,
+      "symrefs",
+      "peel",
+      "ref-prefix HEAD",
+      "ref-prefix refs/tags/",
+      FLUSH,
+    ]),
     signal,
   );
-  const packets = new PktReader().push(new Uint8Array(await res.arrayBuffer()));
+  return parseRefs(repo, new PktReader().push(new Uint8Array(await res.arrayBuffer())));
+}
+
+/** Reads an ls-refs answer: HEAD, and tags peeled to their commits. */
+export function parseRefs(repo: string, packets: Packet[]): { head: string; ref: string; tags: Tag[] } {
+  let head: { head: string; ref: string } | null = null;
+  const tags: Tag[] = [];
   for (const p of packets) {
     if (p.kind !== "data") continue;
     const line = dec.decode(p.data).trim();
-    const m = /^([0-9a-f]{40}) HEAD(?: symref-target:(\S+))?/.exec(line);
-    if (m) return { head: m[1]!, ref: m[2] ?? "HEAD" };
     if (line.startsWith("ERR ")) throw new GitError("notFound", line.slice(4));
+    const h = /^([0-9a-f]{40}) HEAD(?: symref-target:(\S+))?/.exec(line);
+    if (h) head = { head: h[1]!, ref: h[2] ?? "HEAD" };
+    const t = /^([0-9a-f]{40}) refs\/tags\/(\S+)(?: peeled:([0-9a-f]{40}))?/.exec(line);
+    if (t) tags.push({ name: t[2]!, commit: t[3] ?? t[1]! });
   }
-  throw new GitError("notFound", `${repo} has no commits.`);
+  if (!head) throw new GitError("notFound", `${repo} has no commits.`);
+  return { ...head, tags };
 }
 
 /**
- * Downloads a pack holding `want` and everything it reaches. `filter` asks
- * for less, e.g. "tree:0" for commits only. `onBytes` follows the download.
+ * Downloads a pack holding `want` and everything it reaches, short of what
+ * `haves` reach. `filter` asks for less, e.g. "tree:0" for commits only.
+ * `onBytes` follows the download.
  */
 export async function fetchPack(
   proxy: string,
   repo: string,
-  want: string,
-  opts: { filter?: string; onBytes?: (bytes: number) => void; signal?: AbortSignal; headerOnly?: boolean } = {},
+  want: string | string[],
+  opts: {
+    filter?: string;
+    haves?: string[];
+    onBytes?: (bytes: number) => void;
+    signal?: AbortSignal;
+    headerOnly?: boolean;
+  } = {},
 ): Promise<Uint8Array> {
-  const lines: Line[] = ["command=fetch", "object-format=sha1", DELIM, `want ${want}`, "ofs-delta", "no-progress"];
+  const wants = (typeof want === "string" ? [want] : want).map((w) => `want ${w}`);
+  const lines: Line[] = ["command=fetch", "object-format=sha1", DELIM, ...wants, "ofs-delta", "no-progress"];
+  for (const h of opts.haves ?? []) lines.push(`have ${h}`);
   if (opts.filter) lines.push(`filter ${opts.filter}`);
   lines.push("done", FLUSH);
   const res = await post(proxy, repo, encodeRequest(lines), opts.signal);
