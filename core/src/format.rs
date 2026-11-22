@@ -31,6 +31,19 @@ pub struct Data {
     pub changes: Changes,
     pub clips: Clips,
     pub overview: Overview,
+    /// Release tags, oldest first. Added after version 1 shipped, so older
+    /// files have none.
+    #[serde(default)]
+    pub tags: Tags,
+}
+
+/// Release tags, for markers on the ruler: the project's own finished
+/// versions, at their dates.
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Tags {
+    pub name: Vec<String>,
+    pub time: Vec<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]

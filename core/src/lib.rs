@@ -13,6 +13,7 @@ pub mod lines;
 pub mod mem;
 pub mod pack;
 pub mod source;
+pub mod tags;
 pub mod text;
 pub mod time;
 pub mod vendored;

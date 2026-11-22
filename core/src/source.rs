@@ -67,4 +67,8 @@ pub trait Source {
     fn commit(&self, id: Oid) -> Result<RawCommit>;
     fn tree(&self, id: Oid) -> Result<Vec<TreeEntry>>;
     fn blob(&self, id: Oid) -> Result<Vec<u8>>;
+    /// The repository's tags. A source without them has none.
+    fn tags(&self) -> Result<Vec<crate::tags::RawTag>> {
+        Ok(Vec::new())
+    }
 }

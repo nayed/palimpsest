@@ -56,7 +56,9 @@ pub fn build_all(
         diffs.push(diff_commit(src, parent_tree, c.tree, opts)?);
         progress(i + 1, chain.len());
     }
-    Ok(assemble_all(&chain, &diffs, opts))
+    let mut out = assemble_all(&chain, &diffs, opts);
+    out.data.tags = crate::tags::read_releases(src, out.data.repo.start, out.data.repo.end);
+    Ok(out)
 }
 
 /// The commits from the root to the head following first parents, oldest first.

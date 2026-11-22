@@ -3,6 +3,7 @@
 use std::path::Path;
 
 use crate::source::{EntryKind, Oid, RawCommit, Result, Source, TreeEntry};
+use crate::tags::RawTag;
 
 pub struct GitSource {
     repo: gix::Repository,
@@ -73,5 +74,27 @@ impl Source for GitSource {
     fn blob(&self, id: Oid) -> Result<Vec<u8>> {
         let mut blob = self.repo.find_blob(to_gix(id))?;
         Ok(std::mem::take(&mut blob.data))
+    }
+
+    fn tags(&self) -> Result<Vec<RawTag>> {
+        let mut out = Vec::new();
+        for r in self.repo.references()?.tags()? {
+            let Ok(mut r) = r else { continue };
+            let name = r.name().shorten().to_string();
+            // The tagger's date, when the tag is an annotated tag object.
+            let time = r
+                .target()
+                .try_id()
+                .and_then(|id| self.repo.find_object(id).ok())
+                .and_then(|o| o.try_into_tag().ok())
+                .and_then(|t| t.tagger().ok().flatten().map(|s| s.seconds()));
+            let Ok(id) = r.peel_to_id() else { continue };
+            out.push(RawTag {
+                name,
+                commit: to_oid(&id),
+                time,
+            });
+        }
+        Ok(out)
     }
 }
