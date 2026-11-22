@@ -115,9 +115,9 @@ export function TracksView({ session }: { session: Session }) {
   const find = (file: number) => {
     autoPicked.current = false;
     playback.pause();
-    const pins = store.get().pinned;
-    const add = !pins.includes(file) && !picked.includes(file);
-    store.set({ selectedFile: file, selectedLine: -1, ...(add ? { pinned: [...pins, file] } : {}) });
+    // Always pinned first, even when already shown, so it lands at the top where it is seen.
+    const pins = store.get().pinned.filter((f) => f !== file);
+    store.set({ selectedFile: file, selectedLine: -1, pinned: [file, ...pins] });
   };
   const unpin = (file: number) => {
     const pins = store.get().pinned.filter((f) => f !== file);
@@ -205,7 +205,7 @@ export function TracksView({ session }: { session: Session }) {
       label={label}
       content={content}
       hoverCard={phone ? undefined : hoverCard}
-      caption={<FileFinder ref={finderRef} history={h} onPick={find} />}
+      caption={<FileFinder ref={finderRef} history={h} commit={commit} onPick={find} />}
       onRowClick={(i) => {
         const file = files[i];
         if (file !== undefined) select(file);

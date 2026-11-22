@@ -22,7 +22,7 @@ export interface PlayState {
   /** Folder shown in Tracks: "" for the whole repository. */
   folder: string;
   selectedFile: number;
-  /** Files kept in Tracks whatever the folder, first, in the order pinned. */
+  /** Files kept in Tracks whatever the folder, first, the latest found first. */
   pinned: number[];
   /** A line of the selected file, by its line-history id, or -1. */
   selectedLine: number;
