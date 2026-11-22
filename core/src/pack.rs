@@ -644,6 +644,7 @@ pub fn parse_commit(id: Oid, data: &[u8], mailmap: &Mailmap) -> Result<RawCommit
         author_email,
         time: committer_time,
         message: String::from_utf8_lossy(message).into_owned(),
+        credits: Default::default(),
     })
 }
 

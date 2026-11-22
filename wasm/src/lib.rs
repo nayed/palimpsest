@@ -3,7 +3,9 @@
 //! history newest first, a batch at a time, so the app can draw what has been
 //! read while the rest is still coming. Same core as the command-line tool.
 
-use palimpsest_core::build::{attribute_merges, first_parent_chain, history_cut, line_file};
+use palimpsest_core::build::{
+    MergeCredits, attribute_merges, first_parent_chain, history_cut, line_file,
+};
 use palimpsest_core::diff::{FileChange, diff_commit, line_edit_for};
 use palimpsest_core::format::Partial;
 use std::collections::HashMap;
@@ -40,6 +42,8 @@ pub struct Reader {
     /// While the pack is being indexed, a step at a time: the indexer and the
     /// newest commit's id.
     indexing: Option<(PackIndexer, Oid)>,
+    /// Crediting merged work file by file, a step at a time, once read.
+    merge_credits: Option<MergeCredits>,
 }
 
 #[wasm_bindgen]
@@ -62,6 +66,7 @@ impl Reader {
             tags: Vec::new(),
             tag_times: HashMap::new(),
             indexing: None,
+            merge_credits: None,
         }
     }
 
@@ -143,6 +148,25 @@ impl Reader {
             self.first_read = i;
         }
         Ok((self.chain.len() - self.first_read) as u32)
+    }
+
+    /// Credits the work merges bring in, file by file, going through up to
+    /// `n` more first-parent commits oldest first (see [`MergeCredits`]).
+    /// Returns the share done, 0 to 1. Done after reading, before the
+    /// finished data file.
+    #[wasm_bindgen(js_name = creditMerges)]
+    pub fn credit_merges(&mut self, n: u32) -> Result<f64, JsError> {
+        let src = self
+            .src
+            .as_ref()
+            .ok_or_else(|| JsError::new("nothing loaded"))?;
+        let credits = self
+            .merge_credits
+            .get_or_insert_with(|| MergeCredits::new(&self.chain));
+        if credits.step(src, &mut self.chain, n as usize).map_err(js)? {
+            return Ok(1.0);
+        }
+        Ok(credits.done() as f64 / self.chain.len().max(1) as f64)
     }
 
     /// The data file for the commits read so far, as JSON.

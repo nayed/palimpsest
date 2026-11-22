@@ -86,7 +86,8 @@ pub struct Partial {
 pub struct Authors {
     pub name: Vec<String>,
     pub initials: Vec<String>,
-    /// Commits on the first-parent history.
+    /// Commits on the first-parent history, plus one for each merge crediting
+    /// them with files it brings in.
     pub commits: Vec<u32>,
     /// 1 to 5 picks the author color; 0 is Others (sixth place down, and bots);
     /// 6 is the code already there before a loaded window (`repo.earlier_author`).
@@ -141,6 +142,11 @@ pub struct Changes {
     /// Offsets, one more than there are commits.
     pub start: Vec<u32>,
     pub file: Vec<u32>,
+    /// Who wrote each change: for a merge, whoever last changed the file on
+    /// the merged branches; otherwise the commit's author. Added after
+    /// version 1 shipped: older files have none (use the commit's author).
+    #[serde(default)]
+    pub author: Vec<u32>,
     /// 0 added, 1 modified, 2 deleted, 3 renamed (moved, maybe also edited).
     pub kind: Vec<u8>,
     pub added: Vec<u32>,

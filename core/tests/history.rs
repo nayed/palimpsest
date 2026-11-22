@@ -493,3 +493,73 @@ fn a_window_of_history_starts_with_the_code_already_there() {
     // was already there, and has no other commit.
     assert!(!d.authors.name.iter().any(|n| n == "Bo"));
 }
+
+#[test]
+fn a_rollup_credits_each_file_to_whoever_wrote_it() {
+    let mut f = Fixture::new();
+    f.write("a.rs", &lines(10, "a"))
+        .write("b.rs", &lines(10, "b"))
+        .commit("Ann", 0, "Start");
+    let start = f.repo.head_id().unwrap();
+    let files = |a: &str, b: &str| -> BTreeMap<String, String> {
+        [
+            ("a.rs".to_string(), a.to_string()),
+            ("b.rs".to_string(), b.to_string()),
+        ]
+        .into()
+    };
+    let (a0, b0) = (lines(10, "a"), lines(10, "b"));
+    let (a1, b1) = (lines(12, "a"), lines(14, "b"));
+    // Two pull requests: Bo's changes a.rs, Cy's changes b.rs.
+    let bo = f
+        .repo
+        .commit_with("Bo", day(1), "Grow a", &files(&a1, &b0), vec![start]);
+    let cy = f
+        .repo
+        .commit_with("Cy", day(2), "Grow b", &files(&a0, &b1), vec![start]);
+    // Mo batches them in a rollup branch, with merges of their own.
+    let r1 = f.repo.commit_with(
+        "Mo",
+        day(3),
+        "Rollup merge of Bo",
+        &files(&a1, &b0),
+        vec![start, bo],
+    );
+    let r2 = f.repo.commit_with(
+        "Mo",
+        day(3),
+        "Rollup merge of Cy",
+        &files(&a1, &b1),
+        vec![r1, cy],
+    );
+    // A bot merges the rollup into the main line.
+    let m = f.repo.commit_with(
+        "bors",
+        day(4),
+        "Auto merge of rollup",
+        &files(&a1, &b1),
+        vec![start, r2],
+    );
+    f.repo.set_head(m);
+    let d = f.build();
+
+    let name = |a: u32| d.authors.name[a as usize].as_str();
+    let author_of = |path: &str| {
+        let id = file_id(&d, path) as u32;
+        let s = d.changes.start[1] as usize..d.changes.start[2] as usize;
+        let k = s.clone().find(|&k| d.changes.file[k] == id).expect(path);
+        name(d.changes.author[k])
+    };
+    // Each file goes to whoever changed it, not to the rollup's maker or the bot.
+    assert_eq!(author_of("a.rs"), "Bo");
+    assert_eq!(author_of("b.rs"), "Cy");
+    // The merge itself goes to one of them: a file each, so the later one.
+    assert_eq!(name(d.commits.author[1]), "Cy");
+    // Both count for the merge, and rank; the maker and the bot do not.
+    for who in ["Bo", "Cy"] {
+        let a = d.authors.name.iter().position(|n| n == who).unwrap();
+        assert_eq!(d.authors.commits[a], 1, "{who}");
+        assert!(d.authors.rank[a] > 0, "{who}");
+    }
+    assert!(!d.authors.name.iter().any(|n| n == "Mo" || n == "bors"));
+}

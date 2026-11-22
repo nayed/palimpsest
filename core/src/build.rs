@@ -6,16 +6,16 @@
 //! the Overview folders. `assemble` is a pure function, which is what the tests
 //! exercise most.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::clips::{Clip, Touch, clips};
-use crate::diff::{ChangeKind, FileChange, diff_commit, line_edit_for};
+use crate::diff::{ChangeKind, FileChange, changed_paths, diff_commit, line_edit_for};
 use crate::format::{
     self, Changes, Clips, Commits, Data, Files, LineFile, Moment, Overview, OverviewRow, Repo,
     Share,
 };
 use crate::lines::Owners;
-use crate::source::{RawCommit, Result, Source};
+use crate::source::{Oid, RawCommit, Result, Source};
 use crate::time::{month_of, month_start};
 use crate::vendored::is_vendored;
 use crate::{Options, authors};
@@ -49,6 +49,8 @@ pub fn build_all(
 ) -> Result<Output> {
     let mut chain = first_parent_chain(src)?;
     attribute_merges(src, &mut chain)?;
+    let mut credits = MergeCredits::new(&chain);
+    while !credits.step(src, &mut chain, 256)? {}
     let mut diffs = Vec::with_capacity(chain.len());
     for (i, c) in chain.iter().enumerate() {
         let parent_tree = if i == 0 {
@@ -111,6 +113,100 @@ pub fn attribute_merges(src: &dyn Source, chain: &mut [RawCommit]) -> Result<()>
     Ok(())
 }
 
+/// Credits the work a merge on the first-parent line brings in to whoever
+/// did it, file by file, rather than the merge as a whole to one person. A
+/// project that merges pull requests in batches (a "rollup") would otherwise
+/// credit the person who assembled each batch with everyone's code.
+///
+/// A merge's own commits are those its merged side reaches that no earlier
+/// merge brought in: going through the first-parent line oldest first, each
+/// commit is claimed once, so the whole pass visits every commit once. Each
+/// file the merge changes goes to the latest of its commits that changed that
+/// file (merges inside a branch pass the credit on to the work they merge);
+/// the merge itself goes to whoever is credited with the most files. Done a
+/// step at a time, so the browser can do it between other work.
+pub struct MergeCredits {
+    on_chain: HashSet<Oid>,
+    claimed: HashSet<Oid>,
+    next: usize,
+}
+
+impl MergeCredits {
+    pub fn new(chain: &[RawCommit]) -> MergeCredits {
+        MergeCredits {
+            on_chain: chain.iter().map(|c| c.id).collect(),
+            claimed: HashSet::new(),
+            next: 0,
+        }
+    }
+
+    /// First-parent commits gone through so far.
+    pub fn done(&self) -> usize {
+        self.next
+    }
+
+    /// Goes through up to `n` more first-parent commits. Returns whether all are done.
+    pub fn step(&mut self, src: &dyn Source, chain: &mut [RawCommit], n: usize) -> Result<bool> {
+        let end = (self.next + n).min(chain.len());
+        for i in self.next..end {
+            if chain[i].parents.len() > 1 {
+                self.credit(src, &mut chain[i])?;
+            }
+        }
+        self.next = end;
+        Ok(self.next == chain.len())
+    }
+
+    fn credit(&mut self, src: &dyn Source, merge: &mut RawCommit) -> Result<()> {
+        // The merge's own commits, and what each of them changed. Commits
+        // missing from a window of history are left out.
+        let mut work: Vec<(i64, RawCommit, Vec<String>)> = Vec::new();
+        let mut stack: Vec<Oid> = merge.parents[1..].to_vec();
+        while let Some(id) = stack.pop() {
+            if self.on_chain.contains(&id) || !self.claimed.insert(id) {
+                continue;
+            }
+            let Ok(c) = src.commit(id) else { continue };
+            stack.extend(c.parents.iter().copied());
+            // A merge inside the branch is not work of its own; a commit
+            // whose parent is missing (the edge of a window) changed what
+            // is not known.
+            if let [parent] = c.parents[..]
+                && let Ok(p) = src.commit(parent)
+            {
+                let paths = changed_paths(src, Some(p.tree), c.tree)?;
+                work.push((c.time, c, paths));
+            }
+        }
+        if work.is_empty() {
+            return Ok(());
+        }
+        work.sort_by_key(|(time, _, _)| *time);
+        let mut credits: BTreeMap<String, (String, String)> = BTreeMap::new();
+        for (_, c, paths) in &work {
+            for p in paths {
+                credits.insert(p.clone(), (c.author_name.clone(), c.author_email.clone()));
+            }
+        }
+        // The merge goes to whoever has the most files; a tie, to the latest
+        // of them (`max_by_key` keeps the last of equal maxima).
+        let mut files: HashMap<String, usize> = HashMap::new();
+        for (name, email) in credits.values() {
+            *files.entry(authors::key(name, email)).or_default() += 1;
+        }
+        if let Some((_, c, _)) = work
+            .iter()
+            .filter(|(_, c, _)| files.contains_key(&authors::key(&c.author_name, &c.author_email)))
+            .max_by_key(|(_, c, _)| files[&authors::key(&c.author_name, &c.author_email)])
+        {
+            merge.author_name = c.author_name.clone();
+            merge.author_email = c.author_email.clone();
+        }
+        merge.credits = credits;
+        Ok(())
+    }
+}
+
 struct FileAcc {
     born: u32,
     died: Option<u32>,
@@ -165,7 +261,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
     // their lines go to a stand-in for whoever wrote them before the window,
     // and that commit's own author is not credited with them.
     let skip = usize::from(opts.history_cut);
-    let (mut commit_author, author_table) =
+    let (mut commit_author, author_table, author_ids) =
         authors::collect_from(commits, opts.ranked_authors, skip);
     data.authors = author_table;
     let earlier_author = opts.history_cut.then(|| {
@@ -179,6 +275,31 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
         commit_author[0] = id;
         id
     });
+
+    // Who wrote each change: for a merge, whoever its credits name for the
+    // file (by its path, or its old path when moved); otherwise the commit's
+    // author.
+    let change_author: Vec<Vec<u32>> = diffs
+        .iter()
+        .enumerate()
+        .map(|(i, diff)| {
+            diff.iter()
+                .map(|ch| {
+                    if i < skip {
+                        return commit_author[i];
+                    }
+                    let credits = &commits[i].credits;
+                    credits
+                        .get(&ch.path)
+                        .or_else(|| ch.old_path.as_ref().and_then(|p| credits.get(p)))
+                        .and_then(|(name, email)| {
+                            author_ids.get(&authors::key(name, email)).copied()
+                        })
+                        .unwrap_or(commit_author[i])
+                })
+                .collect()
+        })
+        .collect();
 
     data.repo = Repo {
         name: opts.name.clone(),
@@ -277,7 +398,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
                 f.lines = ch.lines_after;
                 f.touches.push(Touch {
                     time: times[i],
-                    author: commit_author[i],
+                    author: change_author[i][j],
                     weight: touch_weight(ch),
                 });
             }
@@ -292,7 +413,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
             };
             match &ch.lines {
                 Some(edit) if !f.lines_lost => {
-                    f.owners.apply(edit, commit_author[i], &mut moved);
+                    f.owners.apply(edit, change_author[i][j], &mut moved);
                     let lf = f.lines_file.get_or_insert_with(|| LineFile {
                         format: format::LINES_FORMAT.into(),
                         version: format::VERSION,
@@ -336,6 +457,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
 
             change_refs.push((ci, j as u32));
             changes.file.push(id as u32);
+            changes.author.push(change_author[i][j]);
             changes.kind.push(ch.kind as u8);
             changes.added.push(ch.added);
             changes.deleted.push(ch.deleted);
@@ -395,7 +517,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
     data.overview = overview(
         diffs,
         &times,
-        &commit_author,
+        &change_author,
         &folder_lines,
         &folder_peak,
         head_lines,
@@ -545,7 +667,7 @@ struct RowAcc {
 fn overview(
     diffs: &[Vec<FileChange>],
     times: &[i64],
-    commit_author: &[u32],
+    change_author: &[Vec<u32>],
     folder_lines: &HashMap<String, i64>,
     folder_peak: &HashMap<String, i64>,
     head_lines: i64,
@@ -585,7 +707,7 @@ fn overview(
     let mut moves: BTreeMap<(u32, String, String), (u32, String)> = BTreeMap::new();
 
     for (i, diff) in diffs.iter().enumerate() {
-        for ch in diff {
+        for (j, ch) in diff.iter().enumerate() {
             let before = ch.old_path.as_deref().unwrap_or(&ch.path);
             if ch.kind != ChangeKind::Added && !is_vendored(before) {
                 let r = &mut rows[row_of(before)];
@@ -599,7 +721,7 @@ fn overview(
                 }
                 r.touches.push(Touch {
                     time: times[i],
-                    author: commit_author[i],
+                    author: change_author[i][j],
                     weight: touch_weight(ch),
                 });
             }

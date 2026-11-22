@@ -6,6 +6,7 @@
 //! file downloaded in the browser (WebAssembly), and on small in-memory fixtures
 //! (the tests).
 
+use std::collections::BTreeMap;
 use std::fmt;
 
 /// A SHA-1 object id.
@@ -42,6 +43,10 @@ pub struct RawCommit {
     /// landed on the branch.
     pub time: i64,
     pub message: String,
+    /// For a merge on the first-parent history: who wrote each file it brings
+    /// in, by path, as (name, email): whoever last changed it on the merged
+    /// branches. Empty for other commits. Filled by `build::MergeCredits`.
+    pub credits: BTreeMap<String, (String, String)>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

@@ -48,6 +48,7 @@ impl Source for GitSource {
             author_email: String::from_utf8_lossy(&author.email).trim().to_string(),
             time,
             message: String::from_utf8_lossy(decoded.message).into_owned(),
+            credits: Default::default(),
         })
     }
 

@@ -259,6 +259,22 @@ fn join(prefix: &str, name: &str) -> String {
     }
 }
 
+/// The paths of the files that differ between two trees: what a commit
+/// changed, without reading any file. Cheap enough for every commit of a
+/// merged branch.
+pub fn changed_paths(src: &dyn Source, old: Option<Oid>, new: Oid) -> Result<Vec<String>> {
+    let mut deltas = Vec::new();
+    walk(src, "", old, Some(new), &mut deltas)?;
+    Ok(deltas
+        .into_iter()
+        .map(|d| match d {
+            Delta::Added { path, .. }
+            | Delta::Deleted { path, .. }
+            | Delta::Modified { path, .. } => path,
+        })
+        .collect())
+}
+
 /// Recursively compares two trees, skipping subtrees whose ids match.
 fn walk(
     src: &dyn Source,

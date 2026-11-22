@@ -48,6 +48,22 @@ impl MemRepo {
         message: &str,
         files: &BTreeMap<String, String>,
     ) -> Oid {
+        let parents: Vec<Oid> = self.head.into_iter().collect();
+        let id = self.commit_with(author, time, message, files, parents);
+        self.head = Some(id);
+        id
+    }
+
+    /// Adds a commit with these parents, leaving the head where it is: for
+    /// branches (one parent off the head) and merges (the head first).
+    pub fn commit_with(
+        &mut self,
+        author: &str,
+        time: i64,
+        message: &str,
+        files: &BTreeMap<String, String>,
+        parents: Vec<Oid>,
+    ) -> Oid {
         let tree = self.write_tree(
             files
                 .iter()
@@ -61,7 +77,6 @@ impl MemRepo {
                 format!("{}@example.com", author.to_lowercase().replace(' ', ".")),
             ),
         };
-        let parents: Vec<Oid> = self.head.into_iter().collect();
         let parent_bytes: Vec<u8> = parents.iter().flat_map(|p| p.0).collect();
         let id = hash(
             "commit",
@@ -83,10 +98,20 @@ impl MemRepo {
                 author_email: email,
                 time,
                 message: message.to_string(),
+                credits: Default::default(),
             },
         );
-        self.head = Some(id);
         id
+    }
+
+    /// The current head, to branch from or merge into.
+    pub fn head_id(&self) -> Option<Oid> {
+        self.head
+    }
+
+    /// Moves the head (after a merge made with [`MemRepo::commit_with`]).
+    pub fn set_head(&mut self, id: Oid) {
+        self.head = Some(id);
     }
 
     fn write_tree(&mut self, files: Vec<(&str, &[u8])>) -> Oid {

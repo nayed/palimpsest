@@ -14,40 +14,79 @@ use crate::source::RawCommit;
 /// first. The top `ranked` non-bots get ranks 1 to `ranked`; everyone else is 0
 /// (Others).
 pub fn collect(commits: &[RawCommit], ranked: usize) -> (Vec<u32>, Authors) {
-    collect_from(commits, ranked, 0)
+    let (per_commit, authors, _) = collect_from(commits, ranked, 0);
+    (per_commit, authors)
+}
+
+/// How authors are matched: by the name shown (the email when there is no
+/// name), ignoring case.
+pub fn key(name: &str, email: &str) -> String {
+    if name.is_empty() { email } else { name }.to_lowercase()
 }
 
 /// Like [`collect`], leaving the first `skip` commits out of the table: their
-/// entries in the returned list are `u32::MAX`, for the caller to fill.
-pub fn collect_from(commits: &[RawCommit], ranked: usize, skip: usize) -> (Vec<u32>, Authors) {
+/// entries in the returned list are `u32::MAX`, for the caller to fill. Also
+/// returns each author's id by [`key`]. People a merge credits with files it
+/// brings in (`RawCommit::credits`) are in the table too, and count one
+/// commit for each merge crediting them.
+pub fn collect_from(
+    commits: &[RawCommit],
+    ranked: usize,
+    skip: usize,
+) -> (Vec<u32>, Authors, HashMap<String, u32>) {
     let mut ids: HashMap<String, u32> = HashMap::new();
     let mut out = Authors::default();
     let mut first_seen = Vec::new();
     let mut per_commit = Vec::with_capacity(commits.len());
+
+    let mut register = |name: &str,
+                        email: &str,
+                        i: usize,
+                        out: &mut Authors,
+                        first_seen: &mut Vec<usize>|
+     -> u32 {
+        let display = if name.is_empty() { email } else { name };
+        let id = *ids.entry(key(name, email)).or_insert_with(|| {
+            out.name.push(display.to_string());
+            out.commits.push(0);
+            out.bot.push(is_bot(name, email));
+            first_seen.push(i);
+            out.name.len() as u32 - 1
+        });
+        id
+    };
 
     for (i, c) in commits.iter().enumerate() {
         if i < skip {
             per_commit.push(u32::MAX);
             continue;
         }
-        let display = if c.author_name.is_empty() {
-            &c.author_email
-        } else {
-            &c.author_name
-        };
-        let key = display.to_lowercase();
-        let id = *ids.entry(key).or_insert_with(|| {
-            out.name.push(display.clone());
-            out.commits.push(0);
-            out.bot.push(is_bot(&c.author_name, &c.author_email));
-            first_seen.push(i);
-            out.name.len() as u32 - 1
-        });
+        let id = register(
+            &c.author_name,
+            &c.author_email,
+            i,
+            &mut out,
+            &mut first_seen,
+        );
         // Keep the latest spelling of the name.
-        out.name[id as usize] = display.clone();
+        out.name[id as usize] = if c.author_name.is_empty() {
+            c.author_email.clone()
+        } else {
+            c.author_name.clone()
+        };
         out.commits[id as usize] += 1;
         per_commit.push(id);
+        // Everyone else a merge credits counts once for it.
+        let mut counted = vec![id];
+        for (name, email) in c.credits.values() {
+            let other = register(name, email, i, &mut out, &mut first_seen);
+            if !counted.contains(&other) {
+                counted.push(other);
+                out.commits[other as usize] += 1;
+            }
+        }
     }
+    drop(register);
 
     let mut order: Vec<usize> = (0..out.name.len()).filter(|&a| !out.bot[a]).collect();
     order.sort_by_key(|&a| (std::cmp::Reverse(out.commits[a]), first_seen[a]));
@@ -77,7 +116,7 @@ pub fn collect_from(commits: &[RawCommit], ranked: usize, skip: usize) -> (Vec<u
         out.initials[a] = chosen;
     }
 
-    (per_commit, out)
+    (per_commit, out, ids)
 }
 
 /// Two-letter initials: first letters of the first and last names, or the
@@ -150,6 +189,7 @@ mod tests {
             author_email: format!("{}@example.com", name.replace(' ', ".")),
             time: 0,
             message: String::new(),
+            credits: Default::default(),
         }
     }
 
