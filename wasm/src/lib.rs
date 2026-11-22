@@ -190,6 +190,15 @@ impl Reader {
         Ok(())
     }
 
+    /// Files in the last snapshot: a check that it numbers files as a data
+    /// file kept from an earlier reading does.
+    #[wasm_bindgen(js_name = fileCount)]
+    pub fn file_count(&self) -> u32 {
+        self.output
+            .as_ref()
+            .map_or(0, |(out, _)| out.data.files.born.len() as u32)
+    }
+
     /// One file's line history as JSON, worked out now, or undefined when it
     /// has none (binary or vendored).
     pub fn lines(&self, file: u32) -> Result<Option<String>, JsError> {

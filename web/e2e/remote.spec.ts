@@ -138,6 +138,43 @@ test("a repository even whose last month is over the limit is only refused", asy
   await expect(page.getByRole("button", { name: /^Load / })).toHaveCount(0);
 });
 
+test("a repository opened again shows at once from this browser", async ({ page, context }) => {
+  await fakeGitHub(context);
+  await page.goto("/BurntSushi/walkdir");
+  await expect(page.locator(".commit-count")).toContainText("Commit 185 of 185", { timeout: 15_000 });
+  await expect(page.locator(".legend")).toContainText("Colored by who was writing", { timeout: 15_000 });
+  // The finished data file is kept beside the pack, in the background.
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        try {
+          const repos = await (await navigator.storage.getDirectory()).getDirectoryHandle("repos");
+          const dir = await repos.getDirectoryHandle("burntsushi__walkdir");
+          for await (const name of (dir as unknown as { keys(): AsyncIterable<string> }).keys()) {
+            if (name.endsWith(".json")) return true;
+          }
+        } catch {
+          // Not yet.
+        }
+        return false;
+      }),
+    )
+    .toBe(true);
+
+  let fetches = 0;
+  page.on("request", (r) => {
+    if ((r.postDataBuffer()?.toString("latin1") ?? "").includes("command=fetch")) fetches++;
+  });
+  await page.reload();
+  // Finished at once: no loading screen, no download, no reading.
+  await expect(page.locator(".legend")).toContainText("Colored by who was writing", { timeout: 3000 });
+  await expect(page.locator(".commit-count")).toContainText("Commit 185 of 185");
+  await expect(page.getByRole("button", { name: "Stop loading" })).toHaveCount(0);
+  expect(fetches).toBe(0);
+  // Line histories still come: from storage, or from a reader rebuilt quietly.
+  await expect(page.locator(".code-row").first()).toBeVisible({ timeout: 15_000 });
+});
+
 test("About lists the repositories kept in this browser, and deletes them", async ({ page, context }) => {
   await fakeGitHub(context);
   await page.goto("/BurntSushi/walkdir");

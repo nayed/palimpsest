@@ -48,7 +48,7 @@ function KeptRepos() {
         <div className="about-kept">
           <p>
             {plural(kept.length, "downloaded repository", "downloaded repositories")}, {formatBytes(total)}, so they open
-            again without downloading. Only this browser has them.
+            again at once. Only this browser has them.
           </p>
           <ul className="about-kept-list">
             {kept.slice(0, LISTED).map((k) => (

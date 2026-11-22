@@ -3,10 +3,15 @@
 // this browser's storage), then reads history newest first with the Rust
 // core compiled to WebAssembly, sending a data file for what has been read
 // every so often. Afterwards it works out line history in the background.
+//
+// The finished data file and each line history worked out are kept beside
+// the pack. Opened again, a repository shows its kept data at once, while a
+// reader is rebuilt quietly for line histories not kept yet.
 
 import init, { Reader } from "../wasm/pkg/palimpsest_wasm.js";
-import { GitError, countCommits, fetchPack, lsRefs } from "../git/smartHttp";
-import { readPack, writePack } from "./cache";
+import wasmUrl from "../wasm/pkg/palimpsest_wasm_bg.wasm?url";
+import { GitError, countCommits, fetchPack, lsRefs, type Tag } from "../git/smartHttp";
+import { clearLines, readData, readLines, readPack, writeData, writeLines, writePack } from "./cache";
 import { SHORT_WINDOW_MONTHS, WINDOW_MONTHS, type FromWorker, type HistoryWindow, type LoadStatus, type ToWorker } from "./protocol";
 
 const post = (m: FromWorker) => self.postMessage(m);
@@ -17,6 +22,88 @@ let reader: Reader | null = null;
 let version = 0;
 let stopped = false;
 const abort = new AbortController();
+
+/** A fingerprint of the core: data kept by another version of it is not reused. */
+let core = "";
+/** Where this repository's pack, data and line histories are kept. */
+let kept: { repo: string; key: string } | null = null;
+/** The data file version whose file ids the kept data and line histories use. */
+let finalVersion = -1;
+/** Settles once the reader can work out line histories for the latest data. */
+let readerReady: Promise<void> = Promise.resolve();
+/** Starts rebuilding the reader for kept data, if not started yet. */
+let startRebuild: (() => void) | null = null;
+/**
+ * Rebuilding starts by unpacking the pack in one go, which holds up every
+ * message meanwhile (34 s for a 209 MB pack): it waits this long, so the
+ * line histories asked for first are answered from storage before it.
+ */
+const REBUILD_DELAY_MS = 3000;
+
+async function start() {
+  const bytes = await (await fetch(wasmUrl)).arrayBuffer();
+  await init({ module_or_path: bytes });
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-1", bytes));
+  core = [...hash.slice(0, 6)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Sends the finished data file, and keeps it for next time. */
+function finish(json: string) {
+  version++;
+  finalVersion = version;
+  post({ type: "data", json, version });
+  status({ step: "done", lines: 1 });
+  if (kept) void writeData(kept.repo, kept.key, core, json);
+}
+
+/** Works out every line's history, in steps, then sends the finished data. */
+async function workLines(total: number) {
+  // Who wrote the code that exists: needs every line's history. Worked out
+  // in steps, so requests for a file's lines are answered in between.
+  const lineDue = every(150);
+  let lines = 0;
+  let step = 20;
+  while (lines < total && !stopped) {
+    const t = performance.now();
+    lines = reader!.workLines(step);
+    step = Math.max(1, Math.min(5000, Math.round(step * (50 / Math.max(1, performance.now() - t)))));
+    if (lineDue()) status({ lines: lines / total });
+    await tick();
+  }
+  if (stopped) return status({ step: "stopped" });
+  finish(reader!.finishLines());
+}
+
+/**
+ * For kept data shown at once: reads the pack again, quietly, so line
+ * histories not kept yet can be worked out. Should this reading number files
+ * otherwise than the kept data (it should not), it finishes and replaces it.
+ */
+async function rebuild(repo: string, pack: Uint8Array, head: string, tags: Tag[], files: number) {
+  reader = new Reader(repo);
+  const total = reader.load(
+    pack,
+    head,
+    tags.map((t) => t.name),
+    tags.map((t) => t.commit),
+    () => {},
+  );
+  let read = 0;
+  let batch = 20;
+  while (read < total && !stopped) {
+    const t = performance.now();
+    read = reader.read(batch);
+    batch = Math.max(1, Math.min(2000, Math.round(batch * (50 / Math.max(1, performance.now() - t)))));
+    await tick();
+  }
+  if (stopped) return;
+  reader.snapshot();
+  if (reader.fileCount() !== files) {
+    // Line histories kept for the old numbering no longer fit.
+    if (kept) await clearLines(kept.repo, kept.key, core);
+    await workLines(total);
+  }
+}
 
 /** Throttles progress messages to a few per second. */
 function every(ms: number) {
@@ -87,14 +174,33 @@ async function findWindows(proxy: string, repo: string, head: string, limit: num
 }
 
 async function open(repo: string, proxy: string, limit: number, since: number | null) {
-  await init();
+  await start();
   status({ step: "connecting" });
   const { head, tags } = await lsRefs(proxy, repo, abort.signal);
 
   // A window of history is a different pack from the whole one.
   const key = since === null ? head : `${head}-since-${since}`;
+  kept = { repo, key };
   let pack = await readPack(repo, key);
   if (pack) {
+    // Read before, by this core: show what it found at once.
+    const data = await readData(repo, key, core);
+    if (data !== null) {
+      finish(data);
+      status({ fromCache: true, downloaded: true, bytes: pack.length });
+      const files = (JSON.parse(data) as { files: { born: unknown[] } }).files.born.length;
+      const kept = pack;
+      readerReady = new Promise<void>((resolve) => {
+        startRebuild = () => {
+          startRebuild = null;
+          void rebuild(repo, kept, head, tags, files)
+            .catch(() => {})
+            .finally(resolve);
+        };
+      });
+      setTimeout(() => startRebuild?.(), REBUILD_DELAY_MS);
+      return;
+    }
     status({ step: "indexing", fromCache: true, downloaded: true, bytes: pack.length });
   } else {
     // Count the commits first, so a repository over the limit is refused
@@ -161,23 +267,7 @@ async function open(repo: string, proxy: string, limit: number, since: number | 
     return;
   }
   status({ step: "lines", read: total });
-
-  // Who wrote the code that exists: needs every line's history. Worked out
-  // in steps, so requests for a file's lines are answered in between.
-  const lineDue = every(150);
-  let lines = 0;
-  let step = 20;
-  while (lines < total && !stopped) {
-    const t = performance.now();
-    lines = reader.workLines(step);
-    step = Math.max(1, Math.min(5000, Math.round(step * (50 / Math.max(1, performance.now() - t)))));
-    if (lineDue()) status({ lines: lines / total });
-    await tick();
-  }
-  if (stopped) return status({ step: "stopped" });
-  version++;
-  post({ type: "data", json: reader.finishLines(), version });
-  status({ step: "done", lines: 1 });
+  await workLines(total);
 }
 
 self.onmessage = async (e: MessageEvent<ToWorker>) => {
@@ -195,10 +285,27 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
     stopped = true;
     abort.abort();
   } else if (m.type === "lines") {
-    let json: string | null = null;
-    if (reader && m.version === version) {
+    void answerLines(m.id, m.file, m.version);
+  }
+};
+
+/** A file's line history: kept from before, or worked out now (and kept). */
+async function answerLines(id: number, file: number, asked: number) {
+  let json: string | null = null;
+  const final = asked === finalVersion && kept !== null;
+  const saved = final ? await readLines(kept!.repo, kept!.key, core, file) : undefined;
+  if (saved !== undefined) {
+    json = saved === "null" ? null : saved;
+  } else {
+    if (final) {
+      // Not kept: the reader is needed now.
+      startRebuild?.();
+      await readerReady;
+    }
+    if (reader && asked === version) {
       try {
-        json = reader.lines(m.file) ?? null;
+        json = reader.lines(file) ?? null;
+        if (asked === finalVersion && kept) void writeLines(kept.repo, kept.key, core, file, json);
       } catch (err) {
         // A trap in WebAssembly leaves the reader unusable: say so rather
         // than failing quietly later.
@@ -208,6 +315,7 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
         }
       }
     }
-    post({ type: "lines", id: m.id, json, version });
   }
-};
+  // Answered for the data version current now: the app asks again if that moved on.
+  post({ type: "lines", id, json, version });
+}
