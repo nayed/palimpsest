@@ -69,6 +69,32 @@ test("the repository menu opens another demo, and rejects what is not a reposito
   await expect(page.getByText("That does not look like a GitHub repository")).toBeVisible();
 });
 
+test("About explains the timeline, lists the keys and links to the source", async ({ page }) => {
+  await page.goto(MOMENT);
+  await page.getByRole("button", { name: "About" }).click();
+  const about = page.getByRole("dialog", { name: "About Palimpsest" });
+  await expect(about).toContainText("A git time machine");
+  await expect(about).toContainText("Find a file in Tracks");
+  await expect(about.getByRole("link", { name: "Nayed Saïd Ali" })).toHaveAttribute("href", "https://github.com/nayed");
+  await expect(about.getByRole("link", { name: "Source on GitHub" })).toHaveAttribute(
+    "href",
+    "https://github.com/nayed/palimpsest",
+  );
+
+  // Escape closes it, and only it: the view stays.
+  const url = page.url();
+  await page.keyboard.press("Escape");
+  await expect(about).toHaveCount(0);
+  expect(page.url()).toBe(url);
+  await expect(page.getByRole("button", { name: "About" })).toBeFocused();
+
+  // A click elsewhere closes it too.
+  await page.getByRole("button", { name: "About" }).click();
+  await expect(about).toBeVisible();
+  await page.locator(".legend").click({ position: { x: 4, y: 4 } });
+  await expect(about).toHaveCount(0);
+});
+
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

@@ -74,3 +74,13 @@ export function PinIcon() {
     </svg>
   );
 }
+
+/** A circled "i", for the About button on phones. */
+export function InfoIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" {...stroke} aria-hidden="true">
+      <circle cx="9" cy="9" r="7" />
+      <path d="M9 8.2v4.3M9 5.6v.1" />
+    </svg>
+  );
+}

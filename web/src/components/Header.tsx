@@ -1,4 +1,5 @@
 import type { View } from "../store/playback";
+import { About } from "./About";
 import { LogoMark } from "./LogoMark";
 import { RepoField } from "./RepoField";
 
@@ -8,7 +9,7 @@ const VIEWS: { id: View; label: string }[] = [
   { id: "lines", label: "Lines" },
 ];
 
-/** Logo, repository field and view tabs. The tabs are links. */
+/** Logo, repository field, view tabs and About. The tabs are links. */
 export function Header(props: {
   repo: string;
   view: View | null;
@@ -24,6 +25,7 @@ export function Header(props: {
         Palimpsest
       </div>
       <RepoField repo={props.repo} phone={props.phone} onOpen={props.onOpenRepo} />
+      <About phone={props.phone} />
       {props.view && (
         <nav className="tabs" aria-label="Views">
           {VIEWS.map((v) => (

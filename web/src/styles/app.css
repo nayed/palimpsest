@@ -34,6 +34,122 @@
   display: block;
 }
 
+/* About, at the right of the header */
+
+.about {
+  position: relative;
+  order: 1;
+  margin-left: auto;
+}
+
+.about-button {
+  height: var(--control-height);
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.about-button:hover,
+.about-button.open {
+  border-color: var(--line-strong);
+  background: var(--well);
+}
+
+/* Two classes, to win over .menu, defined further down. */
+.menu.about-panel {
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(440px, calc(100vw - 2 * var(--page-padding)));
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 18px 20px;
+  gap: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.about-panel:focus {
+  outline: none;
+}
+
+.about-lead {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.about-heading {
+  margin: 14px 0 6px;
+  color: var(--mute);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.about-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.about-chip {
+  min-width: 22px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
+.about-keys {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+}
+
+.about-key {
+  display: contents;
+}
+
+.about-key dt {
+  display: flex;
+  gap: 4px;
+}
+
+.about-key dd {
+  margin: 0;
+  color: var(--mute);
+}
+
+.about-panel kbd {
+  min-width: 22px;
+  padding: 0 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  font-family: var(--font-code);
+  font-size: 12px;
+  text-align: center;
+}
+
+.about-foot {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.about-foot a {
+  color: var(--fg);
+}
+
 .repo-field {
   display: flex;
   align-items: center;
@@ -1081,6 +1197,27 @@
 
 .app.phone .tabs {
   flex: 1 1 100%;
+}
+
+.app.phone .wordmark {
+  margin-right: auto;
+}
+
+.app.phone .about {
+  order: 0;
+  margin-left: 0;
+}
+
+.app.phone .about-button {
+  width: var(--control-height);
+  padding: 0;
+  justify-content: center;
+}
+
+/* Under the button, the width of the page less its gutters. */
+.app.phone .menu.about-panel {
+  width: calc(100vw - 32px);
+  max-height: calc(100vh - 120px);
 }
 
 .app.phone .repo-field.phone {
