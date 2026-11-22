@@ -1,7 +1,7 @@
 // Panels about lines: the file as it was at the playhead (Tracks), and the
 // history of the selected line (Tracks and Lines).
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { formatDate, plural } from "../app/format";
 import { AuthorChip } from "../components/AuthorChip";
 import { CodeText } from "../components/CodeText";
@@ -35,6 +35,22 @@ export function CodeViewer(props: {
   const [scroll, setScroll] = useState({ top: 0, height: 300 });
   const ids = lines ? lines.linesAt(commit) : [];
   const index = ids.indexOf(line);
+  const showing = lines ? ids.length : -1;
+
+  // Only the lines in view are drawn, found from the scroll position kept
+  // here. It must follow the element itself, not only its scroll events: a
+  // different file (or the same one after "Reading…") mounts at the top, and
+  // a shorter one clamps the position, neither firing a scroll event, which
+  // left the viewer drawing the old file's stretch: nothing.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const measure = () => setScroll({ top: el.scrollTop, height: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [lines, showing]);
 
   // Bring the selected line into view, a few lines from the top.
   useEffect(() => {

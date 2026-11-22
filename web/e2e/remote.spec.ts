@@ -138,6 +138,26 @@ test("a repository even whose last month is over the limit is only refused", asy
   await expect(page.getByRole("button", { name: /^Load / })).toHaveCount(0);
 });
 
+test("a file picked after scrolling far down another one shows its lines", async ({ page, context }) => {
+  await fakeGitHub(context);
+  await page.goto("/BurntSushi/walkdir");
+  await expect(page.locator(".panel-title.mono")).toHaveText("src/lib.rs", { timeout: 15_000 });
+  await expect(page.locator(".code-row").first()).toBeVisible();
+  // src/lib.rs is long: scroll the code to its end.
+  await page.locator(".code").evaluate((el) => (el.scrollTop = el.scrollHeight));
+  await expect(page.locator(".code-row").last()).toBeVisible();
+
+  // A short file, so nothing needs scrolling into view once it opens.
+  await page.keyboard.press("/");
+  await page.keyboard.type("Cargo.toml");
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".panel-title.mono")).toHaveText("Cargo.toml");
+  // Drawn where the new file is scrolled to (its top), without scrolling:
+  // the rows must be on screen, not just present further down.
+  await expect(page.locator(".code-row").first()).toBeInViewport();
+  await expect(page.locator(".code-row .code-number").first()).toHaveText("1");
+});
+
 test("a repository opened again shows at once from this browser", async ({ page, context }) => {
   await fakeGitHub(context);
   await page.goto("/BurntSushi/walkdir");
