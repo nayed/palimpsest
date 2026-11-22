@@ -20,6 +20,7 @@ export interface CanvasTheme {
   fontChip: string;
   fontMarker: string;
   fontMarkerDate: string;
+  fontTag: string;
 }
 
 export function readTheme(el: Element): CanvasTheme {
@@ -44,5 +45,6 @@ export function readTheme(el: Element): CanvasTheme {
     fontChip: `600 12px ${v("--font-display")}`,
     fontMarker: `400 13px ${v("--font-ui")}`,
     fontMarkerDate: `600 14px ${v("--font-display")}`,
+    fontTag: `500 12px ${v("--font-display")}`,
   };
 }

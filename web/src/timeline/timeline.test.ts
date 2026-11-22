@@ -7,6 +7,8 @@ import { lineClipDetails, lineClips } from "../views/LinesView";
 import { clipAt, clipDates, clipTexts, fileClipDetails, spanText } from "./notes";
 import { rowHeights, shareAt } from "../views/OverviewView";
 import { timeToX, xToTime, yearSegments } from "./scale";
+import { releases, versionOf } from "./tags";
+import { currentRelease } from "./renderer";
 
 describe("scale", () => {
   const s = { start: Date.UTC(2020, 0, 1) / 1000, end: Date.UTC(2022, 6, 1) / 1000, width: 1000 };
@@ -108,5 +110,22 @@ describe("hover cards", () => {
     const [written, rewritten] = lineClips(h, lines, 1);
     expect(lineClipDetails(h, lines, 1, written!)).toEqual(["Wrote the line", "“Start”"]);
     expect(lineClipDetails(h, lines, 1, rewritten!)).toEqual(["Rewrote the line", "“Move lexer”"]);
+  });
+});
+
+describe("release tags", () => {
+  it("rank releases by the first number that changed", () => {
+    const names = ["v0.1.0", "v0.1.1", "v0.2.0", "v1.0.0", "v1.1.0", "v1.1.1", "v2.0"];
+    const r = releases({ name: names, time: names.map((_, i) => i) });
+    expect(r.map((x) => x.level)).toEqual([0, 1, 0, 0, 1, 2, 0]);
+    expect(versionOf("ignore-0.4.34")).toEqual([0, 4, 34]);
+    expect(releases(undefined)).toEqual([]);
+  });
+
+  it("find the release current at the playhead", () => {
+    const r = releases({ name: ["1.0", "2.0"], time: [10, 20] });
+    expect(currentRelease(r, 5)).toBe(-1);
+    expect(currentRelease(r, 10)).toBe(0);
+    expect(currentRelease(r, 25)).toBe(1);
   });
 });

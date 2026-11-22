@@ -8,8 +8,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { formatDate } from "../app/format";
 import type { Playback } from "../store/playback";
 import { useStore } from "../store/store";
-import { LAYOUT, draw, rowsTop, type DrawnRow, type Marker, type RowContent } from "./renderer";
-import { xToTime, yearSegments, type Scale } from "./scale";
+import { LAYOUT, TAGS_TOP, currentRelease, draw, rowsTop, type DrawnRow, type Marker, type RowContent } from "./renderer";
+import { timeToX, xToTime, yearSegments, type Scale } from "./scale";
+import type { Release } from "./tags";
 import { readTheme, type CanvasTheme } from "./theme";
 
 export interface TimelineProps {
@@ -55,7 +56,11 @@ export function Timeline(props: TimelineProps) {
   const h = playback.history;
   // While a repository is read, newest first, mark how far back it has got.
   const readFrom = h.readFrom;
-  const markerSpace = readFrom !== null ? Math.max(24, props.markerSpace ?? 0) : (props.markerSpace ?? 0);
+  // Release tags get a strip under the ruler, above any marker labels.
+  const releases = h.releases;
+  const tagSpace = releases.length ? LAYOUT.tags : 0;
+  const markerSpace =
+    tagSpace + (readFrom !== null ? Math.max(24, props.markerSpace ?? 0) : (props.markerSpace ?? 0));
   const markers = useMemo((): Marker[] => {
     const own = props.markers ?? [];
     if (readFrom === null) return own;
@@ -120,8 +125,9 @@ export function Timeline(props: TimelineProps) {
     return () => ro.disconnect();
   }, []);
   useEffect(() => {
-    if (size.height) propsRef.current.onSize?.(size.width, size.height);
-  }, [size.width, size.height]);
+    // The views fit rows to this height, so leave out the release strip.
+    if (size.height) propsRef.current.onSize?.(size.width, size.height - tagSpace);
+  }, [size.width, size.height, tagSpace]);
 
   // Keep a row in view (keyboard selection, a line chosen elsewhere).
   useEffect(() => {
@@ -141,8 +147,8 @@ export function Timeline(props: TimelineProps) {
   // clears it) happens only when its size changes. At high speed a view
   // re-renders on every commit, faster than the screen refreshes, and
   // restarting the drawing then would leave the canvas blank.
-  const frame = useRef({ trackWidth, height: size.height, heights, markerSpace, readFrom, markers });
-  frame.current = { trackWidth, height: size.height, heights, markerSpace, readFrom, markers };
+  const frame = useRef({ trackWidth, height: size.height, heights, markerSpace, tagSpace, releases, readFrom, markers });
+  frame.current = { trackWidth, height: size.height, heights, markerSpace, tagSpace, releases, readFrom, markers };
   const cache = useRef<{ key: string; rows: Map<number, RowContent> }>({ key: "", rows: new Map() });
   const redrawRef = useRef<() => void>(() => {});
 
@@ -190,6 +196,8 @@ export function Timeline(props: TimelineProps) {
           width: f.trackWidth,
           height: f.height,
           markerSpace: f.markerSpace,
+          tagSpace: f.tagSpace,
+          releases: f.releases,
           scrollTop: scrollTopRef.current,
           contentBottom: layoutRef.current.bottom,
           markers: f.markers,
@@ -218,11 +226,12 @@ export function Timeline(props: TimelineProps) {
   useEffect(() => {
     cache.current = { key: "", rows: new Map() };
     redrawRef.current();
-  }, [props.content, h, trackWidth, size.height, heights, markerSpace, markers, readFrom]);
+  }, [props.content, h, trackWidth, size.height, heights, markerSpace, markers, readFrom, releases]);
 
   // Dragging anywhere scrubs; a click on a row selects it; a click on the
   // ruler jumps there.
   const press = useRef<{ x: number; y: number; dragging: boolean; onTracks: boolean } | null>(null);
+  const timeToXRef = (t: number) => timeToX(scaleRef.current, t);
   const timeAt = (clientX: number) => {
     const rect = wrapRef.current!.getBoundingClientRect();
     return xToTime(scaleRef.current, clientX - rect.left - left);
@@ -239,13 +248,26 @@ export function Timeline(props: TimelineProps) {
     return -1;
   };
   // A mouse resting on a track shows a card about the clip under it.
-  const [hover, setHover] = useState<{ x: number; y: number; row: number; time: number } | null>(null);
+  const [hover, setHover] = useState<{ x: number; y: number; row: number; time: number; release?: number } | null>(
+    null,
+  );
   const hoverAt = (e: React.PointerEvent<HTMLDivElement>) => {
     const overCaption = (e.target as HTMLElement).closest(".timeline-caption");
-    if (!propsRef.current.hoverCard || e.pointerType !== "mouse" || press.current || overCaption) return setHover(null);
+    if (e.pointerType !== "mouse" || press.current || overCaption) return setHover(null);
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    if (tagSpace && x >= left && y >= TAGS_TOP && y < TAGS_TOP + tagSpace) {
+      // The release tick nearest the pointer, within a few pixels.
+      let best = -1;
+      let dist = 6;
+      releases.forEach((r, i) => {
+        const d = Math.abs(timeToXRef(r.time) - (x - left));
+        if (d < dist) [best, dist] = [i, d];
+      });
+      return setHover(best < 0 ? null : { x, y, row: -1, time: releases[best]!.time, release: best });
+    }
+    if (!propsRef.current.hoverCard) return setHover(null);
     const row = x >= left && x < rect.width - size.scrollbar && y >= top ? rowAt(e.clientY, true) : -1;
     setHover(row < 0 ? null : { x, y, row, time: timeAt(e.clientX) });
   };
@@ -309,7 +331,13 @@ export function Timeline(props: TimelineProps) {
     );
   }
 
-  const card = hover && props.hoverCard?.(hover.row, hover.time);
+  const card =
+    hover &&
+    (hover.release !== undefined ? (
+      <ReleaseCard name={releases[hover.release]!.name} time={releases[hover.release]!.time} />
+    ) : (
+      props.hoverCard?.(hover.row, hover.time)
+    ));
   // Beside the pointer, flipped left or up near the far edges.
   const cardStyle = hover && {
     left: hover.x,
@@ -339,7 +367,7 @@ export function Timeline(props: TimelineProps) {
           aria-valuemin={h.start}
           aria-valuemax={h.end}
           aria-valuenow={Math.round(day)}
-          aria-valuetext={formatDate(day)}
+          aria-valuetext={formatDate(day) + releaseText(releases, day)}
           style={{ top: LAYOUT.top, height: LAYOUT.ruler, left, width: trackWidth }}
         >
           {years.map((y) => (
@@ -381,6 +409,25 @@ export function Timeline(props: TimelineProps) {
       </div>
     </section>
   );
+}
+
+/** A release tag under the pointer. */
+function ReleaseCard({ name, time }: { name: string; time: number }) {
+  return (
+    <>
+      <div className="hover-card-head">
+        <span className="hover-card-name">{name}</span>
+      </div>
+      <div className="hover-card-dates">{formatDate(time)}</div>
+      <p className="hover-card-detail">Release tag</p>
+    </>
+  );
+}
+
+/** ", release v0.12.0" for the release current at a time, for screen readers. */
+function releaseText(releases: Release[], time: number): string {
+  const i = currentRelease(releases, time + 86_399);
+  return i < 0 ? "" : `, release ${releases[i]!.name}`;
 }
 
 /** How many rows of a given height fit in a timeline of this height. */

@@ -65,6 +65,8 @@ export interface Data {
     /** Lines alive at the end of each month, by who last wrote them. */
     share: { start: number[]; author: number[]; lines: number[] };
   };
+  /** Release tags, oldest first. Missing from files built before tags. */
+  tags?: { name: string[]; time: number[] };
 }
 
 export interface Clips {

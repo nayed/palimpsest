@@ -2,6 +2,7 @@
 // repository; every view reads from it and none computes history itself.
 
 import { ChangeKind, FORMAT, VERSION, type Data } from "./format";
+import { releases, type Release } from "../timeline/tags";
 
 export interface FileChange {
   commit: number;
@@ -135,6 +136,14 @@ export class History {
    */
   get provisional(): boolean {
     return this.data.repo.partial !== undefined;
+  }
+
+  private releaseList: Release[] | null = null;
+
+  /** Release tags, oldest first, with how big each release is. */
+  get releases(): Release[] {
+    this.releaseList ??= releases(this.data.tags);
+    return this.releaseList;
   }
 
   /** Time of the oldest commit read so far, while reading; otherwise null. */

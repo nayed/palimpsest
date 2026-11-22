@@ -4,6 +4,7 @@
 // renderer. Also draws the future veil, dashed markers and the playhead.
 
 import type { Clip } from "../data/history";
+import type { Release } from "./tags";
 import { timeToX, type Scale } from "./scale";
 import type { CanvasTheme } from "./theme";
 
@@ -15,7 +16,12 @@ export const LAYOUT = {
   bottom: 24,
   handleWidth: 18,
   handleHeight: 14,
+  /** The strip of release tags under the ruler, when there are any. */
+  tags: 18,
 };
+
+/** Top of the release tag strip. */
+export const TAGS_TOP = LAYOUT.top + LAYOUT.ruler + LAYOUT.gap;
 
 /** Where the rows start, for a given space reserved for markers above them. */
 export function rowsTop(markerSpace: number): number {
@@ -68,8 +74,11 @@ export interface Frame {
   /** Canvas size in CSS pixels. */
   width: number;
   height: number;
-  /** Space between the ruler and the first row, for marker labels. */
+  /** Space between the ruler and the first row: release tags, then marker labels. */
   markerSpace: number;
+  /** The part of `markerSpace` taken by release tags (0 or LAYOUT.tags). */
+  tagSpace: number;
+  releases: Release[];
   scrollTop: number;
   /** Bottom of the last row, in content coordinates. */
   contentBottom: number;
@@ -235,6 +244,50 @@ function drawSilhouette(ctx: CanvasRenderingContext2D, f: Frame, row: DrawnRow, 
   });
 }
 
+/** The release current at the playhead: the last one at or before it. */
+export function currentRelease(releases: Release[], playhead: number): number {
+  let i = -1;
+  while (i + 1 < releases.length && releases[i + 1]!.time <= playhead) i++;
+  return i;
+}
+
+/**
+ * A tick per release under the ruler, and as many names as fit: major
+ * releases first, then minor, then patch, newest first within each. The
+ * release current at the playhead is drawn brighter.
+ */
+function drawReleases(ctx: CanvasRenderingContext2D, f: Frame, theme: CanvasTheme) {
+  const y = TAGS_TOP;
+  const current = currentRelease(f.releases, f.playhead);
+  const xs = f.releases.map((r) => Math.round(timeToX(f.scale, r.time)) + 0.5);
+  ctx.lineWidth = 1;
+  f.releases.forEach((r, i) => {
+    ctx.strokeStyle = i === current ? theme.fg : theme.lineDashed;
+    ctx.beginPath();
+    ctx.moveTo(xs[i]!, y);
+    ctx.lineTo(xs[i]!, y + (r.level === 0 || i === current ? 7 : 4));
+    ctx.stroke();
+  });
+
+  ctx.font = theme.fontTag;
+  ctx.textAlign = "left";
+  const taken: [number, number][] = [];
+  const free = (a: number, b: number) => b <= f.scale.width && taken.every(([s, e]) => b + 6 <= s || a >= e + 6);
+  const order = f.releases
+    .map((_, i) => i)
+    .sort((a, b) => (a === current ? -1 : b === current ? 1 : 0) || f.releases[a]!.level - f.releases[b]!.level || b - a);
+  for (const i of order) {
+    const r = f.releases[i]!;
+    const w = ctx.measureText(r.name).width;
+    const a = xs[i]! + 3;
+    if (!free(a, a + w)) continue;
+    taken.push([a, a + w]);
+    ctx.fillStyle = i === current ? theme.fg : theme.mute;
+    ctx.fillText(r.name, a, y + 11);
+  }
+  ctx.font = theme.fontClip;
+}
+
 export function draw(ctx: CanvasRenderingContext2D, f: Frame, theme: CanvasTheme, dpr: number): void {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, f.width, f.height);
@@ -260,6 +313,10 @@ export function draw(ctx: CanvasRenderingContext2D, f: Frame, theme: CanvasTheme
   }
   ctx.restore();
 
+  if (f.tagSpace) drawReleases(ctx, f, theme);
+  /** Space for marker labels, under the release tags. */
+  const own = f.markerSpace - f.tagSpace;
+
   // Dashed markers with their labels above the rows. A label stops before
   // the next marker.
   const markers = [...f.markers].sort((a, b) => a.time - b.time);
@@ -272,12 +329,12 @@ export function draw(ctx: CanvasRenderingContext2D, f: Frame, theme: CanvasTheme
     ctx.strokeStyle = theme.fg;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(mx, top - f.markerSpace + 2);
+    ctx.moveTo(mx, top - own + 2);
     ctx.lineTo(mx, bottom);
     ctx.stroke();
     ctx.restore();
 
-    const ly = top - f.markerSpace / 2 - 1;
+    const ly = top - own / 2 - 1;
     ctx.textAlign = "left";
     ctx.fillStyle = theme.fg;
     ctx.font = theme.fontMarkerDate;
@@ -316,7 +373,7 @@ export function draw(ctx: CanvasRenderingContext2D, f: Frame, theme: CanvasTheme
       ctx.fillStyle = theme.mute;
       ctx.font = theme.fontMarker;
       ctx.textAlign = "right";
-      ctx.fillText("Not read yet", rx - 10, top - f.markerSpace / 2 - 1);
+      ctx.fillText("Not read yet", rx - 10, top - own / 2 - 1);
       ctx.font = theme.fontClip;
     }
   }
