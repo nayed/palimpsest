@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palimpsest design: phone Overview and Lines, dark</title>
+<!-- Sketch of the phone layouts for Overview and Lines, agreed before building them. Visual reference only: folder rows are simplified to stripes (the app draws size-over-time shapes), and commit texts are illustrative. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#141118;font-family:Barlow,system-ui,sans-serif}
+.board{display:flex;gap:28px;padding:28px;width:max-content}
+.ph{width:300px;background:#201c26;border-radius:28px;border:6px solid #0e0c11;overflow:hidden;color:#f1edf5;font:13px/1.35 Barlow,system-ui,sans-serif;display:flex;flex-direction:column;height:640px;position:relative}
+.dsp{font-family:"Barlow Condensed",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:15px;padding:0 3px;border-radius:3px;color:#16131b;font:600 10px "Barlow Condensed",sans-serif}
+.mute{color:#b3abc0}
+.tr{height:16px;border-radius:3px;background:#221e28;display:flex;gap:1px;overflow:hidden}
+.tr i{display:block;height:100%}
+.lbl{display:flex;align-items:center;gap:5px;margin:7px 0 3px}
+.tp{position:absolute;left:0;right:0;bottom:0;height:52px;background:#2a2531;border-top:1px solid #3d3746;display:flex;align-items:center;justify-content:space-around}
+.play{width:80px;height:36px;border-radius:6px;background:#e4f26b;display:flex;align-items:center;justify-content:center;color:#16131b}
+.ann{font-size:13px;color:#b3abc0;width:300px;margin:12px 0 0;line-height:1.45}
+.mark{width:14px;height:14px;border-radius:3px;background:#6dabdf;display:inline-block}
+</style>
+</head>
+<body>
+<div class="board">
+
+<div>
+<div class="ph">
+ <div style="padding:10px 14px 8px;border-bottom:1px solid #3d3746">
+  <div class="dsp" style="font-size:15px;display:flex;align-items:center;gap:6px"><span class="mark"></span>Palimpsest</div>
+  <div style="display:flex;gap:6px;margin-top:8px"><div class="mono" style="flex:1;border:1px solid #3d3746;border-radius:6px;background:#18151d;padding:7px 8px">alacritty/alacritty ⌄</div><div style="width:30px;border:1px solid #3d3746;border-radius:6px;display:flex;align-items:center;justify-content:center">i</div></div>
+  <div style="display:flex;margin-top:6px;background:#18151d;border:1px solid #3d3746;border-radius:6px;padding:2px;font-size:12px;text-align:center"><div style="flex:1;background:#f1edf5;color:#16131b;border-radius:4px;padding:5px 0;font-weight:600">Overview</div><div style="flex:1;padding:5px 0">Tracks</div><div style="flex:1;padding:5px 0">Lines</div></div>
+ </div>
+ <div style="padding:10px 14px 0">
+  <div style="display:flex;align-items:baseline;justify-content:space-between"><span class="dsp" style="font-size:30px;line-height:1">1 Jun 2021</span><span class="mute" style="font-size:11px">1,676 of 2,338</span></div>
+  <div style="display:flex;height:22px;gap:2px;margin:8px 0 4px;font:600 10px 'Barlow Condensed',sans-serif;color:#16131b"><i style="flex:55;background:#6dabdf;border-radius:3px;padding:4px">CD 55%</i><i style="flex:9;background:#9df3cc;border-radius:3px"></i><i style="flex:21;background:#dfc1ff;border-radius:3px;padding:4px">JW 21%</i><i style="flex:5;background:#e3975a;border-radius:3px"></i><i style="flex:10;background:#6a676f;border-radius:3px"></i></div>
+  <div style="display:flex;gap:6px;align-items:center;font-size:12px"><span class="chip" style="background:#6dabdf">CD</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Fix crashes with cut-off fullwidth…</span></div>
+ </div>
+ <div style="flex:1;background:#2a2531;margin-top:10px;padding:8px 14px 60px;border-top:1px solid #3d3746">
+  <div style="font-size:11px;display:flex;gap:8px;flex-wrap:wrap"><span><span class="chip" style="background:#6dabdf">CD</span> Christian</span><span><span class="chip" style="background:#9df3cc">KC</span> Kirill</span><span><span class="chip" style="background:#dfc1ff">JW</span> Joe</span><span class="mute">+2</span></div>
+  <div class="mute dsp" style="display:flex;justify-content:space-between;font-size:10px;margin-top:8px;border-bottom:1px solid #3d3746;padding-bottom:2px"><span>16</span><span>18</span><span>20</span><span style="color:#e4f26b">21</span><span>22</span><span>24</span><span>26</span></div>
+  <div class="mute" style="font-size:9px;letter-spacing:1px;margin-top:1px">ı ı ıı ı v0.7 ı ı v0.12 ı v0.16</div>
+  <div class="lbl"><span class="mono">alacritty_terminal/</span><span class="mute">›</span><span class="mute" style="margin-left:auto;font-size:10px">38k lines</span></div>
+  <div class="tr" style="height:26px"><i style="flex:30;background:#221e28"></i><i style="flex:28;background:#6dabdf"></i><i style="flex:22;background:#9df3cc;opacity:.55"></i><i style="flex:20;background:#6dabdf;opacity:.55"></i></div>
+  <div class="lbl"><span class="mono">alacritty/</span><span class="mute">›</span><span class="mute" style="margin-left:auto;font-size:10px">21k</span></div>
+  <div class="tr" style="height:20px"><i style="flex:32;background:#221e28"></i><i style="flex:24;background:#6dabdf"></i><i style="flex:44;background:#9df3cc;opacity:.55"></i></div>
+  <div class="lbl"><span class="mono">src/</span><span class="mute">›</span><span class="mute" style="margin-left:auto;font-size:10px">gone 2019</span></div>
+  <div class="tr" style="height:16px"><i style="flex:12;background:#dfc1ff"></i><i style="flex:18;background:#6dabdf"></i><i style="flex:70;background:#221e28"></i></div>
+  <div class="lbl"><span class="mono">extra/</span><span class="mute">›</span></div>
+  <div class="tr"><i style="flex:34;background:#221e28"></i><i style="flex:22;background:#6dabdf"></i><i style="flex:44;background:#9df3cc;opacity:.55"></i></div>
+  <div class="lbl"><span class="mono">everything else</span></div>
+  <div class="tr"><i style="flex:15;background:#dfc1ff"></i><i style="flex:40;background:#6dabdf"></i><i style="flex:45;background:#6dabdf;opacity:.55"></i></div>
+  <div style="position:absolute;left:184px;top:330px;bottom:52px;width:2px;background:#e4f26b"></div>
+ </div>
+ <div class="tp"><span>‹</span><div class="play">▶</div><span>›</span><span class="dsp">4×</span></div>
+</div>
+<p class="ann">Overview: date and count on one line, the share bar, one line of commit, first-name legend, folder names above full-width rows, controls pinned. Tap a folder to open it in Tracks.</p>
+</div>
+
+<div>
+<div class="ph">
+ <div style="padding:10px 14px 8px;border-bottom:1px solid #3d3746">
+  <div class="dsp" style="font-size:15px;display:flex;align-items:center;gap:6px"><span class="mark"></span>Palimpsest</div>
+  <div style="display:flex;gap:6px;margin-top:8px"><div class="mono" style="flex:1;border:1px solid #3d3746;border-radius:6px;background:#18151d;padding:7px 8px">alacritty/alacritty ⌄</div><div style="width:30px;border:1px solid #3d3746;border-radius:6px;display:flex;align-items:center;justify-content:center">i</div></div>
+  <div style="display:flex;margin-top:6px;background:#18151d;border:1px solid #3d3746;border-radius:6px;padding:2px;font-size:12px;text-align:center"><div style="flex:1;padding:5px 0">Overview</div><div style="flex:1;padding:5px 0">Tracks</div><div style="flex:1;background:#f1edf5;color:#16131b;border-radius:4px;padding:5px 0;font-weight:600">Lines</div></div>
+ </div>
+ <div style="padding:10px 14px 8px;display:flex;align-items:center;justify-content:space-between"><span class="dsp" style="font-size:22px;line-height:1">1 Jun 2021</span><span class="mono" style="border:1px solid #3d3746;border-radius:6px;padding:4px 6px">‹ main.rs</span></div>
+ <div style="flex:1;background:#2a2531;padding:8px 14px 0;border-top:1px solid #3d3746">
+  <div class="mute dsp" style="display:flex;justify-content:space-between;font-size:10px;border-bottom:1px solid #3d3746;padding-bottom:2px"><span>16</span><span>18</span><span>20</span><span style="color:#e4f26b">21</span><span>22</span><span>24</span><span>26</span></div>
+  <div style="font-size:10px;margin:4px 0 2px"><b class="dsp">Apr 2019</b> <span class="mute">file moves to alacritty/src/</span></div>
+  <div class="lbl"><span class="mute mono">3</span><span class="chip" style="background:#9df3cc">KC</span><span class="mono" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">#![warn(rust_2018_idioms…</span></div>
+  <div class="tr"><i style="flex:60;background:#221e28"></i><i style="flex:40;background:#9df3cc"></i></div>
+  <div class="lbl"><span class="mute mono">4</span><span class="chip" style="background:#d078a0">MK</span><span class="mono" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">#![deny(clippy::all, cli…</span></div>
+  <div class="tr"><i style="flex:30;background:#221e28"></i><i style="flex:8;background:#6dabdf"></i><i style="flex:20;background:#d078a0"></i><i style="flex:42;background:#6dabdf"></i></div>
+  <div class="lbl" style="background:#2f2a38;margin-left:-14px;margin-right:-14px;padding:3px 14px;border-left:3px solid #e4f26b"><span class="mute mono">5</span><span class="chip" style="background:#9df3cc">KC</span><span class="mono" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">#![cfg_attr(feature = "c…</span></div>
+  <div class="tr"><i style="flex:58;background:#221e28"></i><i style="flex:42;background:#9df3cc"></i></div>
+  <div class="lbl"><span class="chip" style="background:#6a676f">CD</span><span class="mono mute" style="text-decoration:line-through">#![cfg_attr(feature…</span><span class="mute" style="font-size:10px;margin-left:auto">del. 2018</span></div>
+  <div class="tr"><i style="flex:22;background:#221e28"></i><i style="flex:6;background:#6dabdf"></i><i style="flex:72;background:#221e28"></i></div>
+  <div style="position:absolute;left:186px;top:150px;bottom:230px;width:2px;background:#e4f26b"></div>
+ </div>
+ <div style="position:absolute;left:0;right:0;bottom:52px;height:176px;background:#18151d;border-top:1px solid #5a5366;border-radius:14px 14px 0 0;padding:6px 14px">
+  <div style="width:36px;height:4px;border-radius:2px;background:#5a5366;margin:0 auto 8px"></div>
+  <div style="font-weight:600;font-size:13px;margin-bottom:6px">Line 5 has been touched 2 times</div>
+  <div style="display:flex;gap:6px;margin-bottom:6px"><span class="chip" style="background:#9df3cc;margin-top:1px">KC</span><div><div style="font-weight:600;font-size:12px">Error on warnings when running clippy</div><div class="mute" style="font-size:11px">29 Oct 2020</div></div></div>
+  <div style="display:flex;gap:6px"><span class="chip" style="background:#6dabdf;margin-top:1px">CD</span><div><div style="font-weight:600;font-size:12px">Move lints to main.rs</div><div class="mute" style="font-size:11px">17 Apr 2019. Line first written.</div></div></div>
+ </div>
+ <div class="tp"><span>‹</span><div class="play">▶</div><span>›</span><span class="dsp">4×</span></div>
+</div>
+<p class="ann">Lines: compact date with the file as a back button, code above each line's track at full width, the selected line's history in a sheet above the controls (swipe down to hide, tap a line to change it).</p>
+</div>
+
+</div>
+</body>
+</html>
