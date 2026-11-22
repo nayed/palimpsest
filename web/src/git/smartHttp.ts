@@ -195,8 +195,7 @@ export async function fetchPack(
       throw new GitError("network", e instanceof Error ? e.message : String(e));
     }
     if (chunk.done) break;
-    bytes += chunk.value.length;
-    opts.onBytes?.(bytes);
+    const before = bytes;
     for (const p of pkt.push(chunk.value)) {
       if (p.kind !== "data") continue;
       if (!inPack) {
@@ -207,13 +206,18 @@ export async function fetchPack(
       }
       // Side band: 1 is pack data, 2 progress, 3 an error.
       const band = p.data[0];
-      if (band === 1) pack.push(p.data.slice(1));
-      if (opts.headerOnly && pack.reduce((n, c) => n + c.length, 0) >= 12) {
-        void reader.cancel();
-        return concat(pack).subarray(0, 12);
-      }
-      else if (band === 3) throw new GitError("protocol", dec.decode(p.data.subarray(1)).trim());
+      if (band === 1) {
+        pack.push(p.data.slice(1));
+        bytes += p.data.length - 1;
+        if (opts.headerOnly && bytes >= 12) {
+          void reader.cancel();
+          return concat(pack).subarray(0, 12);
+        }
+      } else if (band === 3) throw new GitError("protocol", dec.decode(p.data.subarray(1)).trim());
     }
+    // Only the pack counts: a shallow fetch first lists its edge commits,
+    // which can run to tens of kilobytes before any of the pack arrives.
+    if (bytes !== before) opts.onBytes?.(bytes);
   }
   if (opts.signal?.aborted) throw new GitError("stopped", "Stopped.");
   if (!pack.length) throw new GitError("protocol", "GitHub sent no pack.");

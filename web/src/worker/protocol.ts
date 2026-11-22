@@ -26,6 +26,8 @@ export interface LoadStatus {
   downloaded: boolean;
   /** The pack came from this browser's storage, not from GitHub. */
   fromCache: boolean;
+  /** Share of the pack unpacked (indexed), 0 to 1. */
+  unpacked: number;
   /** Commits counted when there are too many to read: windows are being tried. */
   over: number | null;
   /** Commits on the default branch, once known, and how many are read. */
@@ -46,6 +48,7 @@ export const INITIAL_STATUS: LoadStatus = {
   bytes: 0,
   downloaded: false,
   fromCache: false,
+  unpacked: 0,
   over: null,
   total: null,
   read: 0,

@@ -94,7 +94,8 @@ describe("talking to GitHub", () => {
     const seen: number[] = [];
     const pack = await fetchPack("/p", "a/b", "f".repeat(40), { filter: "tree:0", onBytes: (n) => seen.push(n) });
     expect(text(pack)).toBe("PACK1234");
-    expect(seen[seen.length - 1]).toBe(body.length);
+    // Pack bytes only: not the pkt-line framing or progress messages.
+    expect(seen[seen.length - 1]).toBe(8);
   });
 
   it("counts commits from a pack header alone", async () => {

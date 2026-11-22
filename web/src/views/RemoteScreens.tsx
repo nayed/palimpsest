@@ -64,11 +64,13 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
       ? "Connecting"
       : s.step === "counting"
         ? "Counting commits"
-        : s.total === null
-          ? "Downloading"
-          : s.step === "reading"
-            ? `${formatCount(s.read)} of ${formatCount(s.total)} commits`
-            : `${formatCount(s.total)} commits`;
+        : s.step === "indexing"
+          ? "Unpacking"
+          : s.total === null
+            ? "Downloading"
+            : s.step === "reading"
+              ? `${formatCount(s.read)} of ${formatCount(s.total)} commits`
+              : `${formatCount(s.total)} commits`;
   const detail =
     s.step === "connecting"
       ? "Asking GitHub for the repository."
@@ -81,11 +83,11 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
             ? "GitHub is preparing the download. For a big repository this can take a minute or two."
             : `Downloading the repository: ${mb(s.bytes)} so far.`
           : s.step === "indexing"
-            ? "Unpacking the download."
+            ? `Unpacking the download: ${Math.floor(s.unpacked * 100)}%.`
             : readFrom !== null
               ? `Reading history newest first. Back to ${monthYear(readFrom)} so far.`
               : "Reading history newest first.";
-  const progress = s.step === "reading" && s.total ? s.read / s.total : s.step === "indexing" ? 0.01 : 0;
+  const progress = s.step === "reading" && s.total ? s.read / s.total : s.step === "indexing" ? s.unpacked : 0;
   const reading = s.step === "reading";
 
   const steps: { label: string; state: string; active: boolean }[] = [

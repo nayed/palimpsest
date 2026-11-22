@@ -34,9 +34,9 @@ let readerReady: Promise<void> = Promise.resolve();
 /** Starts rebuilding the reader for kept data, if not started yet. */
 let startRebuild: (() => void) | null = null;
 /**
- * Rebuilding starts by unpacking the pack in one go, which holds up every
- * message meanwhile (34 s for a 209 MB pack): it waits this long, so the
- * line histories asked for first are answered from storage before it.
+ * Rebuilding is heavy work in slices; it waits this long so the line
+ * histories asked for first, as the views open, are answered from storage
+ * without competing with it.
  */
 const REBUILD_DELAY_MS = 3000;
 
@@ -75,19 +75,49 @@ async function workLines(total: number) {
 }
 
 /**
+ * Loads a pack into a new reader, indexing it in slices of about 50 ms so
+ * messages (line histories, stop) are answered in between: a big pack takes
+ * tens of seconds. Null when stopped meanwhile.
+ */
+async function loadPack(
+  repo: string,
+  pack: Uint8Array,
+  head: string,
+  tags: Tag[],
+  onProgress?: (share: number) => void,
+): Promise<Reader | null> {
+  const r = new Reader(repo);
+  r.begin(
+    pack,
+    head,
+    tags.map((t) => t.name),
+    tags.map((t) => t.commit),
+  );
+  let n = 500;
+  for (;;) {
+    const t = performance.now();
+    const share = r.index(n);
+    if (share >= 1) return r;
+    n = Math.max(16, Math.min(200_000, Math.round(n * (50 / Math.max(1, performance.now() - t)))));
+    onProgress?.(share);
+    if (stopped) {
+      r.free();
+      return null;
+    }
+    await tick();
+  }
+}
+
+/**
  * For kept data shown at once: reads the pack again, quietly, so line
  * histories not kept yet can be worked out. Should this reading number files
  * otherwise than the kept data (it should not), it finishes and replaces it.
  */
 async function rebuild(repo: string, pack: Uint8Array, head: string, tags: Tag[], files: number) {
-  reader = new Reader(repo);
-  const total = reader.load(
-    pack,
-    head,
-    tags.map((t) => t.name),
-    tags.map((t) => t.commit),
-    () => {},
-  );
+  const loaded = await loadPack(repo, pack, head, tags);
+  if (!loaded) return;
+  reader = loaded;
+  const total = reader.commitCount();
   let read = 0;
   let batch = 20;
   while (read < total && !stopped) {
@@ -227,14 +257,11 @@ async function open(repo: string, proxy: string, limit: number, since: number | 
   // Stopped while the last of the download arrived: say so.
   if (stopped) return status({ step: "stopped" });
 
-  reader = new Reader(repo);
-  const total = reader.load(
-    pack,
-    head,
-    tags.map((t) => t.name),
-    tags.map((t) => t.commit),
-    () => {},
-  );
+  const indexDue = every(150);
+  const loaded = await loadPack(repo, pack, head, tags, (share) => indexDue() && status({ unpacked: share }));
+  if (!loaded) return status({ step: "stopped" });
+  reader = loaded;
+  const total = reader.commitCount();
   pack = null;
   await fetchTagCommits(repo, proxy, head);
   if (stopped) return status({ step: "stopped" });
