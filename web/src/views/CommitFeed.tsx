@@ -24,7 +24,7 @@ export function CommitFeed({ history, commit }: { history: History; commit: numb
             <li key={c} className={i === 0 ? "feed-row current" : "feed-row"} style={{ opacity: FADE[i] }}>
               <span className="feed-date">{formatDate(commits.time[c]!)}</span>
               <AuthorChip history={history} author={commits.author[c]!} />
-              <span className="feed-subject">{commits.subject[c]}</span>
+              <span className="feed-subject">{history.commitSubject(c)}</span>
               <span className="feed-files">{what}</span>
             </li>
           );

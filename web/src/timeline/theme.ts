@@ -10,7 +10,7 @@ export interface CanvasTheme {
   onUntouched: string;
   untouchedStripe: string;
   untouchedGap: string;
-  authors: string[]; // index = rank; 0 = Others
+  authors: string[]; // index = rank; 0 = Others, 6 = code from before a loaded window
   futureVeil: string;
   playheadLine: string;
   now: string;
@@ -35,7 +35,15 @@ export function readTheme(el: Element): CanvasTheme {
     onUntouched: v("--on-untouched"),
     untouchedStripe: v("--untouched-stripe"),
     untouchedGap: v("--untouched-gap"),
-    authors: [v("--author-others"), v("--author-1"), v("--author-2"), v("--author-3"), v("--author-4"), v("--author-5")],
+    authors: [
+      v("--author-others"),
+      v("--author-1"),
+      v("--author-2"),
+      v("--author-3"),
+      v("--author-4"),
+      v("--author-5"),
+      v("--author-earlier"),
+    ],
     futureVeil: v("--future-veil"),
     playheadLine: v("--playhead-line"),
     now: v("--now"),

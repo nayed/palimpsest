@@ -55,6 +55,7 @@
   --author-4: #e3975a;
   --author-5: #d078a0;
   --author-others: #6a676f;           /* sixth author onward, and bots */
+  --author-earlier: #8a7e68;          /* code already there before a loaded window: faded parchment */
   --untouched: repeating-linear-gradient(135deg, #4a4455 0 3px, #2f2a38 3px 6px);
   --untouched-stripe: #4a4455;      /* the two colors of the --untouched hatch, */
   --untouched-gap: #2f2a38;         /* for the canvas, which cannot read a gradient */
@@ -103,6 +104,7 @@
   --author-4: #d0792a;
   --author-5: #fd9ac6;
   --author-others: #8b857f;
+  --author-earlier: #b3a284;
   --untouched: repeating-linear-gradient(135deg, #c4beb4 0 3px, #e3e0da 3px 6px);
   --untouched-stripe: #c4beb4;
   --untouched-gap: #e3e0da;

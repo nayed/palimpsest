@@ -1448,6 +1448,47 @@
 
 .failure-side {
   flex: 3 1 460px;
+  gap: 12px;
+}
+
+/* Windows of recent history offered for a repository too big to read */
+
+.windows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.window-choice {
+  min-height: 72px;
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.window-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.now-button {
+  flex: 0 0 auto;
+  min-height: var(--control-height);
+  padding: 0 22px;
+  border: 2px solid var(--now-outline);
+  border-radius: var(--radius-control);
+  background: var(--now);
+  color: var(--on-now);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.window-choice .outlined-button {
+  flex: 0 0 auto;
 }
 
 .display {

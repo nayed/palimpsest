@@ -106,7 +106,9 @@ export function LineHistoryPanel(props: {
     const date = formatDate(c.time[e.commit]!);
     switch (e.kind) {
       case "born":
-        return `${date}. Line first written.`;
+        return h.isWindowStart(e.commit)
+          ? `${date}. Already there when the loaded history starts.`
+          : `${date}. Line first written.`;
       case "moved":
         return `${date}. Line unchanged, the file moved from ${e.from}.`;
       case "deleted":
@@ -124,7 +126,7 @@ export function LineHistoryPanel(props: {
           <li key={`${e.commit}-${e.kind}`} className="history-item">
             <AuthorChip history={h} author={c.author[e.commit]!} />
             <div>
-              <div className="history-subject">{c.subject[e.commit]}</div>
+              <div className="history-subject">{h.commitSubject(e.commit)}</div>
               <div className="history-detail">{detail(e)}</div>
             </div>
           </li>

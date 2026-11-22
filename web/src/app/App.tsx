@@ -50,7 +50,7 @@ function applyRoute(playback: Playback, route: Route): void {
 }
 
 /** The route describing a playback's current moment. */
-function currentRoute(repo: string, playback: Playback, lines: LinesSource): Route {
+function currentRoute(repo: string, since: number | null, playback: Playback, lines: LinesSource): Route {
   const s = playback.state;
   const h = playback.history;
   const commit = h.commitAt(s.time);
@@ -70,6 +70,7 @@ function currentRoute(repo: string, playback: Playback, lines: LinesSource): Rou
     folder: s.folder,
     file: s.playing && s.view !== "lines" ? null : file,
     line: s.playing ? null : line,
+    since,
   };
 }
 
@@ -77,6 +78,8 @@ export function App() {
   const phone = useMediaQuery(PHONE_QUERY);
   const [route, setRoute] = useState(() => parseRoute(location.pathname, location.search));
   const repo = route.repo ?? DEFAULT_REPO;
+  // A window of history applies to a pasted repository only.
+  const since = demoByName(repo) ? null : route.since;
   const [state, setState] = useState<State>({ kind: "loading", repo });
   const [view, setView] = useState<View>(route.view);
   const routeRef = useRef(route);
@@ -91,7 +94,7 @@ export function App() {
     const demo = demoByName(repo);
     setState({ kind: "loading", repo });
     if (!demo) {
-      const remote = new RemoteRepo(repo);
+      const remote = new RemoteRepo(repo, since);
       setState({ kind: "remote", repo, remote });
       const unsubscribe = remote.history.subscribe(() => {
         const history = remote.history.get().history;
@@ -132,7 +135,7 @@ export function App() {
       cancelled = true;
       playback?.dispose();
     };
-  }, [repo, attempt]);
+  }, [repo, since, attempt]);
 
   const playback = state.kind === "ready" ? state.playback : null;
   const lines: LinesSource = state.kind === "ready" ? state.lines : NO_LINES;
@@ -149,7 +152,7 @@ export function App() {
     let lastView = playback.state.view;
     const sync = () => {
       timer = 0;
-      const url = routeUrl(currentRoute(repo, playback, lines));
+      const url = routeUrl(currentRoute(repo, since, playback, lines));
       const s = playback.state;
       if (url === location.pathname + location.search) return;
       if (s.view !== lastView) history.pushState(null, "", url);
@@ -172,7 +175,7 @@ export function App() {
   useEffect(() => {
     const onPop = () => {
       const r = parseRoute(location.pathname, location.search);
-      if ((r.repo ?? DEFAULT_REPO) !== repo) setRoute(r);
+      if ((r.repo ?? DEFAULT_REPO) !== repo || r.since !== since) setRoute(r);
       else if (playback) applyRoute(playback, r);
     };
     window.addEventListener("popstate", onPop);
@@ -182,7 +185,7 @@ export function App() {
   const openRepo = useCallback(
     (name: string) => {
       if (name.toLowerCase() === repo.toLowerCase()) return;
-      const r: Route = { repo: name, at: null, view: "tracks", folder: "", file: null, line: null };
+      const r: Route = { repo: name, at: null, view: "tracks", folder: "", file: null, line: null, since: null };
       history.pushState(null, "", routeUrl(r));
       if (demoByName(name) === null) addRecent(name);
       setRoute(r);
@@ -227,7 +230,14 @@ export function App() {
   const session: Session | null = playback
     ? { playback, history: playback.history, lines, phone, upper: loadingPanel }
     : null;
-  const href = (v: View) => (playback ? routeUrl({ ...currentRoute(repo, playback, lines), repo, view: v }) : "/");
+  const href = (v: View) => (playback ? routeUrl({ ...currentRoute(repo, since, playback, lines), repo, view: v }) : "/");
+
+  /** Reads only the history since `start`: for a repository too big to read whole. */
+  const loadWindow = (start: number) => {
+    const r: Route = { repo, at: null, view: "tracks", folder: "", file: null, line: null, since: start };
+    history.pushState(null, "", routeUrl(r));
+    setRoute(r);
+  };
 
   return (
     <div className={phone ? "app phone" : "app"}>
@@ -244,7 +254,12 @@ export function App() {
       {session && view === "lines" && <LinesView session={session} />}
       {state.kind === "loading" && <main className="message" aria-busy="true" />}
       {state.kind === "remote" && (
-        <RemoteScreen remote={state.remote} onBack={backToDemo} onRetry={() => setAttempt((n) => n + 1)} />
+        <RemoteScreen
+          remote={state.remote}
+          onBack={backToDemo}
+          onRetry={() => setAttempt((n) => n + 1)}
+          onWindow={loadWindow}
+        />
       )}
       {state.kind === "error" && (
         <main className="message">

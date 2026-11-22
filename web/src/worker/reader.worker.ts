@@ -7,7 +7,7 @@
 import init, { Reader } from "../wasm/pkg/palimpsest_wasm.js";
 import { GitError, countCommits, fetchPack, lsRefs } from "../git/smartHttp";
 import { readPack, writePack } from "./cache";
-import type { FromWorker, LoadStatus, ToWorker } from "./protocol";
+import { SHORT_WINDOW_MONTHS, WINDOW_MONTHS, type FromWorker, type HistoryWindow, type LoadStatus, type ToWorker } from "./protocol";
 
 const post = (m: FromWorker) => self.postMessage(m);
 const status = (s: Partial<LoadStatus>) => post({ type: "status", status: s });
@@ -53,31 +53,70 @@ async function fetchTagCommits(repo: string, proxy: string, head: string) {
   }
 }
 
-async function open(repo: string, proxy: string, limit: number) {
+const DAY = 86_400;
+
+/** The start of the UTC day `months` before now. */
+function monthsAgo(months: number): number {
+  const t = Math.floor(Date.now() / 1000) - Math.round(months * 30.44 * DAY);
+  return t - (t % DAY);
+}
+
+/**
+ * For a repository over the limit: the longest recent window that fits, and
+ * the short one beside it. One header-only count per window tried.
+ */
+async function findWindows(proxy: string, repo: string, head: string, limit: number): Promise<HistoryWindow[]> {
+  const counted = new Map<number, HistoryWindow>();
+  const count = async (months: number) => {
+    const since = monthsAgo(months);
+    const w = { months, since, commits: await countCommits(proxy, repo, head, abort.signal, since) };
+    counted.set(months, w);
+    return w;
+  };
+  let longest: HistoryWindow | null = null;
+  for (const months of WINDOW_MONTHS) {
+    const w = await count(months);
+    if (w.commits <= limit) {
+      longest = w;
+      break;
+    }
+  }
+  if (!longest) return [];
+  if (longest.months <= SHORT_WINDOW_MONTHS) return [longest];
+  return [longest, counted.get(SHORT_WINDOW_MONTHS) ?? (await count(SHORT_WINDOW_MONTHS))];
+}
+
+async function open(repo: string, proxy: string, limit: number, since: number | null) {
   await init();
   status({ step: "connecting" });
   const { head, tags } = await lsRefs(proxy, repo, abort.signal);
 
-  let pack = await readPack(repo, head);
+  // A window of history is a different pack from the whole one.
+  const key = since === null ? head : `${head}-since-${since}`;
+  let pack = await readPack(repo, key);
   if (pack) {
     status({ step: "indexing", fromCache: true, downloaded: true, bytes: pack.length });
   } else {
     // Count the commits first, so a repository over the limit is refused
     // before the big download. Only a pack header is downloaded for this.
     status({ step: "counting" });
-    const commits = await countCommits(proxy, repo, head, abort.signal);
+    const commits = await countCommits(proxy, repo, head, abort.signal, since);
     if (commits > limit) {
-      status({ step: "failed", failure: { kind: "tooBig", message: String(commits) } });
+      // Offer windows of recent history that fit instead.
+      status({ over: commits });
+      const windows = await findWindows(proxy, repo, head, limit);
+      status({ step: "failed", failure: { kind: "tooBig", message: String(commits), windows } });
       return;
     }
     const due = every(150);
     status({ step: "downloading" });
     pack = await fetchPack(proxy, repo, head, {
       signal: abort.signal,
+      since,
       onBytes: (bytes) => due() && status({ bytes }),
     });
     status({ step: "indexing", bytes: pack.length, downloaded: true });
-    void writePack(repo, head, pack);
+    void writePack(repo, key, pack);
   }
   // Stopped while the last of the download arrived: say so.
   if (stopped) return status({ step: "stopped" });
@@ -145,7 +184,7 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
   const m = e.data;
   if (m.type === "open") {
     try {
-      await open(m.repo, m.proxy, m.limit);
+      await open(m.repo, m.proxy, m.limit, m.since);
     } catch (err) {
       if (err instanceof GitError && err.kind === "stopped") return status({ step: "stopped" });
       const kind = err instanceof GitError && err.kind !== "stopped" ? err.kind : "internal";

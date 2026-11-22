@@ -13,6 +13,7 @@ import type { Clip, History } from "../data/history";
 import type { LineHistory } from "../data/lines";
 import { useStore } from "../store/store";
 import { ClipCard } from "../components/ClipCard";
+import { authorColor } from "../components/authorColor";
 import { CodeText } from "../components/CodeText";
 import { syntaxOf } from "../data/tone";
 import { clipAt, commitsInClip, dirOf } from "../timeline/notes";
@@ -47,6 +48,14 @@ export function lineClipDetails(h: History, lines: LineHistory, line: number, cl
   const commits = commitsInClip(h, lines.versionCommits[line]!, clip);
   const first = commits[0];
   if (first === undefined) return [];
+  if (h.isWindowStart(first)) {
+    const later = commits.length - 1;
+    return [
+      later === 0
+        ? "Already there when the loaded history starts"
+        : `Already there when the loaded history starts, then edited ${later === 1 ? "once" : `${later} times`}`,
+    ];
+  }
   const born = first === lines.versionCommits[line]![0];
   const out = [
     commits.length === 1
@@ -130,7 +139,7 @@ function LinesTimeline({
         <span
           className="chip"
           style={{
-            background: future || dead ? "var(--former-author-chip)" : `var(${rank ? `--author-${rank}` : "--author-others"})`,
+            background: future || dead ? "var(--former-author-chip)" : authorColor(rank),
           }}
           title={h.authorName(author)}
         >

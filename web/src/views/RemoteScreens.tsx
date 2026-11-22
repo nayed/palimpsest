@@ -7,7 +7,7 @@ import { NextCommitIcon, PlayIcon, PreviousCommitIcon } from "../components/Icon
 import type { History } from "../data/history";
 import type { RemoteRepo } from "../data/remote";
 import { useStore } from "../store/store";
-import { COMMIT_LIMIT, type LoadStatus } from "../worker/protocol";
+import { COMMIT_LIMIT, type HistoryWindow, type LoadStatus } from "../worker/protocol";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -75,7 +75,9 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
     s.step === "connecting"
       ? "Asking GitHub for the repository."
       : s.step === "counting"
-        ? "Checking how big the history is before downloading it."
+        ? s.over !== null
+          ? `${formatCount(s.over)} commits, more than Palimpsest reads at once. Looking for a recent part that fits.`
+          : "Checking how big the history is before downloading it."
         : s.step === "downloading"
           ? `Downloading the repository: ${mb(s.bytes)} so far.`
           : s.step === "indexing"
@@ -139,15 +141,29 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
   );
 }
 
-function failureText(s: LoadStatus, repo: string): { title: string; text: string; retry: boolean } {
+/** "the last year", "the last 6 months". */
+export function windowName(months: number): string {
+  if (months % 12 === 0) return months === 12 ? "the last year" : `the last ${months / 12} years`;
+  return months === 1 ? "the last month" : `the last ${months} months`;
+}
+
+/** "41,000" for 40,812: a count that is about right is easier to read. */
+function about(n: number): string {
+  const step = n >= 10_000 ? 1000 : n >= 1000 ? 100 : 10;
+  return formatCount(Math.max(step, Math.round(n / step) * step));
+}
+
+function failureText(s: LoadStatus, repo: string, since: number | null): { title: string; text: string; retry: boolean } {
   const f = s.failure!;
   switch (f.kind) {
-    case "tooBig":
+    case "tooBig": {
+      const what = since === null ? "This repository has" : `Its history since ${monthYear(since)} has`;
       return {
         title: "Too big for one browser tab",
-        text: `This repository has ${formatCount(Number(f.message))} commits. Palimpsest reads history inside your browser, and it stops at ${formatCount(COMMIT_LIMIT)} so the tab stays responsive.`,
+        text: `${what} ${formatCount(Number(f.message))} commits. Palimpsest reads history inside your browser, and it stops at ${formatCount(COMMIT_LIMIT)} so the tab stays responsive.`,
         retry: false,
       };
+    }
     case "notFound":
       return {
         title: "Repository not found",
@@ -165,12 +181,60 @@ function failureText(s: LoadStatus, repo: string): { title: string; text: string
   }
 }
 
+/**
+ * For a repository too big to read whole: windows of recent history that
+ * fit, the longest first (the main choice), then a short, quick one.
+ */
+function WindowChoices({ windows, onWindow }: { windows: HistoryWindow[]; onWindow: (since: number) => void }) {
+  return (
+    <section className="panel failure-side">
+      <h2 className="panel-title">Load part of it instead</h2>
+      {windows.length === 0 ? (
+        <p className="caption">Even its last month has more than {formatCount(COMMIT_LIMIT)} commits.</p>
+      ) : (
+        <>
+          <ul className="windows">
+            {windows.map((w, i) => {
+              const name = windowName(w.months);
+              return (
+                <li key={w.months} className="window-choice">
+                  <div>
+                    <div className="window-name">{name.charAt(0).toUpperCase() + name.slice(1)}</div>
+                    <div className="caption">
+                      About {about(w.commits)} commits, back to {monthYear(w.since)}.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={i === 0 ? "now-button" : "outlined-button"}
+                    onClick={() => onWindow(w.since)}
+                  >
+                    Load {name}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="caption">
+            The download holds every file as it was when the window starts, plus each change since, so it can be large.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
 /** Before anything is loaded: progress, or why nothing will be. */
-export function RemoteScreen(props: { remote: RemoteRepo; onBack: () => void; onRetry: () => void }) {
+export function RemoteScreen(props: {
+  remote: RemoteRepo;
+  onBack: () => void;
+  onRetry: () => void;
+  onWindow: (since: number) => void;
+}) {
   const s = useStore(props.remote.status, (x) => x);
   const f =
     s.step === "failed" && s.failure
-      ? failureText(s, props.remote.name)
+      ? failureText(s, props.remote.name, props.remote.since)
       : s.step === "stopped"
         ? { title: "Stopped", text: "Loading stopped before any history was read.", retry: true }
         : null;
@@ -190,8 +254,11 @@ export function RemoteScreen(props: { remote: RemoteRepo; onBack: () => void; on
               <BackToDemo onBack={props.onBack} />
             </div>
           </section>
-          {/* Room for loading part of a big repository (a later feature). */}
-          <section className="panel failure-side" />
+          {s.failure?.kind === "tooBig" && s.failure.windows ? (
+            <WindowChoices windows={s.failure.windows} onWindow={props.onWindow} />
+          ) : (
+            <section className="panel failure-side" />
+          )}
         </main>
       ) : (
         <LoadingPanel remote={props.remote} history={null} onBack={props.onBack} />

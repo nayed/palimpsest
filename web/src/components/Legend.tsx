@@ -14,6 +14,12 @@ export function Legend({ history, short = false }: { history: History; short?: b
           {short ? history.authorName(a).split(" ")[0] : history.authorName(a)}
         </span>
       ))}
+      {history.earlierAuthor !== null && (
+        <span className="legend-item">
+          <span className="chip" style={{ background: "var(--author-earlier)" }} aria-hidden="true" />
+          {history.authorName(history.earlierAuthor)}
+        </span>
+      )}
       {history.hasOthers() && (
         <span className="legend-item">
           <span className="chip" style={{ background: "var(--author-others)" }} aria-hidden="true" />

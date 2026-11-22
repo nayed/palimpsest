@@ -228,7 +228,7 @@ export function TracksView({ session }: { session: Session }) {
             {commit >= 0 && (
               <div className="phone-commit">
                 <AuthorChip history={h} author={c.author[commit]!} />
-                <span>{c.subject[commit]}</span>
+                <span>{h.commitSubject(commit)}</span>
               </div>
             )}
           </section>

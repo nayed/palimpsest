@@ -18,12 +18,15 @@ export interface Data {
     lineHistory: boolean;
     /** Set while a repository is still being read, newest first. */
     partial?: { readFrom: number; totalCommits: number };
+    /** Only a window of recent history was loaded: the author id standing for
+        code already there when it starts (rank 6). */
+    earlierAuthor?: number;
   };
   authors: {
     name: string[];
     initials: string[];
     commits: number[];
-    /** 1 to 5 picks the color; 0 is Others. */
+    /** 1 to 5 picks the color; 0 is Others; 6 is code from before a loaded window. */
     rank: number[];
     bot: boolean[];
   };

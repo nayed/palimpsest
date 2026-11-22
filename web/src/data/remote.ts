@@ -12,6 +12,8 @@ export const GIT_PROXY: string = import.meta.env.VITE_GIT_PROXY ?? "/git-proxy";
 
 export class RemoteRepo implements LinesSource {
   readonly name: string;
+  /** Only the history since then (Unix seconds), or null for all of it. */
+  readonly since: number | null;
   readonly status = new Store<LoadStatus>(INITIAL_STATUS);
   /** The latest snapshot, or null before the first one. */
   readonly history = new Store<{ history: History | null }>({ history: null });
@@ -22,13 +24,14 @@ export class RemoteRepo implements LinesSource {
   private readonly lines = new Map<string, Promise<LineHistory | null>>();
   private readonly ready = new Map<string, LineHistory | null>();
 
-  constructor(name: string) {
+  constructor(name: string, since: number | null = null) {
     this.name = name;
+    this.since = since;
     this.worker = new Worker(new URL("../worker/reader.worker.ts", import.meta.url), { type: "module" });
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => this.receive(e.data);
     this.worker.onerror = (e) =>
       this.status.set({ step: "failed", failure: { kind: "internal", message: e.message || "The reader stopped." } });
-    this.send({ type: "open", repo: name, proxy: GIT_PROXY, limit: COMMIT_LIMIT });
+    this.send({ type: "open", repo: name, proxy: GIT_PROXY, limit: COMMIT_LIMIT, since });
     // For debugging in development: the open repository, on window.
     if (import.meta.env.DEV) (globalThis as { palimpsestRemote?: RemoteRepo }).palimpsestRemote = this;
   }

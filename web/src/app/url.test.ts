@@ -11,15 +11,32 @@ describe("routes", () => {
       folder: "src",
       file: "src/lexer.ts",
       line: 43,
+      since: null,
     });
     expect(routeUrl(r)).toBe("/alacritty/alacritty?at=2026-03-12&view=lines&folder=src&file=src/lexer.ts&line=43");
   });
 
   it("defaults to the demo in Tracks and ignores nonsense", () => {
-    expect(parseRoute("/", "")).toEqual({ repo: null, at: null, view: "tracks", folder: "", file: null, line: null });
-    const r = parseRoute("/a/b", "?at=yesterday&view=map&line=-3");
-    expect([r.at, r.view, r.line]).toEqual([null, "tracks", null]);
+    expect(parseRoute("/", "")).toEqual({
+      repo: null,
+      at: null,
+      view: "tracks",
+      folder: "",
+      file: null,
+      line: null,
+      since: null,
+    });
+    const r = parseRoute("/a/b", "?at=yesterday&view=map&line=-3&since=soon");
+    expect([r.at, r.view, r.line, r.since]).toEqual([null, "tracks", null, null]);
     expect(routeUrl({ ...r, repo: null })).toBe("/");
+  });
+});
+
+describe("a window of history", () => {
+  it("is kept in the address as the day it starts", () => {
+    const r = parseRoute("/rust-lang/rust", "?since=2025-11-22");
+    expect(r.since).toBe(Date.UTC(2025, 10, 22) / 1000);
+    expect(routeUrl(r)).toBe("/rust-lang/rust?since=2025-11-22");
   });
 });
 

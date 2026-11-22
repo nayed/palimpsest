@@ -1,4 +1,4 @@
-import { formatCount, plural } from "../app/format";
+import { formatCount, formatDate, plural } from "../app/format";
 import { AuthorChip } from "../components/AuthorChip";
 import type { History } from "../data/history";
 
@@ -7,6 +7,20 @@ export function CurrentCommit({ history, commit }: { history: History; commit: n
   if (commit < 0) return null;
   const c = history.data.commits;
   const s = history.commitSummary(commit);
+  if (history.isWindowStart(commit)) {
+    return (
+      <div className="current-commit">
+        <AuthorChip history={history} author={c.author[commit]!} />
+        <div>
+          <div className="history-subject">{history.commitSubject(commit)}</div>
+          <div className="history-detail">
+            History before {formatDate(c.time[commit]!)} was not loaded. The {plural(s.files, "file")} already there are
+            drawn as {history.authorName(c.author[commit]!)}.
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="current-commit">
       <AuthorChip history={history} author={c.author[commit]!} />

@@ -4,6 +4,8 @@
 import { ChangeKind, FORMAT, VERSION, type Data } from "./format";
 import { releases, type Release } from "../timeline/tags";
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 export interface FileChange {
   commit: number;
   file: number;
@@ -161,7 +163,25 @@ export class History {
     return this.totalCommits - this.commitCount;
   }
 
-  /** The author's rank: 1 to 5, or 0 for Others (sixth place down, and bots). */
+  /**
+   * When only a window of recent history was loaded: the stand-in author for
+   * code already there when it starts (rank 6). Otherwise null.
+   */
+  get earlierAuthor(): number | null {
+    return this.data.repo.earlierAuthor ?? null;
+  }
+
+  /** The window's first commit: what it changed is not known, only its files. */
+  isWindowStart(commit: number): boolean {
+    return commit === 0 && this.earlierAuthor !== null;
+  }
+
+  /** A commit's subject, or what the window's first commit stands for. */
+  commitSubject(commit: number): string {
+    return this.isWindowStart(commit) ? "The loaded history starts here" : (this.data.commits.subject[commit] ?? "");
+  }
+
+  /** The author's rank: 1 to 5, 0 for Others (sixth place down, and bots), 6 for earlier code. */
   rank(author: number): number {
     return this.provisional ? 0 : (this.data.authors.rank[author] ?? 0);
   }
@@ -171,6 +191,10 @@ export class History {
   }
 
   authorName(author: number): string {
+    if (author === this.earlierAuthor) {
+      const d = new Date(this.start * 1000);
+      return `Before ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+    }
     return this.data.authors.name[author] ?? "";
   }
 
@@ -179,7 +203,7 @@ export class History {
     const r = this.data.authors.rank;
     return r
       .map((rank, id) => ({ rank, id }))
-      .filter((a) => a.rank > 0)
+      .filter((a) => a.rank > 0 && a.rank <= 5)
       .sort((a, b) => a.rank - b.rank)
       .map((a) => a.id);
   }

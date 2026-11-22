@@ -1,5 +1,6 @@
-// The URL is the state: repository, date, view, folder, file and line.
-//   /<owner>/<repo>?at=2026-03-12&view=tracks&folder=src&file=src/lexer.ts&line=43
+// The URL is the state: repository, date, view, folder, file and line, and
+// for a repository too big to read whole, the window of history loaded.
+//   /<owner>/<repo>?at=2026-03-12&view=tracks&folder=src&file=src/lexer.ts&line=43&since=2025-11-22
 // "/" alone is the demo repository, in Tracks, playing.
 
 import type { View } from "../store/playback";
@@ -15,6 +16,8 @@ export interface Route {
   file: string | null;
   /** 1-based line number at the playhead. */
   line: number | null;
+  /** Only the history since this day (Unix seconds), or null for all of it. */
+  since: number | null;
 }
 
 const VIEWS: View[] = ["overview", "tracks", "lines"];
@@ -23,7 +26,9 @@ export function parseRoute(pathname: string, search: string): Route {
   const parts = pathname.split("/").filter(Boolean);
   const q = new URLSearchParams(search);
   const at = q.get("at");
-  const atTime = at && /^\d{4}-\d{2}-\d{2}$/.test(at) ? Date.parse(`${at}T00:00:00Z`) / 1000 : NaN;
+  const day = (s: string | null) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? Date.parse(`${s}T00:00:00Z`) / 1000 : NaN);
+  const atTime = day(at);
+  const sinceTime = day(q.get("since"));
   const view = q.get("view") as View | null;
   const line = Number(q.get("line"));
   return {
@@ -33,6 +38,7 @@ export function parseRoute(pathname: string, search: string): Route {
     folder: (q.get("folder") ?? "").replace(/^\/+|\/+$/g, ""),
     file: q.get("file") || null,
     line: Number.isInteger(line) && line > 0 ? line : null,
+    since: Number.isFinite(sinceTime) ? sinceTime : null,
   };
 }
 
@@ -47,6 +53,7 @@ export function routeUrl(r: Route): string {
   if (r.folder) q.set("folder", r.folder);
   if (r.file) q.set("file", r.file);
   if (r.line !== null) q.set("line", String(r.line));
+  if (r.since !== null) q.set("since", isoDay(r.since));
   const path = r.repo ? `/${r.repo}` : "/";
   const query = q.toString().replace(/%2F/g, "/");
   return query ? `${path}?${query}` : path;

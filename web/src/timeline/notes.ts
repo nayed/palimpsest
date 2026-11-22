@@ -39,7 +39,7 @@ export function clipTexts(history: History, file: number, clip: Clip): string[] 
       : [`untouched for ${span}`, "untouched", ""];
   }
 
-  const initials = history.initials(clip.author);
+  const initials = clip.author === history.earlierAuthor ? "already there" : history.initials(clip.author);
   const note = clipNote(history, file, clip);
   return note ? [`${note} · ${initials}`, initials, ""] : [initials, ""];
 }
@@ -82,6 +82,13 @@ export function fileClipDetails(history: History, file: number, clip: Clip): str
     return [`No commits for ${spanText(clip.to - clip.from)}${deletedAtEnd ? ", then deleted" : ""}`];
   }
   const commits = commitsInClip(history, history.commitsOf(file), clip);
+  if (clip.author === history.earlierAuthor) {
+    const later = commits.filter((c) => !history.isWindowStart(c)).length;
+    return [
+      "Already there when the loaded history starts",
+      ...(later ? [`then ${later === 1 ? "1 commit" : `${later.toLocaleString("en-US")} commits`}`] : []),
+    ];
+  }
   const theirs = commits.filter((c) => history.data.commits.author[c] === clip.author).length;
   const first = history.authorName(clip.author).split(" ")[0];
   const count = commits.length === 1 ? "1 commit" : `${commits.length.toLocaleString("en-US")} commits`;

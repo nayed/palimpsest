@@ -134,10 +134,12 @@ test("release tags sit under the ruler, with a card on hover", async ({ page }) 
   await page.goto("/alacritty/alacritty?at=2019-01-01");
   // v0.2.4 came out in December 2018.
   await expect(page.getByRole("slider", { name: "Playhead" })).toHaveAttribute("aria-valuetext", /release v0\.2\.4$/);
+  // Measure once the layout has settled (fonts change the legend's height).
+  await page.evaluate(() => document.fonts.ready);
   const box = (await page.locator(".timeline-area canvas").boundingBox())!;
   const ruler = (await page.getByRole("slider", { name: "Playhead" }).boundingBox())!;
-  // Sweep along the release strip under the ruler until a card shows.
-  const card = page.getByRole("tooltip");
+  // Sweep along the release strip under the ruler until a release card shows.
+  const card = page.getByRole("tooltip").filter({ hasText: "Release tag" });
   for (let x = box.x + 2; x < box.x + box.width && !(await card.count()); x += 3) {
     await page.mouse.move(x, ruler.y + ruler.height + 4 + 8);
   }

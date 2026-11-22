@@ -78,3 +78,35 @@ describe("the alacritty demo data", () => {
     }
   });
 });
+
+describe("a window of history", () => {
+  /** The fixture as if only its history from the first commit on were loaded. */
+  function windowed(): History {
+    const d = fixture();
+    d.authors.name.push("Earlier history");
+    d.authors.initials.push("");
+    d.authors.commits.push(0);
+    d.authors.rank.push(6);
+    d.authors.bot.push(false);
+    d.repo.earlierAuthor = 2;
+    d.commits.author[0] = 2;
+    return new History(d);
+  }
+
+  it("names the code already there by when the window starts", () => {
+    const h = windowed();
+    expect(h.earlierAuthor).toBe(2);
+    expect(h.authorName(2)).toBe("Before Jan 2020");
+    expect(h.rank(2)).toBe(6);
+    expect(h.rankedAuthors()).toEqual([0, 1]);
+  });
+
+  it("says what the first commit stands for", () => {
+    const h = windowed();
+    expect(h.isWindowStart(0)).toBe(true);
+    expect(h.isWindowStart(1)).toBe(false);
+    expect(h.commitSubject(0)).toBe("The loaded history starts here");
+    expect(h.commitSubject(1)).toBe("Edit a");
+    expect(new History(fixture()).isWindowStart(0)).toBe(false);
+  });
+});

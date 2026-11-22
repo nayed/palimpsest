@@ -141,3 +141,16 @@ describe("release tags", () => {
     expect(currentRelease(r, 25)).toBe(1);
   });
 });
+
+describe("windows of history", () => {
+  it("are named in plain words", async () => {
+    const { windowName } = await import("../views/RemoteScreens");
+    expect([24, 12, 6, 3, 1].map(windowName)).toEqual([
+      "the last 2 years",
+      "the last year",
+      "the last 6 months",
+      "the last 3 months",
+      "the last month",
+    ]);
+  });
+});

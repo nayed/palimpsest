@@ -165,6 +165,8 @@ export async function fetchPack(
   opts: {
     filter?: string;
     haves?: string[];
+    /** Only history since this time (Unix seconds): a shallow pack. */
+    since?: number | null;
     onBytes?: (bytes: number) => void;
     signal?: AbortSignal;
     headerOnly?: boolean;
@@ -173,6 +175,7 @@ export async function fetchPack(
   const wants = (typeof want === "string" ? [want] : want).map((w) => `want ${w}`);
   const lines: Line[] = ["command=fetch", "object-format=sha1", DELIM, ...wants, "ofs-delta", "no-progress"];
   for (const h of opts.haves ?? []) lines.push(`have ${h}`);
+  if (opts.since != null) lines.push(`deepen-since ${opts.since}`);
   if (opts.filter) lines.push(`filter ${opts.filter}`);
   lines.push("done", FLUSH);
   const res = await post(proxy, repo, encodeRequest(lines), opts.signal);
@@ -220,10 +223,17 @@ export async function fetchPack(
 /**
  * How many commits the default branch reaches, as GitHub counts them: the
  * object count in the header of a commits-only pack. Only the header is
- * downloaded, so this is quick even for very large repositories.
+ * downloaded, so this is quick even for very large repositories. With
+ * `since`, only the commits since then.
  */
-export async function countCommits(proxy: string, repo: string, want: string, signal?: AbortSignal): Promise<number> {
-  const header = await fetchPack(proxy, repo, want, { filter: "tree:0", headerOnly: true, signal });
+export async function countCommits(
+  proxy: string,
+  repo: string,
+  want: string,
+  signal?: AbortSignal,
+  since?: number | null,
+): Promise<number> {
+  const header = await fetchPack(proxy, repo, want, { filter: "tree:0", headerOnly: true, signal, since });
   if (header.length < 12 || dec.decode(header.subarray(0, 4)) !== "PACK") {
     throw new GitError("protocol", "GitHub sent something that is not a pack.");
   }

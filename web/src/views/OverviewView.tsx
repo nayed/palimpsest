@@ -6,11 +6,13 @@ import { formatDate, plural, formatCount } from "../app/format";
 import { useViewKeys } from "../app/keys";
 import type { Session } from "../app/session";
 import { AuthorChip } from "../components/AuthorChip";
+import { authorColor } from "../components/authorColor";
 import { DateDisplay } from "../components/DateDisplay";
 import { ChevronRightIcon } from "../components/Icons";
 import { Legend } from "../components/Legend";
 import { Transport } from "../components/Transport";
 import { ChangeKind } from "../data/format";
+import { CurrentCommit } from "./CurrentCommit";
 import type { History } from "../data/history";
 import { useStore } from "../store/store";
 import { LAYOUT, rowsTop, type Marker, type RowContent } from "../timeline/renderer";
@@ -88,14 +90,15 @@ function ShareBar({ history: h, time, title = true }: { history: History; time: 
       <div className="share-bar" role="group" aria-label={heading}>
         {parts.map((p) => {
           const pct = Math.round(p.share * 100);
-          const label = `${p.author === null ? "Others" : h.initials(p.author)} ${pct}%`;
+          const who = p.author === null ? "Others" : p.author === h.earlierAuthor ? "Earlier" : h.initials(p.author);
+          const label = `${who} ${pct}%`;
           return (
             <div
               key={p.rank}
               className="share-part"
               style={{
                 flexGrow: p.share,
-                background: `var(${p.rank ? `--author-${p.rank}` : "--author-others"})`,
+                background: authorColor(p.rank),
               }}
               title={`${p.author === null ? "Others" : h.authorName(p.author)}: ${pct}%`}
             >
@@ -119,6 +122,13 @@ function CommitFiles({ session, commit }: { session: Session; commit: number }) 
   const s = h.commitSummary(commit);
   const changes = h.changesIn(commit).slice(0, 6);
   const more = h.changesIn(commit).length - changes.length;
+  if (h.isWindowStart(commit)) {
+    return (
+      <section className="panel panel-wide">
+        <CurrentCommit history={h} commit={commit} />
+      </section>
+    );
+  }
   return (
     <section className="panel panel-wide">
       <div className="current-commit plain">
@@ -260,7 +270,7 @@ export function OverviewView({ session }: { session: Session }) {
             {commit >= 0 && (
               <div className="phone-commit">
                 <AuthorChip history={h} author={c.author[commit]!} />
-                <span>{c.subject[commit]}</span>
+                <span>{h.commitSubject(commit)}</span>
               </div>
             )}
           </section>

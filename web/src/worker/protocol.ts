@@ -4,6 +4,20 @@ export const COMMIT_LIMIT = 50_000;
 
 export type FailureKind = "notFound" | "network" | "protocol" | "tooBig" | "internal";
 
+/** A window of recent history small enough to read: the last `months`. */
+export interface HistoryWindow {
+  months: number;
+  /** Unix seconds, the start of a day (UTC). */
+  since: number;
+  /** Commits in it, as GitHub counts them. */
+  commits: number;
+}
+
+/** Windows tried for a repository over the limit, longest first. */
+export const WINDOW_MONTHS = [24, 12, 6, 3, 1];
+/** The quick option offered beside the longest window that fits. */
+export const SHORT_WINDOW_MONTHS = 3;
+
 export interface LoadStatus {
   /** What is happening now. */
   step: "connecting" | "counting" | "downloading" | "indexing" | "reading" | "lines" | "done" | "stopped" | "failed";
@@ -12,12 +26,19 @@ export interface LoadStatus {
   downloaded: boolean;
   /** The pack came from this browser's storage, not from GitHub. */
   fromCache: boolean;
+  /** Commits counted when there are too many to read: windows are being tried. */
+  over: number | null;
   /** Commits on the default branch, once known, and how many are read. */
   total: number | null;
   read: number;
   /** Share of line history worked out, 0 to 1. */
   lines: number;
-  failure: { kind: FailureKind; message: string } | null;
+  failure: {
+    kind: FailureKind;
+    message: string;
+    /** For a repository too big to read whole: windows that fit, longest first. */
+    windows?: HistoryWindow[];
+  } | null;
 }
 
 export const INITIAL_STATUS: LoadStatus = {
@@ -25,6 +46,7 @@ export const INITIAL_STATUS: LoadStatus = {
   bytes: 0,
   downloaded: false,
   fromCache: false,
+  over: null,
   total: null,
   read: 0,
   lines: 0,
@@ -32,7 +54,8 @@ export const INITIAL_STATUS: LoadStatus = {
 };
 
 export type ToWorker =
-  | { type: "open"; repo: string; proxy: string; limit: number }
+  /** `since`: only the history since then (a window), or null for all of it. */
+  | { type: "open"; repo: string; proxy: string; limit: number; since: number | null }
   /** A file's line history in snapshot `version`. */
   | { type: "lines"; id: number; file: number; version: number }
   | { type: "stop" };
