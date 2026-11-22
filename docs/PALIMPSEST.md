@@ -434,6 +434,10 @@ Do not build these now.
 - ~~**A logo mark and favicon**, once designed.~~ Built after the MVP: the files are in `docs/logo/` (its README gives the geometry), the icons and web app manifest in `web/public/`, and the mark sits before the live-text wordmark in the header. Only the dark version exists.
 - **The light theme** and the sun and moon switch, as in `design/screens/light/`.
 
+### Code tones (added after the MVP)
+
+Code has no syntax colors: color means authors. Instead, comments are drawn in `--mute` and strings in `--code-string` (between `--fg` and `--mute`), in the code viewer and in Lines. Lines are read one at a time (`web/src/data/tone.ts`), from the file's extension or name; inside a block comment only lines starting with `*` are known to be comment, and other multi-line comments and strings stay plain. Files of unknown kinds, Markdown included, stay plain.
+
 ---
 
 ## Decisions already made

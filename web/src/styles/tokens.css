@@ -28,6 +28,7 @@
   /* Text */
   --fg: #f1edf5;
   --mute: #b3abc0;          /* secondary text; passes 4.5:1 on bg, panel and well */
+  --code-string: #d6cfe0;   /* strings in code: between --fg and --mute (comments use --mute) */
   --disabled: #8a8296;
   --on-author: #16131b;     /* text on any author color */
 
@@ -78,6 +79,7 @@
 
   --fg: #201d1a;
   --mute: #5c564e;
+  --code-string: #3e3934;
   --disabled: #8a8378;
   --on-author: #201d1a;
 

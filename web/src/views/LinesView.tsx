@@ -13,6 +13,8 @@ import type { Clip, History } from "../data/history";
 import type { LineHistory } from "../data/lines";
 import { useStore } from "../store/store";
 import { ClipCard } from "../components/ClipCard";
+import { CodeText } from "../components/CodeText";
+import { syntaxOf } from "../data/tone";
 import { clipAt, commitsInClip, dirOf } from "../timeline/notes";
 import type { Marker, RowContent, TrackClip } from "../timeline/renderer";
 import { Timeline } from "../timeline/Timeline";
@@ -92,6 +94,7 @@ function LinesTimeline({
   const content = useCallback((i: number): RowContent => ({ style: "plain", clips: clips[i]! }), [clips]);
   const markers = useMemo(() => moveMarkers(h, lines.file), [h, lines.file]);
   const heights = useMemo(() => lines.order.map(() => (phone ? PHONE.row : ROW)), [lines, phone]);
+  const syntax = useMemo(() => syntaxOf(h.latestPath(lines.file)), [h, lines.file]);
 
   useViewKeys((e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -133,7 +136,7 @@ function LinesTimeline({
         >
           {h.initials(author)}
         </span>
-        <span className={dead ? "code-text struck" : "code-text"}>{lines.textAt(id, commit)}</span>
+        <CodeText text={lines.textAt(id, commit)} syntax={syntax} className={dead ? "code-text struck" : "code-text"} />
         {dead && (
           <span className="line-note">
             {phone ? "del." : "deleted in"} {new Date(h.commitTime(died) * 1000).getUTCFullYear()}

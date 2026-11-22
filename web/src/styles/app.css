@@ -887,6 +887,21 @@
   color: var(--mute);
 }
 
+/* Quiet tones: comments muted, strings a little dimmer (no hues: color is
+   for authors). */
+.tone-comment {
+  color: var(--mute);
+}
+
+.tone-string {
+  color: var(--code-string);
+}
+
+/* A line drawn muted as a whole (deleted, not written yet) stays one tone. */
+.line-label.absent .code-text span {
+  color: inherit;
+}
+
 .line-label.absent .code-text {
   color: var(--mute);
 }

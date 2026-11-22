@@ -4,6 +4,8 @@
 import { useEffect, useRef, useState } from "react";
 import { formatDate, plural } from "../app/format";
 import { AuthorChip } from "../components/AuthorChip";
+import { CodeText } from "../components/CodeText";
+import { syntaxOf } from "../data/tone";
 import type { History } from "../data/history";
 import { lineEvents, type LineHistory } from "../data/lines";
 
@@ -51,6 +53,7 @@ export function CodeViewer(props: {
   const first = Math.max(0, Math.floor(scroll.top / CODE_ROW) - 5);
   const last = Math.min(ids.length, Math.ceil((scroll.top + scroll.height) / CODE_ROW) + 5);
   const width = String(ids.length).length;
+  const syntax = syntaxOf(h.latestPath(lines.file));
   return (
     <div
       ref={scrollRef}
@@ -71,7 +74,7 @@ export function CodeViewer(props: {
                 {n + 1}
               </span>
               <AuthorChip history={h} author={lineAuthor(h, lines, id, commit)} />
-              <span className="code-text">{lines.textAt(id, commit)}</span>
+              <CodeText text={lines.textAt(id, commit)} syntax={syntax} />
             </li>
           );
         })}
