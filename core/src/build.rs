@@ -8,7 +8,7 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use crate::clips::{Clip, Touch, clips};
+use crate::clips::{Clip, Touch, Unit, clips_in};
 use crate::diff::{ChangeKind, FileChange, changed_paths, diff_commit, line_edit_for};
 use crate::format::{
     self, Changes, Clips, Commits, Data, Files, LineFile, Moment, Overview, OverviewRow, Repo,
@@ -224,6 +224,17 @@ fn touch_weight(c: &FileChange) -> u32 {
     (c.added + c.deleted).max(1)
 }
 
+/// A touch's weight in its clip unit. The code already there when a window
+/// of history starts weighs nothing: it was not written then, so anyone who
+/// did change the file in that unit wins it.
+fn weight_of(c: &FileChange, author: u32, earlier: Option<u32>) -> u32 {
+    if Some(author) == earlier {
+        0
+    } else {
+        touch_weight(c)
+    }
+}
+
 /// Every folder containing `path`: "a/b/c.rs" gives "a" and "a/b".
 fn folders_of(path: &str) -> impl Iterator<Item = &str> {
     path.match_indices('/').map(move |(i, _)| &path[..i])
@@ -256,6 +267,8 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
         times.push(c.time.max(prev));
     }
     let (start, end) = (times[0], *times.last().unwrap());
+    // Clips are bucketed by a unit suited to the history's length.
+    let unit = Unit::for_span(start, end);
 
     // A window of history: the first commit's files were already there, so
     // their lines go to a stand-in for whoever wrote them before the window,
@@ -399,7 +412,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
                 f.touches.push(Touch {
                     time: times[i],
                     author: change_author[i][j],
-                    weight: touch_weight(ch),
+                    weight: weight_of(ch, change_author[i][j], earlier_author),
                 });
             }
 
@@ -504,12 +517,14 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
         let to = f.died.map_or(end, |d| times[d as usize]);
         push_clips(
             &mut data.clips,
-            &clips(
+            &clips_in(
+                unit,
                 times[f.born as usize],
                 to,
                 &f.touches,
                 opts.untouched_months,
                 opts.min_clip_months,
+                earlier_author,
             ),
         );
     }
@@ -518,6 +533,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
         diffs,
         &times,
         &change_author,
+        earlier_author,
         &folder_lines,
         &folder_peak,
         head_lines,
@@ -668,6 +684,7 @@ fn overview(
     diffs: &[Vec<FileChange>],
     times: &[i64],
     change_author: &[Vec<u32>],
+    earlier_author: Option<u32>,
     folder_lines: &HashMap<String, i64>,
     folder_peak: &HashMap<String, i64>,
     head_lines: i64,
@@ -722,7 +739,7 @@ fn overview(
                 r.touches.push(Touch {
                     time: times[i],
                     author: change_author[i][j],
-                    weight: touch_weight(ch),
+                    weight: weight_of(ch, change_author[i][j], earlier_author),
                 });
             }
             if let (ChangeKind::Renamed, Some(old)) = (ch.kind, &ch.old_path)
@@ -780,12 +797,14 @@ fn overview(
         };
         push_clips(
             &mut row_clips,
-            &clips(
+            &clips_in(
+                Unit::for_span(start, end),
                 born,
                 to,
                 &r.touches,
                 opts.untouched_months,
                 opts.min_clip_months,
+                earlier_author,
             ),
         );
         out.rows.push(OverviewRow {

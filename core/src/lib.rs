@@ -35,8 +35,10 @@ pub struct Options {
     pub ranked_authors: usize,
     /// A stretch with no commit this long, in months, is drawn as Untouched.
     pub untouched_months: i32,
-    /// An author's stretch shorter than this, in months, is absorbed by the
-    /// longer neighboring stretch. 1 keeps every month as it is.
+    /// An author's stretch shorter than this, in clip units, is absorbed by
+    /// the longer neighboring stretch. 1 keeps every unit as it is. Units are
+    /// months for a history of years, weeks or fortnights for a shorter one
+    /// (`clips::Unit`).
     pub min_clip_months: i32,
     /// Follow individual lines (line history and who wrote today's code).
     pub line_history: bool,

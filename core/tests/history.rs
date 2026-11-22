@@ -302,11 +302,12 @@ fn clips_follow_who_was_writing() {
 
     let f = file_id(&d, "f.rs");
     assert_eq!(clip_authors(&d, f), ["Ann Lee", "Bo Kim", "untouched"]);
-    // A single month from Bo inside Ann's stretch does not cut it.
+    // A single busy unit from Bo inside Ann's stretch does not cut it. This
+    // history is five weeks long, so units are weeks.
     let mut fx = Fixture::new();
     fx.write("g.rs", &lines(10, "a"))
         .commit("Ann Lee", 0, "Add");
-    for (k, day_n) in [40, 70, 100, 130, 160].into_iter().enumerate() {
+    for (k, day_n) in [7, 14, 21, 28, 35].into_iter().enumerate() {
         let who = if k == 1 { "Bo Kim" } else { "Ann Lee" };
         fx.write("g.rs", &lines(11 + k, "a"))
             .commit(who, day_n, "Edit");
@@ -489,6 +490,12 @@ fn a_window_of_history_starts_with_the_code_already_there() {
         assert_eq!(d.files.born[id], 0, "{path}");
         assert_eq!(clip_authors(&d, id)[0], "Earlier history", "{path}");
     }
+    // Cy changed a.rs a hundred days in: the earlier code's stretch ends
+    // there, rather than absorbing Cy's.
+    assert_eq!(
+        clip_authors(&d, file_id(&d, "a.rs")),
+        ["Earlier history", "Cy"]
+    );
     // Bo, whose commit opens the window, is not credited with the code that
     // was already there, and has no other commit.
     assert!(!d.authors.name.iter().any(|n| n == "Bo"));
