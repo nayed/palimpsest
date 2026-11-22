@@ -16,6 +16,11 @@ export function plural(n: number, one: string, many = `${one}s`): string {
   return `${formatCount(n)} ${n === 1 ? one : many}`;
 }
 
+/** "86 MB", "0.3 MB". */
+export function formatBytes(bytes: number): string {
+  return `${(bytes / 1e6).toFixed(bytes < 1e7 ? 1 : 0)} MB`;
+}
+
 /** "6 minutes", "90 seconds". */
 export function formatDuration(seconds: number): string {
   if (seconds < 120) return plural(Math.round(seconds), "second");

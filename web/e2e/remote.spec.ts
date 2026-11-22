@@ -136,6 +136,34 @@ test("a repository even whose last month is over the limit is only refused", asy
   await expect(page.getByRole("button", { name: /^Load / })).toHaveCount(0);
 });
 
+test("About lists the repositories kept in this browser, and deletes them", async ({ page, context }) => {
+  await fakeGitHub(context);
+  await page.goto("/BurntSushi/walkdir");
+  await expect(page.locator(".legend")).toContainText("Andrew Gallant", { timeout: 15_000 });
+  // The download is saved in the background: wait until it is there.
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        try {
+          const repos = await (await navigator.storage.getDirectory()).getDirectoryHandle("repos");
+          const dir = await repos.getDirectoryHandle("burntsushi__walkdir");
+          for await (const name of (dir as unknown as { keys(): AsyncIterable<string> }).keys()) return name.endsWith(".pack");
+        } catch {
+          // Not yet.
+        }
+        return false;
+      }),
+    )
+    .toBe(true);
+
+  await page.getByRole("button", { name: "About" }).click();
+  const about = page.getByRole("dialog", { name: "About Palimpsest" });
+  await expect(about).toContainText("1 downloaded repository");
+  await expect(about).toContainText("burntsushi/walkdir");
+  await about.getByRole("button", { name: "Delete them" }).click();
+  await expect(about).toContainText("No downloaded repositories are kept in this browser.");
+});
+
 test("a private or missing repository says so", async ({ page, context }) => {
   await fakeGitHub(context, { missing: true });
   await page.goto("/example-owner/example-missing");

@@ -2,7 +2,7 @@
 // and the layout used before anything is loaded (connecting, too big, or a
 // failure), with the play controls disabled and empty dashed rows.
 
-import { formatCount } from "../app/format";
+import { formatBytes, formatCount } from "../app/format";
 import { NextCommitIcon, PlayIcon, PreviousCommitIcon } from "../components/Icons";
 import type { History } from "../data/history";
 import type { RemoteRepo } from "../data/remote";
@@ -16,9 +16,7 @@ function monthYear(seconds: number): string {
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
-function mb(bytes: number): string {
-  return `${(bytes / 1e6).toFixed(bytes < 1e7 ? 1 : 0)} MB`;
-}
+const mb = formatBytes;
 
 /** Still loading: anything before reading has finished. */
 export function isLoading(s: LoadStatus): boolean {

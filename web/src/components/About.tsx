@@ -3,6 +3,8 @@
 // it comes from.
 
 import { useEffect, useRef, useState } from "react";
+import { formatBytes, formatCount, plural } from "../app/format";
+import { clearStored, listStored, type StoredRepo } from "../worker/cache";
 import { InfoIcon } from "./Icons";
 
 const SOURCE = "https://github.com/nayed/palimpsest";
@@ -18,6 +20,60 @@ const SHORTCUTS: [string[], string][] = [
   [["Esc"], "Back up one view"],
   [["/"], "Find a file in Tracks"],
 ];
+
+/** How many lines of kept repositories are listed before "and n more". */
+const LISTED = 4;
+
+/**
+ * Repositories downloaded and kept in this browser, so they open again
+ * without a download, and a way to delete them.
+ */
+function KeptRepos() {
+  const [kept, setKept] = useState<StoredRepo[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    void listStored().then((k) => live && setKept(k));
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (kept === null) return null;
+  const total = kept.reduce((n, k) => n + k.bytes, 0);
+  return (
+    <>
+      <h2 className="about-heading">Kept in this browser</h2>
+      {kept.length === 0 ? (
+        <p className="about-kept-none">No downloaded repositories are kept in this browser.</p>
+      ) : (
+        <div className="about-kept">
+          <p>
+            {plural(kept.length, "downloaded repository", "downloaded repositories")}, {formatBytes(total)}, so they open
+            again without downloading. Only this browser has them.
+          </p>
+          <ul className="about-kept-list">
+            {kept.slice(0, LISTED).map((k) => (
+              <li key={k.repo}>
+                <span className="mono">{k.repo}</span>
+                <span>{formatBytes(k.bytes)}</span>
+              </li>
+            ))}
+            {kept.length > LISTED && <li className="about-kept-more">and {formatCount(kept.length - LISTED)} more</li>}
+          </ul>
+          <button
+            type="button"
+            className="outlined-button"
+            onClick={async () => {
+              await clearStored();
+              setKept(await listStored());
+            }}
+          >
+            Delete them
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
 
 export function About({ phone }: { phone: boolean }) {
   const [open, setOpen] = useState(false);
@@ -103,6 +159,8 @@ export function About({ phone }: { phone: boolean }) {
               </dl>
             </>
           )}
+
+          <KeptRepos />
 
           <p className="about-foot">
             Everything runs in your browser; nothing is stored on a server. Made by{" "}
