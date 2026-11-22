@@ -69,6 +69,18 @@ test("the repository menu opens another demo, and rejects what is not a reposito
   await expect(page.getByText("That does not look like a GitHub repository")).toBeVisible();
 });
 
+test("Lines keeps its file in the address while playing, so a reload shows it", async ({ page }) => {
+  await page.goto(`${MOMENT}&view=lines&file=alacritty/src/main.rs`);
+  await expect(page.locator(".line-label").first()).toBeVisible();
+  await page.keyboard.press(" ");
+  await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
+  await expect(page).toHaveURL(/view=lines&file=/);
+  await expect(page).not.toHaveURL(/at=/);
+  await page.reload();
+  await expect(page.locator(".line-label").first()).toBeVisible();
+  await expect(page.getByText("Pick a file in Tracks to see its lines.")).toHaveCount(0);
+});
+
 test("About explains the timeline, lists the keys and links to the source", async ({ page }) => {
   await page.goto(MOMENT);
   await page.getByRole("button", { name: "About" }).click();

@@ -1173,6 +1173,7 @@
 }
 
 .repo-button {
+  max-width: 100%;
   min-height: var(--control-height);
   display: flex;
   align-items: center;
@@ -1231,9 +1232,12 @@
   max-height: calc(100vh - 120px);
 }
 
+/* Room for the wordmark and the About button beside it, so the three keep
+   to the first row at any phone width; a long name is cut short instead. */
 .app.phone .repo-field.phone {
   flex: 0 1 auto;
   min-width: 0;
+  max-width: calc(100% - 216px);
 }
 
 .app.phone .repo-button .mono {

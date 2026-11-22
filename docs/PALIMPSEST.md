@@ -282,6 +282,8 @@ Shortcuts are ignored while a text field has focus. Everything is also reachable
 
 `/` alone is the demo repository at its latest commit, in Tracks, playing. Update the address as the state changes, without adding a history entry for every frame of a scrub.
 
+While playing, the moment keeps moving, so the address leaves out `at`, `line` and, in Overview and Tracks, `file`. Lines keeps its `file`, since it shows nothing without one: reloading a playing Lines plays that file from the start.
+
 ---
 
 ## Author colors

@@ -61,13 +61,14 @@ function currentRoute(repo: string, playback: Playback, lines: LinesSource): Rou
     const n = known ? known.linesAt(commit).indexOf(s.selectedLine) + 1 : 0;
     line = n > 0 ? n : null;
   }
-  // While playing, the address is the repository and view: the moment keeps moving.
+  // While playing, the moment keeps moving, so the address leaves it out: the
+  // repository and view, and in Lines the file, which Lines cannot do without.
   return {
     repo: repo === DEFAULT_REPO && s.playing && s.view === "tracks" ? null : repo,
     at: s.playing ? null : Math.floor(s.time / DAY) * DAY,
     view: s.view,
     folder: s.folder,
-    file: s.playing ? null : file,
+    file: s.playing && s.view !== "lines" ? null : file,
     line: s.playing ? null : line,
   };
 }
