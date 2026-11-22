@@ -77,7 +77,9 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
           ? `${formatCount(s.over)} commits, more than Palimpsest reads at once. Looking for a recent part that fits.`
           : "Checking how big the history is before downloading it."
         : s.step === "downloading"
-          ? `Downloading the repository: ${mb(s.bytes)} so far.`
+          ? s.bytes === 0
+            ? "GitHub is preparing the download. For a big repository this can take a minute or two."
+            : `Downloading the repository: ${mb(s.bytes)} so far.`
           : s.step === "indexing"
             ? "Unpacking the download."
             : readFrom !== null
@@ -89,7 +91,15 @@ export function LoadingPanel(props: { remote: RemoteRepo; history: History | nul
   const steps: { label: string; state: string; active: boolean }[] = [
     {
       label: "Download the repository",
-      state: s.downloaded ? (s.fromCache ? "done, from this browser" : `done, ${mb(s.bytes)}`) : s.step === "downloading" ? mb(s.bytes) : "",
+      state: s.downloaded
+        ? s.fromCache
+          ? "done, from this browser"
+          : `done, ${mb(s.bytes)}`
+        : s.step === "downloading"
+          ? s.bytes === 0
+            ? "preparing"
+            : mb(s.bytes)
+          : "",
       active: !s.downloaded && s.step !== "connecting",
     },
     {

@@ -90,6 +90,8 @@ test("the loading screen shows progress and can stop", async ({ page, context })
   await page.goto("/BurntSushi/walkdir");
   await expect(page.getByRole("button", { name: "Stop loading" })).toBeVisible();
   await expect(page.getByText("Download the repository")).toBeVisible();
+  // Nothing has arrived yet: GitHub is still preparing the pack.
+  await expect(page.getByText("GitHub is preparing the download.", { exact: false })).toBeVisible();
   await expect(page.getByText("Nothing is loaded yet. Tracks will appear here.")).toBeVisible();
   await page.getByRole("button", { name: "Stop loading" }).click();
   await expect(page.getByRole("heading", { name: "Stopped" })).toBeVisible();
