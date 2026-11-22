@@ -20,6 +20,9 @@ use crate::time::{month_of, month_start};
 use crate::vendored::is_vendored;
 use crate::{Options, authors};
 
+/// The rank of the stand-in author for code from before a window of history.
+pub const EARLIER_RANK: u8 = 6;
+
 /// The main data file and the per-file line histories.
 pub struct Output {
     pub data: Data,
@@ -56,22 +59,38 @@ pub fn build_all(
         diffs.push(diff_commit(src, parent_tree, c.tree, opts)?);
         progress(i + 1, chain.len());
     }
-    let mut out = assemble_all(&chain, &diffs, opts);
+    let opts = Options {
+        history_cut: history_cut(&chain),
+        ..opts.clone()
+    };
+    let mut out = assemble_all(&chain, &diffs, &opts);
     out.data.tags = crate::tags::read_releases(src, out.data.repo.start, out.data.repo.end);
     Ok(out)
 }
 
-/// The commits from the root to the head following first parents, oldest first.
+/// The commits from the root to the head following first parents, oldest
+/// first. A shallow download (a window of recent history) stops before the
+/// root: the walk ends at the first commit whose parent is not there, and the
+/// chain's first commit then still lists a parent (see [`history_cut`]).
 pub fn first_parent_chain(src: &dyn Source) -> Result<Vec<RawCommit>> {
     let mut chain = Vec::new();
-    let mut next = Some(src.head()?);
-    while let Some(id) = next {
-        let c = src.commit(id)?;
-        next = c.parents.first().copied();
+    let mut c = src.commit(src.head()?)?;
+    loop {
+        let parent = c.parents.first().copied();
         chain.push(c);
+        match parent.map(|p| src.commit(p)) {
+            Some(Ok(p)) => c = p,
+            // No parent: the root. A missing one: the edge of the window.
+            _ => break,
+        }
     }
     chain.reverse();
     Ok(chain)
+}
+
+/// Whether a first-parent chain starts at a cut rather than at the root.
+pub fn history_cut(chain: &[RawCommit]) -> bool {
+    chain.first().is_some_and(|c| !c.parents.is_empty())
 }
 
 /// A merge commit on the first-parent line brings in someone else's branch.
@@ -80,8 +99,11 @@ pub fn first_parent_chain(src: &dyn Source) -> Result<Vec<RawCommit>> {
 /// credit its maintainers with everyone's code.
 pub fn attribute_merges(src: &dyn Source, chain: &mut [RawCommit]) -> Result<()> {
     for c in chain.iter_mut() {
-        if let Some(&merged) = c.parents.get(1) {
-            let tip = src.commit(merged)?;
+        // In a window of history, a branch whose last commit is older than
+        // the window is not there: the merge keeps its own author.
+        if let Some(&merged) = c.parents.get(1)
+            && let Ok(tip) = src.commit(merged)
+        {
             c.author_name = tip.author_name;
             c.author_email = tip.author_email;
         }
@@ -139,8 +161,24 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
     }
     let (start, end) = (times[0], *times.last().unwrap());
 
-    let (commit_author, author_table) = authors::collect(commits, opts.ranked_authors);
+    // A window of history: the first commit's files were already there, so
+    // their lines go to a stand-in for whoever wrote them before the window,
+    // and that commit's own author is not credited with them.
+    let skip = usize::from(opts.history_cut);
+    let (mut commit_author, author_table) =
+        authors::collect_from(commits, opts.ranked_authors, skip);
     data.authors = author_table;
+    let earlier_author = opts.history_cut.then(|| {
+        let a = &mut data.authors;
+        a.name.push("Earlier history".into());
+        a.initials.push(String::new());
+        a.commits.push(0);
+        a.rank.push(EARLIER_RANK);
+        a.bot.push(false);
+        let id = a.name.len() as u32 - 1;
+        commit_author[0] = id;
+        id
+    });
 
     data.repo = Repo {
         name: opts.name.clone(),
@@ -150,6 +188,7 @@ pub fn assemble_all(commits: &[RawCommit], diffs: &[Vec<FileChange>], opts: &Opt
         end,
         line_history: opts.line_history,
         partial: None,
+        earlier_author,
     };
 
     data.commits = Commits::default();

@@ -54,6 +54,11 @@ pub struct Options {
     pub descend_share: f64,
     /// Notable moments kept for Overview. The app shows two or three.
     pub max_moments: usize,
+    /// The history starts at a cut, not at the repository's first commit:
+    /// only a window of recent history was downloaded. The first commit's
+    /// files were already there, written by someone unknown before the
+    /// window. Set by [`build_all`] (and the browser's reader) from the commits.
+    pub history_cut: bool,
 }
 
 impl Default for Options {
@@ -70,6 +75,7 @@ impl Default for Options {
             overview_rows: 5,
             descend_share: 0.6,
             max_moments: 10,
+            history_cut: false,
         }
     }
 }

@@ -3,7 +3,7 @@
 //! history newest first, a batch at a time, so the app can draw what has been
 //! read while the rest is still coming. Same core as the command-line tool.
 
-use palimpsest_core::build::{first_parent_chain, line_file};
+use palimpsest_core::build::{attribute_merges, first_parent_chain, history_cut, line_file};
 use palimpsest_core::diff::{FileChange, diff_commit, line_edit_for};
 use palimpsest_core::format::Partial;
 use std::collections::HashMap;
@@ -89,7 +89,11 @@ impl Reader {
             .zip(tag_commits)
             .filter_map(|(name, hex)| {
                 let commit = oid_from_hex(&hex).ok()?;
-                Some(RawTag { name, commit, time: None })
+                Some(RawTag {
+                    name,
+                    commit,
+                    time: None,
+                })
             })
             .collect();
         for id in release_commits(&self.tags) {
@@ -98,6 +102,8 @@ impl Reader {
             }
         }
         self.chain = first_parent_chain(&src).map_err(js)?;
+        // Merges go to whoever wrote the merged branch, as in the demo data.
+        attribute_merges(&src, &mut self.chain).map_err(js)?;
         self.diffs = vec![Vec::new(); self.chain.len()];
         self.first_read = self.chain.len();
         self.src = Some(src);
@@ -129,7 +135,13 @@ impl Reader {
         if k == self.chain.len() {
             return Err(JsError::new("no commits read yet"));
         }
-        let mut out = assemble_all(&self.chain[k..], &self.diffs[k..], &self.opts);
+        // A window of history starts at a cut, which matters once reading
+        // has reached its first commit (diffed against nothing).
+        let opts = Options {
+            history_cut: k == 0 && history_cut(&self.chain),
+            ..self.opts.clone()
+        };
+        let mut out = assemble_all(&self.chain[k..], &self.diffs[k..], &opts);
         let repo = &mut out.data.repo;
         if k > 0 {
             // The timeline still spans the whole history; the part before
@@ -141,7 +153,12 @@ impl Reader {
             repo.start = repo.start.min(self.chain[0].time);
         }
         let (start, end) = (repo.start, repo.end);
-        out.data.tags = releases(&self.tags, &mut |id| self.tag_times.get(&id).copied(), start, end);
+        out.data.tags = releases(
+            &self.tags,
+            &mut |id| self.tag_times.get(&id).copied(),
+            start,
+            end,
+        );
         let json = serde_json::to_string(&out.data).map_err(js)?;
         self.output = Some((out, k));
         Ok(json)

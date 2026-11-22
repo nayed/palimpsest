@@ -95,7 +95,12 @@ pub fn read_releases(src: &dyn Source, start: i64, end: i64) -> Tags {
     let Ok(tags) = src.tags() else {
         return Tags::default();
     };
-    releases(&tags, &mut |id| src.commit(id).ok().map(|c| c.time), start, end)
+    releases(
+        &tags,
+        &mut |id| src.commit(id).ok().map(|c| c.time),
+        start,
+        end,
+    )
 }
 
 /// The commits of release tags, for a source that has not got them all yet.
@@ -132,7 +137,15 @@ mod tests {
             parse_version("alacritty_terminal_v0.25.1"),
             Some(("alacritty_terminal_v", vec![0, 25, 1]))
         );
-        for name in ["v0.16.0-rc1", "nightly", "v1", "1.2.3.4.5", "rc1.0", "0.1.0beta.2", "1..2"] {
+        for name in [
+            "v0.16.0-rc1",
+            "nightly",
+            "v1",
+            "1.2.3.4.5",
+            "rc1.0",
+            "0.1.0beta.2",
+            "1..2",
+        ] {
             assert_eq!(parse_version(name), None, "{name}");
         }
     }

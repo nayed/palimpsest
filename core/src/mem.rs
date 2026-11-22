@@ -133,6 +133,14 @@ impl MemRepo {
     }
 }
 
+impl MemRepo {
+    /// Drops a commit, as a shallow download leaves out what is older than
+    /// its window: commits pointing to it then point to nothing.
+    pub fn forget(&mut self, id: Oid) {
+        self.commits.remove(&id);
+    }
+}
+
 impl Source for MemRepo {
     fn head(&self) -> Result<Oid> {
         self.head.ok_or_else(|| "empty repository".into())

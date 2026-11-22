@@ -64,6 +64,11 @@ pub struct Repo {
     /// commits from `read_from` on are in the file so far.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub partial: Option<Partial>,
+    /// Set when only a window of recent history was loaded: the author id
+    /// standing for code that was already there when the window starts
+    /// (rank 6). The first commit's files are that code.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub earlier_author: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
@@ -83,7 +88,8 @@ pub struct Authors {
     pub initials: Vec<String>,
     /// Commits on the first-parent history.
     pub commits: Vec<u32>,
-    /// 1 to 5 picks the author color; 0 is Others (sixth place down, and bots).
+    /// 1 to 5 picks the author color; 0 is Others (sixth place down, and bots);
+    /// 6 is the code already there before a loaded window (`repo.earlier_author`).
     pub rank: Vec<u8>,
     pub bot: Vec<bool>,
 }

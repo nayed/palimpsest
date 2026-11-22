@@ -15,6 +15,8 @@ fn day(n: i64) -> i64 {
 struct Fixture {
     repo: MemRepo,
     files: BTreeMap<String, String>,
+    /// The last commit made.
+    last: Option<palimpsest_core::source::Oid>,
 }
 
 impl Fixture {
@@ -22,6 +24,7 @@ impl Fixture {
         Self {
             repo: MemRepo::new(),
             files: BTreeMap::new(),
+            last: None,
         }
     }
     fn write(&mut self, path: &str, content: &str) -> &mut Self {
@@ -38,7 +41,7 @@ impl Fixture {
         self
     }
     fn commit(&mut self, author: &str, day_n: i64, message: &str) -> &mut Self {
-        self.repo.commit(author, day(day_n), message, &self.files);
+        self.last = Some(self.repo.commit(author, day(day_n), message, &self.files));
         self
     }
     fn build(&self) -> Data {
@@ -457,4 +460,36 @@ fn line_history_on_demand_matches_the_full_pass() {
         palimpsest_core::line_file(&fx.repo, &diffs, &lazy, 1, &opts).unwrap(),
         None
     );
+}
+
+#[test]
+fn a_window_of_history_starts_with_the_code_already_there() {
+    let mut f = Fixture::new();
+    f.write("a.rs", &lines(10, "a")).commit("Ann", 0, "Start");
+    let outside = f.last.unwrap();
+    // The window starts here: Bo's commit is its first, but what Bo changed
+    // is not known, since the commit before it was not downloaded.
+    f.write("b.rs", &lines(5, "b")).commit("Bo", 400, "Add b");
+    f.write("a.rs", &(lines(10, "a") + "more\n"))
+        .commit("Cy", 500, "Edit a");
+    let full = f.build();
+    assert_eq!(full.repo.earlier_author, None);
+
+    f.repo.forget(outside);
+    let d = f.build();
+    assert_eq!(d.repo.commit_count, 2);
+    assert_eq!(d.repo.start, day(400));
+    let earlier = d.repo.earlier_author.expect("an earlier author") as usize;
+    assert_eq!(d.authors.name[earlier], "Earlier history");
+    assert_eq!(d.authors.rank[earlier], 6);
+    assert_eq!(d.commits.author[0] as usize, earlier);
+    // Both files were there from the start, by the earlier author.
+    for path in ["a.rs", "b.rs"] {
+        let id = file_id(&d, path);
+        assert_eq!(d.files.born[id], 0, "{path}");
+        assert_eq!(clip_authors(&d, id)[0], "Earlier history", "{path}");
+    }
+    // Bo, whose commit opens the window, is not credited with the code that
+    // was already there, and has no other commit.
+    assert!(!d.authors.name.iter().any(|n| n == "Bo"));
 }

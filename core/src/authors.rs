@@ -14,12 +14,22 @@ use crate::source::RawCommit;
 /// first. The top `ranked` non-bots get ranks 1 to `ranked`; everyone else is 0
 /// (Others).
 pub fn collect(commits: &[RawCommit], ranked: usize) -> (Vec<u32>, Authors) {
+    collect_from(commits, ranked, 0)
+}
+
+/// Like [`collect`], leaving the first `skip` commits out of the table: their
+/// entries in the returned list are `u32::MAX`, for the caller to fill.
+pub fn collect_from(commits: &[RawCommit], ranked: usize, skip: usize) -> (Vec<u32>, Authors) {
     let mut ids: HashMap<String, u32> = HashMap::new();
     let mut out = Authors::default();
     let mut first_seen = Vec::new();
     let mut per_commit = Vec::with_capacity(commits.len());
 
     for (i, c) in commits.iter().enumerate() {
+        if i < skip {
+            per_commit.push(u32::MAX);
+            continue;
+        }
         let display = if c.author_name.is_empty() {
             &c.author_email
         } else {
