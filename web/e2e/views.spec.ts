@@ -107,4 +107,36 @@ test.describe("on a phone", () => {
     await page.mouse.click(box.x + 150, box.y + box.height + 14);
     await expect(page.getByRole("link", { name: "Lines" })).toHaveAttribute("aria-current", "page");
   });
+
+  test("overview fits the screen, folder names above their rows", async ({ page }) => {
+    await page.goto(`${MOMENT}&view=overview`);
+    const first = page.locator(".row-label.above").first();
+    await expect(first).toContainText("alacritty_terminal/");
+    await expect(first.locator(".folder-size")).toHaveText(/\d+k? lines?|gone \d{4}/);
+    // No changed-files list, and nothing wider than the screen.
+    await expect(page.locator(".commit-files")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    const scroll = page.locator(".timeline-scroll");
+    expect(await scroll.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
+    // A tap on a folder opens it in Tracks.
+    await first.click();
+    await expect(page.getByRole("link", { name: "Tracks" })).toHaveAttribute("aria-current", "page");
+    await expect(page).toHaveURL(/folder=alacritty_terminal/);
+  });
+
+  test("lines put the code above each track, and the line's story in a sheet", async ({ page }) => {
+    await page.goto(`${MOMENT}&view=lines&file=alacritty/src/main.rs&line=5`);
+    const sheet = page.getByRole("region", { name: "Line history" });
+    await expect(sheet).toContainText(/Line 5 has been touched/);
+    await expect(page.getByRole("button", { name: "main.rs" })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+
+    await page.getByRole("button", { name: "Hide the line history" }).click();
+    await expect(sheet).toHaveCount(0);
+    // Tapping a line brings it back, for that line.
+    const label = page.locator(".row-label.above").filter({ hasText: "#![deny(clippy" }).first();
+    const box = (await label.boundingBox())!;
+    await page.mouse.click(box.x + 150, box.y + box.height + 6);
+    await expect(sheet).toContainText(/Line 4 has been touched/);
+  });
 });

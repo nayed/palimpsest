@@ -20,25 +20,33 @@ import { spanText } from "../timeline/notes";
 const MIN_ROW = 44;
 const GAP = 6;
 const MARKER_SPACE = 26;
+/** On a phone: folder names above their rows, thinner rows, a hint under them. */
+const PHONE = { minRow: 14, gap: 4, labelAbove: 20, moments: 2 };
 /** Notable moments drawn at once. */
 const MOMENTS = 3;
 /** A move of fewer files is not notable. */
 const MIN_MOVED = 3;
 
-/** Row heights proportional to each folder's size today, at least 44px. */
-export function rowHeights(sizes: number[], available: number): number[] {
+/** "38k lines", or "gone 2019" for a folder that no longer exists. */
+export function folderSize(lines: number, died: number | null): string {
+  if (died !== null && lines === 0) return `gone ${new Date(died * 1000).getUTCFullYear()}`;
+  return lines >= 1000 ? `${Math.round(lines / 1000)}k lines` : plural(lines, "line");
+}
+
+/** Row heights proportional to each folder's size today, at least `min` px. */
+export function rowHeights(sizes: number[], available: number, min = MIN_ROW, gap = GAP): number[] {
   const total = sizes.reduce((s, n) => s + n, 0);
-  const free = Math.max(0, available - GAP * (sizes.length - 1));
-  if (total === 0) return sizes.map(() => MIN_ROW);
+  const free = Math.max(0, available - gap * (sizes.length - 1));
+  if (total === 0) return sizes.map(() => min);
   // Folders too small for the minimum get it; the rest share what is left by
   // size. Repeat until no shared row falls under the minimum.
   const small = sizes.map(() => false);
-  let heights = sizes.map(() => MIN_ROW);
+  let heights = sizes.map(() => min);
   for (let pass = 0; pass <= sizes.length; pass++) {
-    const fixed = small.filter(Boolean).length * MIN_ROW;
+    const fixed = small.filter(Boolean).length * min;
     const bigTotal = sizes.reduce((s, n, i) => (small[i] ? s : s + n), 0);
-    heights = sizes.map((n, i) => (small[i] || bigTotal === 0 ? MIN_ROW : ((free - fixed) * n) / bigTotal));
-    const newlySmall = heights.map((h, i) => !small[i] && h < MIN_ROW);
+    heights = sizes.map((n, i) => (small[i] || bigTotal === 0 ? min : ((free - fixed) * n) / bigTotal));
+    const newlySmall = heights.map((h, i) => !small[i] && h < min);
     if (!newlySmall.some(Boolean)) break;
     newlySmall.forEach((v, i) => v && (small[i] = true));
   }
@@ -70,12 +78,14 @@ function monthIndex(h: History, time: number): number {
   return m;
 }
 
-function ShareBar({ history: h, time }: { history: History; time: number }) {
+/** `title` false leaves out the heading (phone); the bar keeps it as its name. */
+function ShareBar({ history: h, time, title = true }: { history: History; time: number; title?: boolean }) {
   const parts = shareAt(h, monthIndex(h, time));
+  const heading = "Who wrote the code that exists on this day";
   return (
     <div className="share">
-      <h2 className="panel-title">Who wrote the code that exists on this day</h2>
-      <div className="share-bar">
+      {title && <h2 className="panel-title">{heading}</h2>}
+      <div className="share-bar" role="group" aria-label={heading}>
         {parts.map((p) => {
           const pct = Math.round(p.share * 100);
           const label = `${p.author === null ? "Others" : h.initials(p.author)} ${pct}%`;
@@ -89,7 +99,7 @@ function ShareBar({ history: h, time }: { history: History; time: number }) {
               }}
               title={`${p.author === null ? "Others" : h.authorName(p.author)}: ${pct}%`}
             >
-              {pct >= 6 ? label : ""}
+              {pct >= 6 && <span className="share-label">{label}</span>}
             </div>
           );
         })}
@@ -148,7 +158,7 @@ function CommitFiles({ session, commit }: { session: Session; commit: number }) 
 }
 
 export function OverviewView({ session }: { session: Session }) {
-  const { playback, history: h } = session;
+  const { playback, history: h, phone } = session;
   const store = playback.store;
   const commit = useStore(store, (s) => h.commitAt(s.time));
   const day = useStore(store, (s) => Math.floor(s.time / 86_400) * 86_400);
@@ -157,12 +167,15 @@ export function OverviewView({ session }: { session: Session }) {
   const rows = h.data.overview.rows;
 
   const heights = useMemo(() => {
+    const sizes = rows.map((r) => r.lines || r.peakLines * 0.15);
+    if (phone) {
+      const available =
+        height - rowsTop(MARKER_SPACE) - LAYOUT.bottom - rows.length * PHONE.labelAbove;
+      return rowHeights(sizes, Math.max(available, rows.length * PHONE.minRow), PHONE.minRow, PHONE.gap);
+    }
     const available = height - rowsTop(MARKER_SPACE) - LAYOUT.bottom;
-    return rowHeights(
-      rows.map((r) => r.lines || r.peakLines * 0.15),
-      Math.max(available, rows.length * MIN_ROW),
-    );
-  }, [rows, height]);
+    return rowHeights(sizes, Math.max(available, rows.length * MIN_ROW));
+  }, [rows, height, phone]);
 
   const contents = useMemo(
     () =>
@@ -194,7 +207,7 @@ export function OverviewView({ session }: { session: Session }) {
     for (const m of h.data.overview.moments) {
       if (m.kind === "move" && m.files < MIN_MOVED) continue;
       const t = h.commitTime(m.commit);
-      if (chosen.length < MOMENTS && chosen.every((c) => Math.abs(h.commitTime(c.commit) - t) > apart)) chosen.push(m);
+      if (chosen.length < (phone ? PHONE.moments : MOMENTS) && chosen.every((c) => Math.abs(h.commitTime(c.commit) - t) > apart)) chosen.push(m);
     }
     return chosen.map((m) => {
       const t = h.commitTime(m.commit);
@@ -207,7 +220,7 @@ export function OverviewView({ session }: { session: Session }) {
             : `files move from ${m.from || "the top"}/ to ${m.folder}/`;
       return { time: t, date, text };
     });
-  }, [h]);
+  }, [h, phone]);
 
   const open = (i: number) => {
     const r = rows[i];
@@ -227,6 +240,55 @@ export function OverviewView({ session }: { session: Session }) {
     }
     return false;
   });
+
+  const label = (i: number) => (
+    <span className={i === selectedRow ? "folder-label selected" : "folder-label"}>
+      <span className="mono">{rows[i]!.label}</span>
+      <ChevronRightIcon />
+      {phone && <span className="folder-size">{folderSize(rows[i]!.lines, rows[i]!.died)}</span>}
+    </span>
+  );
+
+  if (phone) {
+    const c = h.data.commits;
+    return (
+      <>
+        {session.upper ?? (
+          <section className="phone-upper">
+            <DateDisplay playback={playback} />
+            <ShareBar history={h} time={day + 86_399} title={false} />
+            {commit >= 0 && (
+              <div className="phone-commit">
+                <AuthorChip history={h} author={c.author[commit]!} />
+                <span>{c.subject[commit]}</span>
+              </div>
+            )}
+          </section>
+        )}
+        <div className="lower tracks-lower">
+          <Legend history={h} short />
+          <Timeline
+            playback={playback}
+            heights={heights}
+            gap={PHONE.gap}
+            gutter={0}
+            labelAbove={PHONE.labelAbove}
+            label={label}
+            content={content}
+            markers={markers}
+            markerSpace={MARKER_SPACE}
+            monthStarts={h.data.overview.monthStarts}
+            onRowClick={open}
+            onSize={(_, hh) => setHeight(hh)}
+            revealRow={selectedRow}
+            shortYears
+            name="Folders over time"
+          />
+        </div>
+        <Transport playback={playback} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -249,12 +311,7 @@ export function OverviewView({ session }: { session: Session }) {
           heights={heights}
           gap={GAP}
           gutter={168}
-          label={(i) => (
-            <span className={i === selectedRow ? "folder-label selected" : "folder-label"}>
-              <span className="mono">{rows[i]!.label}</span>
-              <ChevronRightIcon />
-            </span>
-          )}
+          label={label}
           content={content}
           markers={markers}
           markerSpace={MARKER_SPACE}

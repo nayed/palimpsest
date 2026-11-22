@@ -1,7 +1,7 @@
 // Lines: one file, one track per line it ever had. The color changes where
 // someone rewrote the line; deleted lines stay, struck through.
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { formatDate } from "../app/format";
 import { useViewKeys } from "../app/keys";
 import { useLineHistory, type Session } from "../app/session";
@@ -20,6 +20,8 @@ import { LineHistoryPanel, effectiveLine, lineAuthor } from "./LinePanels";
 
 const ROW = 24;
 const GAP = 3;
+/** On a phone: each line's code above its track. */
+const PHONE = { row: 14, gap: 6, labelAbove: 22 };
 
 /** A line's track: one clip per stretch of the same author. */
 export function lineClips(h: History, lines: LineHistory, line: number): TrackClip[] {
@@ -68,8 +70,17 @@ export function moveMarkers(h: History, file: number): Marker[] {
   return out;
 }
 
-function LinesTimeline({ session, lines }: { session: Session; lines: LineHistory }) {
-  const { playback, history: h } = session;
+function LinesTimeline({
+  session,
+  lines,
+  onPick,
+}: {
+  session: Session;
+  lines: LineHistory;
+  /** Called when a line is tapped or clicked, after it is selected. */
+  onPick?: () => void;
+}) {
+  const { playback, history: h, phone } = session;
   const store = playback.store;
   const commit = useStore(store, (s) => h.commitAt(s.time));
   const selectedLine = useStore(store, (s) => s.selectedLine);
@@ -80,7 +91,7 @@ function LinesTimeline({ session, lines }: { session: Session; lines: LineHistor
   const clips = useMemo(() => lines.order.map((id) => lineClips(h, lines, id)), [h, lines]);
   const content = useCallback((i: number): RowContent => ({ style: "plain", clips: clips[i]! }), [clips]);
   const markers = useMemo(() => moveMarkers(h, lines.file), [h, lines.file]);
-  const heights = useMemo(() => lines.order.map(() => ROW), [lines]);
+  const heights = useMemo(() => lines.order.map(() => (phone ? PHONE.row : ROW)), [lines, phone]);
 
   useViewKeys((e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -123,7 +134,11 @@ function LinesTimeline({ session, lines }: { session: Session; lines: LineHistor
           {h.initials(author)}
         </span>
         <span className={dead ? "code-text struck" : "code-text"}>{lines.textAt(id, commit)}</span>
-        {dead && <span className="line-note">deleted in {new Date(h.commitTime(died) * 1000).getUTCFullYear()}</span>}
+        {dead && (
+          <span className="line-note">
+            {phone ? "del." : "deleted in"} {new Date(h.commitTime(died) * 1000).getUTCFullYear()}
+          </span>
+        )}
         {future && <span className="line-note">not written yet</span>}
       </span>
     );
@@ -133,24 +148,66 @@ function LinesTimeline({ session, lines }: { session: Session; lines: LineHistor
     <Timeline
       playback={playback}
       heights={heights}
-      gap={GAP}
-      gutter={Math.round(width * 0.44)}
+      gap={phone ? PHONE.gap : GAP}
+      gutter={phone ? 0 : Math.round(width * 0.44)}
+      labelAbove={phone ? PHONE.labelAbove : 0}
       label={label}
       content={content}
-      hoverCard={hoverCard}
+      hoverCard={phone ? undefined : hoverCard}
       markers={markers}
       markerSpace={markers.length ? 24 : 18}
       caption="One track per line. The color changes where someone rewrote it."
-      onRowClick={(i) => store.set({ selectedLine: lines.order[i]! })}
+      onRowClick={(i) => {
+        store.set({ selectedLine: lines.order[i]! });
+        onPick?.();
+      }}
       onSize={(w) => setWidth(w)}
       revealRow={lines.order.indexOf(line)}
+      shortYears={phone}
       name="Lines over time"
     />
   );
 }
 
+/**
+ * On a phone, the selected line's story in a sheet above the controls. The
+ * handle hides it, by a tap or a swipe down; tapping a line brings it back.
+ */
+function LineSheet({ children, onHide }: { children: React.ReactNode; onHide: () => void }) {
+  const start = useRef<number | null>(null);
+  return (
+    <section className="line-sheet" aria-label="Line history">
+      <button
+        type="button"
+        className="sheet-handle"
+        aria-label="Hide the line history"
+        onPointerDown={(e) => {
+          start.current = e.clientY;
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerUp={(e) => {
+          const moved = start.current === null ? 0 : e.clientY - start.current;
+          start.current = null;
+          // A tap or a swipe down hides it; a swipe up does nothing.
+          if (moved > 24 || Math.abs(moved) < 8) onHide();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onHide();
+          }
+        }}
+      >
+        <span aria-hidden="true" />
+      </button>
+      <div className="line-sheet-body">{children}</div>
+    </section>
+  );
+}
+
 export function LinesView({ session }: { session: Session }) {
-  const { playback, history: h } = session;
+  const { playback, history: h, phone } = session;
+  const [sheet, setSheet] = useState(true);
   const store = playback.store;
   const commit = useStore(store, (s) => h.commitAt(s.time));
   const file = useStore(store, (s) => s.selectedFile);
@@ -158,6 +215,43 @@ export function LinesView({ session }: { session: Session }) {
   const lines = useLineHistory(session, file);
   const line = lines ? effectiveLine(lines, selectedLine, commit) : -1;
   const path = file >= 0 ? h.pathAt(file, Math.max(commit, h.born(file))) : "";
+
+  if (phone) {
+    return (
+      <>
+        {session.upper ?? (
+          <section className="phone-upper lines-phone-upper">
+            <DateDisplay playback={playback} />
+            {file >= 0 && (
+              <button type="button" className="back-button" onClick={() => store.set({ view: "tracks" })}>
+                <ChevronLeftIcon />
+                <span className="mono">{path.split("/").pop()}</span>
+              </button>
+            )}
+          </section>
+        )}
+        <div className="lower tracks-lower">
+          {lines ? (
+            <LinesTimeline session={session} lines={lines} onPick={() => setSheet(true)} />
+          ) : (
+            <p className="timeline-message">
+              {file < 0
+                ? "Pick a file in Tracks to see its lines."
+                : lines === undefined
+                  ? "Reading the file’s history…"
+                  : "This file has no line history: it is binary or vendored."}
+            </p>
+          )}
+        </div>
+        {sheet && lines && line >= 0 && (
+          <LineSheet onHide={() => setSheet(false)}>
+            <LineHistoryPanel history={h} lines={lines} line={line} commit={commit} />
+          </LineSheet>
+        )}
+        <Transport playback={playback} />
+      </>
+    );
+  }
 
   return (
     <>

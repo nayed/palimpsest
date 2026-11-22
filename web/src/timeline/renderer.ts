@@ -231,6 +231,8 @@ function drawSilhouette(ctx: CanvasRenderingContext2D, f: Frame, row: DrawnRow, 
     ctx.fillRect(x0, y + row.h - bar, x1 - x0 + 0.5, bar);
   }
   // A chip where each author's stretch starts, when there is room for it.
+  // Thin rows (phone) have none: the colors say it.
+  if (row.h < 30) return;
   let free = -Infinity;
   row.clips.forEach((c, i) => {
     if (row.clips[i - 1]?.author === c.author) return;

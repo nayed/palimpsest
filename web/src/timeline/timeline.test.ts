@@ -5,7 +5,7 @@ import { History } from "../data/history";
 import { LineHistory } from "../data/lines";
 import { lineClipDetails, lineClips } from "../views/LinesView";
 import { clipAt, clipDates, clipTexts, fileClipDetails, spanText } from "./notes";
-import { rowHeights, shareAt } from "../views/OverviewView";
+import { folderSize, rowHeights, shareAt } from "../views/OverviewView";
 import { timeToX, xToTime, yearSegments } from "./scale";
 import { releases, versionOf } from "./tags";
 import { currentRelease } from "./renderer";
@@ -38,6 +38,18 @@ describe("overview rows", () => {
     expect(h[0]).toBeGreaterThan(h[1]!);
     expect(h[3]).toBe(44);
     expect(h.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(600);
+  });
+
+  it("name a folder's size, or the year it went", () => {
+    expect(folderSize(17_400, null)).toBe("17k lines");
+    expect(folderSize(1, null)).toBe("1 line");
+    expect(folderSize(0, Date.UTC(2019, 3, 28) / 1000)).toBe("gone 2019");
+  });
+
+  it("can be thinner on a phone", () => {
+    const h = rowHeights([800, 150, 50, 0], 200, 14, 4);
+    expect(h.every((x) => x >= 14)).toBe(true);
+    expect(h.reduce((a, b) => a + b, 0) + 3 * 4).toBeLessThanOrEqual(200);
   });
 
   it("splits who wrote the code alive in a month, Others last", () => {
