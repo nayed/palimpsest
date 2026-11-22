@@ -39,12 +39,7 @@ export const FileFinder = forwardRef<HTMLInputElement, { history: History; onPic
     };
 
     return (
-      <div
-        className="file-finder"
-        // Keep presses here from scrubbing or selecting a track underneath.
-        onPointerDown={(e) => e.stopPropagation()}
-        onPointerUp={(e) => e.stopPropagation()}
-      >
+      <div className="file-finder">
         <input
           ref={ref}
           className="file-finder-input"

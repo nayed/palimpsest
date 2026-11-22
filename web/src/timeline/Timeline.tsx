@@ -252,7 +252,9 @@ export function Timeline(props: TimelineProps) {
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setHover(null);
-    if (e.button !== 0) return;
+    // Presses on the caption (Find a file) and on buttons in labels are theirs.
+    // They still reach the page, so open menus elsewhere close.
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".timeline-caption, button")) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;

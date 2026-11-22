@@ -120,6 +120,16 @@ test("any file can be found, pinned to the top and unpinned", async ({ page }) =
   expect(await page.locator(".date").textContent()).toBe(date);
 });
 
+test("clicking Find a file closes the repository menu", async ({ page }) => {
+  await page.goto("/alacritty/alacritty?at=2021-06-01");
+  await page.getByRole("combobox", { name: "Repository" }).click();
+  const demo = page.getByRole("option", { name: /alacritty\/alacritty.*the demo/ });
+  await expect(demo).toBeVisible();
+  await page.getByRole("combobox", { name: "Find a file" }).click();
+  await expect(demo).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Find a file" })).toBeFocused();
+});
+
 test("the speed menu changes speed and closes with Escape", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "4× speed" }).click();

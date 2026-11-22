@@ -186,8 +186,6 @@ export function TracksView({ session }: { session: Session }) {
             className="unpin"
             aria-label={`Unpin ${path}`}
             title="Pinned. Click to unpin"
-            onPointerDown={(e) => e.stopPropagation()}
-            onPointerUp={(e) => e.stopPropagation()}
             onClick={() => unpin(file)}
           >
             <PinIcon />
