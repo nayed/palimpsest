@@ -4,12 +4,12 @@ Palimpsest is a git time machine for the web: open a public repository, then scr
 
 It is a static web app and a portfolio project. There is no account, no database and no application server. A demo repository is loaded and already playing when the page opens; any other public GitHub repository can be pasted in and is read inside the browser.
 
-This file is the source of truth. Read it fully, look at the screens in `design/screens/`, then build the MVP described in [Scope of the MVP](#scope-of-the-mvp), in the order given in [Build order](#build-order).
+This file is the source of truth. It started as the design brief for the MVP, which was built in the five steps of [Build order](#build-order) and shipped at palimpsest.nayed.workers.dev; the app has grown since (see [After the MVP](#after-the-mvp)). Every section below describes the app as it is now. The screens in `design/screens/` remain the visual reference.
 
 Every decision below is marked one of two ways:
 
-- **Decided**: agreed with the author (Nayed) during design.
-- **Proposed**: the designer's recommendation, not yet confirmed by the author. Build it as written, keep it easy to change, and list these in your first summary so the author can overrule any of them.
+- **Decided**: agreed with the author (Nayed).
+- **Proposed**: the designer's recommendation, not yet confirmed by the author. Build it as written, keep it easy to change, and say so in your summary so the author can overrule it.
 
 ---
 
@@ -18,38 +18,35 @@ Every decision below is marked one of two ways:
 | Path | What it is |
 | --- | --- |
 | `PALIMPSEST.md` | This brief. |
-| `README-draft.md` | The approved intro for the repository README (the meaning of the name, the one-paragraph pitch). Use it as the top of `README.md`. |
-| `design/screens/dark/*.png` | The approved designs in the dark theme, rendered at 2× (2880 × 1800; the phone screen is 780 × 1688). **Match these.** |
-| `design/screens/light/*.png` | The same screens in the light theme. |
-| `design/html/dark/*.html`, `design/html/light/*.html` | The same screens as static HTML. Open them to read exact sizes, spacing and colors. The view tabs and the sun and moon switch link the pages to each other. They are a visual reference, not code to copy: everything in them is HTML elements, while the real app draws the timeline on a canvas. |
+| `README-draft.md` | The approved intro for the repository README (the meaning of the name, the one-paragraph pitch). It became the top of `README.md`. |
+| `design/screens/dark/*.png` | The designs in the dark theme, rendered at 2× (2880 × 1800; phone screens are narrower). **Match these.** |
+| `design/screens/light/*.png` | The same screens in the light theme, which is not built. |
+| `design/html/dark/*.html`, `design/html/light/*.html` | The same screens as static HTML, to read exact sizes, spacing and colors. A visual reference, not code to copy: everything in them is HTML elements, while the app draws the timeline on a canvas. |
 | `design/author-colors.png`, `design/author-colors.html` | The reference sheet for the author palette in both themes. |
-| `design/tokens.css` | Every color, font and size as CSS variables for both themes. Copy it to `web/src/styles/tokens.css`. |
-| `design/icons/*.svg` | The nine icons used in the designs: play, pause, previous commit, next commit, sun, moon and three chevrons. They use `currentColor`. |
+| `design/tokens.css` | Every color, font and size as CSS variables for both themes, copied to `web/src/styles/tokens.css` (which has since gained a few, see [Design tokens](#design-tokens)). |
+| `design/icons/*.svg` | The icons used in the designs. They use `currentColor`. |
+| `logo/` | The logo mark, the lockup, the wordmark, favicons and app icons (dark only). Its README gives the mark's geometry. |
+| `images/` | The README's pictures: the Archimedes Palimpsest and a recording of the app playing. |
 
-Not in this folder yet:
+The screens. All are 1440 px wide pages except the phone screens.
 
-- The README hero illustration (`docs/images/Palimpsest.png`). `README-draft.md` references it; the author will provide it.
-- A logo mark and a favicon. The designs use the wordmark only: PALIMPSEST in Barlow Condensed. None has been designed.
-
-The screens. All are 1440 px wide pages except the phone screen (390 × 844).
-
-| Screen | In the MVP | Shows |
-| --- | --- | --- |
-| `01-overview` | Yes | The whole repository: one track per folder, colored by who was writing, taller for bigger folders. Above it, the date, who wrote the code that exists on that day, and what the current commit changed. |
-| `02-tracks` | Yes | The home screen: one track per file. Above it, the selected file as it was at the playhead, the date, and the history of the selected line. |
-| `03-lines` | Yes | One file: one track per line of code, with the code as the row labels. Above it, the date and the selected line's history. |
-| `04-playing` | Yes | Tracks while history plays: the code viewer is replaced by a feed of commits, the play button is a pause button, and the speed menu is open. |
-| `05-repo-field-open` | Yes | The repository field focused, with its dropdown: suggested repositories, recently opened ones, and the paste hint. |
-| `06-loading` | Yes | A pasted repository being read: progress, three steps, and tracks filling in from the right. |
-| `07-too-big` | Yes, simplified | A repository over the commit limit, with two ways to load part of it. For the MVP the message and "Back to the demo repo" are required; the two partial-load options are a [later feature](#later-features-not-the-mvp). |
-| `08-phone-tracks` | Yes | Tracks at phone width: file names above their tracks, no code viewer, controls pinned to the bottom. |
-| `09-phone-overview-lines` | Yes, a sketch | Overview and Lines at phone width, agreed after the MVP. Folder rows are simplified to stripes there; the app draws its usual silhouettes. |
+| Screen | Shows |
+| --- | --- |
+| `01-overview` | The whole repository: one track per folder, colored by who was writing, taller for bigger folders. Above it, the date, who wrote the code that exists on that day, and what the current commit changed. |
+| `02-tracks` | The home screen: one track per file. Above it, the selected file as it was at the playhead, the date, and the history of the selected line. |
+| `03-lines` | One file: one track per line of code, with the code as the row labels. Above it, the date and the selected line's history. |
+| `04-playing` | Tracks while history plays: the code viewer is replaced by a feed of commits, the play button is a pause button, and the speed menu is open. |
+| `05-repo-field-open` | The repository field focused, with its dropdown: suggested repositories, recently opened ones, and the paste hint. |
+| `06-loading` | A pasted repository being read: progress, three steps, and tracks filling in from the right. |
+| `07-too-big` | A repository over the commit limit, with ways to load part of it. Built with windows of recent history; the folder option was dropped (see [Too big](#too-big-and-other-failures-07-too-big)). |
+| `08-phone-tracks` | Tracks at phone width: file names above their tracks, no code viewer, controls pinned to the bottom. |
+| `09-phone-overview-lines` | Overview and Lines at phone width, sketched after the MVP. Folder rows are simplified to stripes there; the app draws its usual silhouettes. |
 
 Three things about the screens to know before matching them:
 
 - **The data in them is invented.** The repository `example/tidepool`, the authors Jonas Weber, Sara Lindqvist and Mira Okafor, the file names, commits, dates and percentages are all placeholders. The real demo repository is alacritty (see [Demo repositories](#demo-repositories)).
-- **Only the dark theme is built for now (Decided).** The light screens stay in this folder as a reference, and the light values stay in `tokens.css`, so light can come back later as a token swap. Build each view once with CSS variables and never hard-code a color.
-- **The legend shows three authors.** A real repository shows up to five, plus Others and Untouched, in the same row above the tracks.
+- **Only the dark theme is built (Decided).** The light screens stay as a reference, and the light values stay in `tokens.css`, so light can come back as a token swap. Every view uses CSS variables; no color is hard-coded.
+- **They predate later changes.** The sun and moon switch at the far right of the header is the About button in the app; the release strip under the ruler, "Find a file" and the hover cards are not in them.
 
 ---
 
@@ -57,8 +54,8 @@ Three things about the screens to know before matching them:
 
 1. They open the site. The demo repository is already loaded and **Tracks is already playing**: history is moving before they click anything.
 2. They pause, drag the playhead, step commit by commit, and switch between three views of the same moment: **Overview** (folders), **Tracks** (files), **Lines** (one file's lines).
-3. They drill down like zooming a map: clicking a folder in Overview opens its files in Tracks; clicking a file's track opens its lines in Lines.
-4. They open the repository field, pick a suggestion or paste any public GitHub URL, and that repository loads in the browser with a visible progress state.
+3. They drill down like zooming a map: clicking a folder in Overview opens its files in Tracks; clicking a file's track opens its lines in Lines. Any file can be found by name and pinned.
+4. They open the repository field, pick a suggestion or paste any public GitHub URL, and that repository loads in the browser with a visible progress state. A repository too big to read whole offers a window of its recent history instead.
 5. The address bar always holds the repository, the date and the view, so any moment in any repository is a link they can share.
 
 The one idea that holds the product together: **the playhead is shared**. The date you have scrubbed to stays the same as you move between views, and the date display, the play controls and the time axis sit in the same place in all three.
@@ -70,134 +67,137 @@ The one idea that holds the product together: **the playhead is shared**. The da
 | Area | Choice | Status | Notes |
 | --- | --- | --- | --- |
 | App shell | **React + TypeScript + Vite** | Decided | Plain single-page app. Nothing needs server rendering. |
-| Timeline drawing | **Canvas 2D** | Decided | Clips, silhouettes, the playhead and the future veil are drawn on a canvas, because a real repository means thousands of strips redrawn while scrubbing. The header, panels, menus, the ruler, the legend and the track labels stay ordinary React and DOM. |
-| Playhead state | A small store outside React (Zustand or hand-rolled) | Decided | The playhead moves every frame. It must not live in React state, or the whole tree re-renders 60 times a second. The canvas subscribes to the store directly. |
-| Styling | Plain CSS with custom properties | Decided | See `design/tokens.css`. No Tailwind. The canvas reads the same variables. |
-| History logic | **Rust**, one core library compiled twice | Decided | Once as a native command-line tool (builds the demo data at build time) and once as **WebAssembly** (reads pasted repositories in a Web Worker). Same code, so the demo data and the live path cannot disagree. |
-| Reading git objects | **gitoxide** (the `gix` crates) | Decided | Pure Rust. See the risk below about fetching inside WebAssembly. |
-| Rust to JavaScript bridge | **wasm-bindgen**, typed arrays across the boundary | Decided | |
-| Storing a cloned repository | The browser's private file system (OPFS), with computed history cached by repository and head commit | Decided | |
-| CORS proxy | One **Cloudflare Worker** | Decided | GitHub does not allow cross-origin git fetches from a browser. The Worker forwards only git smart-HTTP requests to `github.com` and nothing else; it must not be usable as an open proxy. |
-| Hosting | **Cloudflare Pages** | Decided | Static site plus that one Worker. In step 5, Cloudflare's tooling had folded Pages into Workers, so the site is deployed as Workers static assets (`web/wrangler.jsonc`) at palimpsest.nayed.workers.dev, with the proxy at palimpsest-git-proxy.nayed.workers.dev. |
-| Tests | `cargo test` for the core, **Vitest** for the front end, **Playwright** for the views | Decided | The history logic is where the bugs will be. Test it hardest. |
+| Timeline drawing | **Canvas 2D** | Decided | Clips, silhouettes, release ticks, the playhead and the future veil are drawn on a canvas, because a real repository means thousands of strips redrawn while scrubbing. The header, panels, menus, the ruler, the legend and the track labels stay ordinary React and DOM. |
+| Playhead state | A small hand-rolled store outside React (`web/src/store`) | Decided | The playhead moves every frame. It must not live in React state, or the whole tree re-renders 60 times a second. The canvas subscribes to the store directly. |
+| Styling | Plain CSS with custom properties | Decided | No Tailwind. The canvas reads the same variables. |
+| History logic | **Rust**, one core library compiled twice | Decided | Once as a native command-line tool (builds the demo data) and once as **WebAssembly** (reads pasted repositories in a Web Worker). Same code, so the demo data and the live path cannot disagree. |
+| Reading git objects | **gitoxide** natively; the core's own pack reader in the browser | Decided | gitoxide does not compile for `wasm32-unknown-unknown` with its network features (settled in step 4). In the browser, JavaScript downloads the pack with a small hand-written git protocol v2 client (`web/src/git`), and the core reads it with `core/src/pack.rs`. |
+| Rust to JavaScript bridge | **wasm-bindgen** | Decided | |
+| Storing a pasted repository | The browser's private file system (OPFS) | Decided | The downloaded pack, the finished data file and every line history worked out, so a repository opens again at once (see [Loading](#loading-a-pasted-repository-06-loading)). |
+| CORS proxy | One **Cloudflare Worker** (`proxy/`) | Decided | GitHub does not allow cross-origin git fetches from a browser. The Worker forwards only git smart-HTTP reads to `github.com`, only for the site's origin, and stores nothing; it must not be usable as an open proxy. |
+| Hosting | **Cloudflare** | Decided | Designed for Pages; by step 5 Pages had been folded into Workers, so the site is Workers static assets (`web/wrangler.jsonc`) at palimpsest.nayed.workers.dev, with the proxy at palimpsest-git-proxy.nayed.workers.dev. GitHub Actions tests every push to `main` and deploys it. |
+| Tests | `cargo test` for the core, **Vitest** for the front end, **Playwright** for the views | Decided | The history logic is where the bugs will be. Test it hardest. Browser tests replay recorded GitHub answers, so they need no network. |
 | Package manager | **pnpm** | Decided | |
-| Fonts | Barlow, Barlow Condensed and JetBrains Mono, bundled locally with `@fontsource` | Decided | No request to Google Fonts at runtime. |
+| Fonts | Barlow, Barlow Condensed and JetBrains Mono, bundled with `@fontsource` | Decided | No request to Google Fonts at runtime. |
 | License | **MIT** | Decided | |
 
-Three things to verify before relying on them. They were written from general knowledge during design and were not checked against current documentation:
-
-1. **Fetching a repository from inside WebAssembly.** Parsing git data in WebAssembly is well-trodden; doing the network fetch from inside it may not be supported by gitoxide today. Settle this with a one-day experiment at the start of build step 4. The safe fallback is to let JavaScript download the pack file (a small hand-written smart-HTTP fetch, or isomorphic-git for transport only) and hand the bytes to Rust to parse.
-   **Settled in step 4:** gitoxide does not compile for `wasm32-unknown-unknown` with its network features (gix-sec needs Unix file APIs). JavaScript downloads the pack with a small hand-written git protocol v2 client (`web/src/git`), and the core reads it with its own pack reader (`core/src/pack.rs`), so gitoxide is used natively only.
-2. **WebAssembly build tooling.** The Rust and WebAssembly tooling was reorganized in the last couple of years. Look up the currently recommended way to build with wasm-bindgen and bundle with Vite; do not follow an older tutorial.
-3. **Crate and package versions.** Before adding each dependency, check that it is still maintained and pick the current version.
-
-Names: the project is Palimpsest. The wordmark in the interface is `Palimpsest` set in uppercase by CSS; in prose it is Palimpsest. Suggested crate names: `palimpsest-core`, `palimpsest-cli`, `palimpsest-wasm` (check they are free).
+Names: the project is Palimpsest. The wordmark in the interface is `Palimpsest` set in uppercase by CSS; in prose it is Palimpsest. The crates are `palimpsest-core`, `palimpsest-cli` and `palimpsest-wasm`.
 
 ---
 
 ## Architecture foundations
 
-Follow these from the first commit. They exist so the later features can be added without rewriting anything.
+Followed from the first commit, so features can be added without rewriting anything.
 
 1. **One core, two builds.** All history logic lives in `core/`. The command-line tool and the WebAssembly wrapper are thin shells around it. Nothing about history is computed in TypeScript.
-2. **One data format.** The core produces one format (see [Data the views need](#data-the-views-need)). The app loads it the same way whether it came from a static file or from the Worker. Give the format a version number.
+2. **One data format.** The core produces one format (see [Data and rules](#data-and-rules)). The app loads it the same way whether it came from a static file or from the Worker. It has a version number; fields added later are optional, so older files still load.
 3. **The views are pure functions of (data, playhead, selection).** No view fetches or computes history. This is what makes scrubbing cheap.
-4. **Three views, one grammar.** A row is a thing (a folder, a file, a line), a colored strip is its life, the color is who was writing. Implement the track renderer once and feed it folders, files or lines.
+4. **Three views, one grammar.** A row is a thing (a folder, a file, a line), a colored strip is its life, the color is who was writing. The track renderer is written once and fed folders, files or lines.
 5. **Author colors are assigned once per repository** and never change while scrubbing. See [Author colors](#author-colors).
 6. **Colors only through CSS variables.** No hex values in components or in canvas code.
-7. **Heavy work never runs on the main thread.** Cloning, parsing and line history run in a Web Worker and report progress.
-8. **The URL is the state.** Repository, date, view, file and line live in the address. Loading a URL restores that moment.
+7. **Heavy work never runs on the main thread.** Downloading, unpacking, reading and line history run in a Web Worker, in slices, and report progress.
+8. **The URL is the state.** Repository, date, view, folder, file and line live in the address. Loading a URL restores that moment.
 9. **Static by default.** The only network requests at runtime are the site's own files, and, for pasted repositories, the proxy to GitHub.
 
-Suggested layout:
+The layout:
 
 ```
 palimpsest/
 ├── docs/                 # this folder
 ├── Cargo.toml            # workspace
-├── core/                 # palimpsest-core: walk history, renames, clips, line history, the data format
+├── core/                 # palimpsest-core: history, renames, merge credit, clips, line history, tags, packs, the format
 ├── cli/                  # palimpsest-cli: `build-data <path to a local clone> -o <file>`
-├── wasm/                 # palimpsest-wasm: wasm-bindgen wrapper around the core
+├── wasm/                 # palimpsest-wasm: the browser's reader around the core
 ├── proxy/                # the Cloudflare Worker
+├── scripts/              # building the WebAssembly and the demo data
 └── web/
     ├── public/data/      # precomputed demo data, one folder per demo repository
     └── src/
-        ├── app/          # routing from the URL, the header, theme
+        ├── app/          # routing from the URL, keys, formatting
         ├── store/        # playhead, selection, playback (outside React)
-        ├── data/         # loading the format, the Worker client, caches
-        ├── timeline/     # the canvas track renderer, ruler, playhead, hit testing
-        ├── views/        # Overview, Tracks, Lines, Playing feed, Loading, TooBig
-        ├── components/   # RepoField, ViewTabs, ThemeSwitch, Transport, Legend, AuthorChip
-        └── styles/       # tokens.css, base.css
+        ├── data/         # the format, history lookups, line histories, the pasted-repository client
+        ├── git/          # the git protocol v2 client
+        ├── worker/       # the reader Worker and the browser storage
+        ├── timeline/     # the canvas renderer, the ruler, hit testing, release tags
+        ├── views/        # Overview, Tracks, Lines, the commit feed, loading and failure screens
+        ├── components/   # header, repository field, About, transport, legend, chips, Find a file
+        └── styles/       # tokens.css, base.css, app.css
 ```
 
 ---
 
-## Data the views need
+## Data and rules
 
-A starting point, not a contract. Design the real format in build step 1 and keep it compact (typed arrays, tables of ids, no repeated strings).
+One main data file per repository, loaded on open, plus one small file per source file for line history, fetched when that file is opened. Line history for the whole repository is never in the main file. The format is tables stored column by column, with ids instead of repeated strings (`core/src/format.rs`, mirrored in `web/src/data/format.ts`).
 
 | Data | Used by |
 | --- | --- |
-| Repository: name, head commit, commit count, first and last commit dates | Header, date display, "Commit n of m" |
+| Repository: name, head commit, commit count, first and last commit dates, and for a window of history the stand-in author for earlier code | Header, date display, "Commit n of m" |
 | Authors: name, initials, commit count, rank, whether it is a bot | Colors, legend, chips |
 | Commits, oldest to newest: time, author, short hash, subject, and the body's first paragraph (the "why") | Date display, commit feed, line history |
-| Per commit: the files it added, changed, deleted or renamed | "What this commit did", the feed, highlights on tracks |
+| Per commit: the files it added, changed, deleted or renamed, each with who wrote that change | "What this commit did", the feed, highlights, line authors |
 | Files as identities that survive renames: each path it has had and when, when it was born and when it died | Track rows, clip labels such as "moved to parser/" |
 | Per file: its clips (who was writing, from when to when) and its untouched stretches | Tracks |
-| Per folder: its size over time and its clips | Overview |
-| Per moment: the share of existing lines last written by each author | "Who wrote the code that exists on this day" |
-| Per file, loaded on demand: every line that ever existed, when it was born and died, and each rewrite with its commit | Lines, and the line history panel |
+| Per folder: its size over time and its clips; notable moments | Overview |
+| Per month: the share of existing lines last written by each author | "Who wrote the code that exists on this day" |
+| Release tags: name and date | The release strip under the ruler |
+| Per file, loaded on demand: every line that ever existed, when it was born and died, and each rewrite with its commit | Lines, the code viewer, the line history panel |
 
-Rules for deriving that data. All are **Decided** as starting points; put the numbers in constants and tune them on the three demo repositories.
+Rules for deriving that data. All are **Decided**; the numbers are constants in the core, tuned on the demo repositories.
 
-- **Which history.** Walk the default branch's first-parent history so there is one linear sequence of commits to scrub. A merge commit on that line is credited to the author of the merged branch's last commit, not to whoever merged it, and a GitHub pull-request merge shows the pull request's title as its subject (Decided in step 1). **Refined after the MVP (rollup credit):** each file a merge brings in is credited to whoever last changed it on the merged branches, so a project that merges pull requests in batches (rust's rollups) no longer credits the person assembling each batch with everyone's code. A merge's own commits are those its merged side reaches that no earlier merge brought in (the first-parent line is gone through oldest first, each commit claimed once); merges inside a branch pass the credit on; commits at the edge of a window, whose changes are unknown, are left out. The merge itself is shown under whoever is credited with the most of its files, and everyone credited counts one commit for it in the ranking. The data file gained a per-change `changes.author` column (older files fall back to the commit's author), used for clips, the who-wrote bar, line authors and hover cards. In the browser this is a stepped phase after reading ("Crediting merged work"): about 3 s for rust's last 3 months. On rust it took the top five from the rollup makers to Ralf Jung, Guillaume Gomez, mejrs, Nicholas Nethercote and Esteban Küber; on the demos, which merge single-author pull requests, it changes almost nothing.
-- **Clips.** Bucket commits by month. A month's color is the author who changed the most lines of that file in it. A month with no commits continues the previous clip. Merge neighboring months with the same author into one clip. An author's stretch shorter than 3 months is absorbed by its longer neighbor, so the busiest files show about 10 color changes instead of about 37 (Decided in step 1, `min_clip_months`). **Refined after the MVP:** the unit scales with the history's length, so a track has a few dozen of them whatever the span: weeks (starting on Monday) up to about 15 months, fortnights up to about 30, calendar months beyond. The "shorter than 3" rule counts those units; "untouched" stays a year in real time. Every demo spans years and is unchanged; a window of recent history no longer collapses to one color per file (rust's last 3 months: 2 to 4 stretches per busy file instead of 1). In a window, the code already there ("Before …") weighs nothing in a unit and its stretch is never merged with a neighbor's, so it lasts only until someone changes the file.
-- **Vendored files.** Vendored folders, lock files and generated code are flagged per file and left out of folder sizes and Overview (Decided in step 1).
-- **Untouched.** A stretch of 12 months or more with no commit to the file is drawn as Untouched instead of continuing the last author's clip.
-- **Renames.** Git does not record them. Start with exact matches (a path deleted and a path added in the same commit with identical content), then add similarity matching above a threshold, as `git log -M` does.
-- **Lines.** Process one file's commits oldest to newest, diffing each version against the previous one, and keep an owner for every line. Inside a changed hunk, pair old and new lines in order when they are similar enough; a paired line continues with a new color, an unpaired one is a death and a birth.
-- **Size.** Folder size is its line count. If counting lines for every commit is too slow in the browser, use bytes; decide by measuring in step 1.
+- **Which history.** The default branch's first-parent history: one linear sequence of commits to scrub. A GitHub pull-request merge shows the pull request's title as its subject.
+- **Who wrote a merge.** Each file a merge on that line brings in is credited to whoever last changed it on the merged branches, so a project that merges pull requests in batches (rust's rollups) does not credit whoever assembled each batch with everyone's code. A merge's own commits are those its merged side reaches that no earlier merge brought in: the first-parent line is gone through oldest first, each commit claimed once. Merges inside a branch pass the credit on; commits at the edge of a window, whose changes are unknown, are left out. The merge itself is shown under whoever is credited with the most of its files.
+- **Clips.** Commits are bucketed by a unit of time that suits the history's length, so a track has a few dozen units whatever its span: weeks (starting on Monday) up to about 15 months, two-week periods up to about 30, calendar months beyond (every demo uses months). A unit's color is the author who changed the most lines of that file in it. A unit with no commits continues the previous clip, and neighboring units with the same author are one clip. An author's stretch shorter than 3 units is absorbed by its longer neighbor, so the busiest demo files show about 10 color changes instead of about 37 (`min_clip_months`).
+- **Untouched.** A stretch of 12 months or more (in real time, whatever the unit) with no commit to the file is drawn as Untouched instead of continuing the last author's clip.
+- **Renames.** Git does not record them. Exact matches first (a path deleted and a path added in the same commit with identical content), then similarity matching above a threshold, as `git log -M` does.
+- **Lines.** One file's commits are processed oldest to newest, diffing each version against the previous one and keeping an owner for every line. Inside a changed hunk, old and new lines are paired in order when they are similar enough (character bigrams, capped for very long lines); a paired line continues with a new color, an unpaired one is a death and a birth.
+- **Size.** Folder size is its line count.
+- **Vendored files.** Vendored folders, lock files and generated code are flagged per file and left out of folder sizes and Overview.
 - **Bots.** An author whose name ends in `[bot]`, or whose email is a known automation address, is a bot.
+- **Release tags.** The project's own finished versions: bare `15.2.0` or `v0.16.0` tags when there are any, else the most common prefix such as `app-`; never release candidates. Each is dated by its tagger date, else its commit's, since releases are often tagged on a release branch off the first-parent history.
+- **A window of history.** When only recent history was downloaded (see [Too big](#too-big-and-other-failures-07-too-big)), the first-parent walk stops where the window's commits end. The window's first commit stands for the code already there: its files are credited to a stand-in author (rank 6, named "Before Nov 2025" after the window's start), whose stretch weighs nothing in its unit and is never merged with a neighbor's, so it lasts only until someone changes the file.
 
-Precomputed demo data: one main file per repository, loaded on open, plus one small file per source file for line history, fetched when that file is opened in Lines. Line history for the whole repository must not be in the main file.
+Reading a pasted repository happens in the Worker, in phases, each reporting progress:
 
-Reading a pasted repository happens in two passes, which is why the loading screen has three steps:
-
-1. **Download** the repository.
-2. **Read every commit**, newest first: metadata and changed files. This is enough to draw Tracks and Overview, and it fills the screen from the right as shown in `06-loading`.
-3. **Line history**, worked out per file only when the user opens that file in Lines. The authorship share bar in Overview is computed in the background after step 2 and shows a quiet "working it out" state until it is ready.
+1. **Download** the pack through the proxy (or take it from the browser's storage).
+2. **Unpack** it: index every object, in slices of about 50 ms so messages are answered meanwhile.
+3. **Read every commit**, newest first: metadata and changed files. Enough to draw Tracks and Overview, filling the screen from the right as in `06-loading`.
+4. **Credit merged work**, file by file (see above).
+5. **Line history**: worked out per file when the user opens it, and for every file in the background, for the share bar in Overview, which shows a quiet "working it out" state until it is ready.
 
 ---
 
-## Scope of the MVP
+## The screens
 
 ### The header (every screen)
 
-- Left to right: the wordmark, the repository field with its label, and the view tabs (Overview, Tracks, Lines). The theme switch shown at the far right of the mockups is not built for now.
+- Left to right: the logo mark and the wordmark, the repository field with its label, the view tabs (Overview, Tracks, Lines), and at the far right an "About" button, where the mockups have the sun and moon switch.
 - The view tabs are links. The current one is filled with `--active-bg`.
-- **Theme (Decided):** dark only for now, with no theme switch. Set `data-theme="dark"` on the root element. **The theme never follows the system setting**; do not use `prefers-color-scheme`. If light comes back later, it returns as the sun and moon pill in the mockups, remembered in `localStorage`, with dark as the default.
+- **Theme (Decided):** dark only, with no theme switch. `data-theme="dark"` is set on the root element. **The theme never follows the system setting**; `prefers-color-scheme` is not used. If light comes back, it returns as the sun and moon pill in the mockups, remembered in `localStorage`, with dark as the default.
+- **About** opens a panel under the button, like the repository menu: one sentence on what this is; how to read the timeline (colors, Others, hatching, release ticks, the veil); the keyboard shortcuts (not on phones); the repositories kept in this browser, with their sizes and a "Delete them" button; and a footer saying everything runs in the browser, with the author linked to their GitHub profile and the source. Escape or a click elsewhere closes it.
 - Everything interactive is at least 44 px tall.
 
 ### The transport bar and the timeline (every view)
 
 - The transport bar sits between the upper half and the timeline: previous commit, play or pause (yellow-green, 64 × 44), next commit, and the speed button.
-- Below it, the **legend row**: "Colored by who was writing", then a chip and name for each ranked author present, then Others if there are any, then Untouched.
-- Then the timeline: a ruler with one label per year, centered in its year, and the rows.
+- Below it, the **legend row**: "Colored by who was writing", then a chip and name for each ranked author present, then the earlier code of a window ("Before Nov 2025") if any, Others if there are any, then Untouched.
+- Then the timeline: a ruler with one label per year, centered in its year; under it, when the repository has release tags, an 18 px **release strip**: a tick per release, longer for major ones, and as many names as fit, major releases first; the release current at the playhead is brighter. Then the rows.
 - **The playhead** is a 2 px vertical line through the ruler and every row, with an 18 × 14 handle above the ruler. In dark it is yellow-green; in light the line is ink and the handle is yellow-green with a 2 px ink outline, because yellow-green is invisible as a thin line on a light background.
 - **Everything to the right of the playhead is veiled** with `--future-veil`: the future exists, but you are not there yet.
-- Dragging anywhere on the timeline scrubs. Scrubbing must hold 60 frames per second on the demo repositories.
+- Dragging anywhere on the timeline scrubs. Scrubbing holds 60 frames per second on the demo repositories.
+- **Hover cards** (not on phones): resting the mouse on a clip shows who was writing, the dates, and the commits in it (in Tracks, how many were theirs and any move; in Lines, whether they wrote or rewrote the line, and why). On a release tick, its name and date.
 - The date display (54 px Barlow Condensed, like a timecode) and "Commit n of m · hash" update live.
 
 ### Tracks (`02-tracks`): the home screen
 
-- **Upper half, left:** the selected file's path, the caption "The file exactly as it was at the playhead", and the code. Each line has its number, a chip with the initials of whoever last wrote it in that author's color, and the code in JetBrains Mono. The selected line has the selected-row background and a 4 px mark at its left.
-- **Upper half, right:** the date display, then "Line n has been touched k times" and one entry per change, newest first: author chip, the commit subject in semibold, then the date and the reason. The reason is the first paragraph of the commit body; if there is none, show the date only.
+- **Upper half, left:** the selected file's path, the caption "The file exactly as it was at the playhead", and the code. Each line has its number, a chip with the initials of whoever last wrote it in that author's color, and the code in JetBrains Mono, with comments and strings in quieter tones (see [Code tones](#code-tones)). The selected line has the selected-row background and a 4 px mark at its left. Only the lines in view are drawn.
+- **Upper half, right:** the date display, then "Line n has been touched k times" and one entry per change, newest first: author chip, the commit subject in semibold, then the date and the reason. The reason is the first paragraph of the commit body; if there is none, the date only.
 - **Timeline:** one row per file, 30 px tall, 4 px apart, with the path in a 168 px gutter on the left. The selected file's label is highlighted.
 - **Clips** carry the author's initials. A clip can also carry a short note: the old path before a rename, "moved to parser/", "untouched for 2 years, then deleted".
 - **A deleted file's** track ends with a small dashed cap, or a dashed box labeled "deleted" when there is room.
 - **A file born in the current commit** shows "born in this commit" to the left of the playhead.
-- **Which files are shown (Decided):** the files with the most commits in the current folder over the whole history, as many as fit. The list stays fixed while scrubbing so rows never jump. Files changed by the current commit are highlighted, not added. The user can pin other files. Coming from a folder in Overview sets the current folder.
+- **Which files are shown (Decided):** pinned files first, then the files with the most commits in the current folder over the whole history, as many as fit. The list stays fixed while scrubbing so rows never jump. Files changed by the current commit are highlighted, not added. Coming from a folder in Overview sets the current folder. With no file chosen, the busiest file that exists at the playhead is selected.
+- **Find a file** (press /, not on phones): a field over the file names matches any path a file ever had, busiest first, with file-name matches counting more. Results show the latest path, plus the name Tracks labels the file with at the playhead when it differs ("src/config.rs on this date", "created in Apr 2019 as src/cursor.rs"). Picking one pauses, selects it and pins it to the top of the list, whatever the folder; a pin button on its label unpins it. A file named in the address that is not among the busiest is pinned too. Pins last while the tab is open, not in the address.
 - Clicking a track selects that file. Clicking it again, or pressing Enter, opens it in Lines.
 
 ### Overview (`01-overview`)
@@ -206,7 +206,7 @@ Reading a pasted repository happens in two passes, which is why the loading scre
 - **Upper half, right:** the current commit (author chip, subject, "This commit changed n files, added n and deleted n"), then one row per affected file: changed (links to Lines), born, or deleted with the path struck through.
 - **Timeline:** one row per folder with the caption "Taller track, bigger folder". A row's height is proportional to the folder's size at the latest commit, never less than 44 px. Inside a row, a filled silhouette shows the folder's size over time, relative to its own maximum, colored by who was writing there. A chip marks where each author's stretch starts.
 - **Which folders (Decided):** up to five rows. The largest folders, going one level deeper when a single folder holds most of the code, and "everything else" for the rest.
-- **Notable moments** are dashed vertical lines with a short label above the rows: a folder appearing, a file moving between folders. For the MVP, generate them only for folder births and for renames that cross folders, and show at most two or three.
+- **Notable moments** are dashed vertical lines with a short label above the rows: a folder appearing, files moving between folders. At most three.
 - Clicking a folder row opens Tracks for that folder.
 
 ### Lines (`03-lines`)
@@ -224,7 +224,7 @@ Reading a pasted repository happens in two passes, which is why the loading scre
 - **Decided:** while history plays, the code viewer is replaced by "Commits going by": a feed with the current commit on top and highlighted, older ones below and fading out. Each row has the date, the author chip, the subject, and the file changed or "n files". The caption reads "While history plays, this shows commits. Pause to read a file." Pausing brings the code viewer back.
 - The play button becomes a pause button. The track being changed by the current commit gets a dot on the playhead and a highlighted label.
 - **The speed menu** opens upward from the speed button: 1×, 2×, 4×, 8×, 16×, with the current one filled.
-- **Speed (Decided):** playback follows calendar time, not commit count, so busy periods do not crawl. At the default 4× the whole demo repository plays in about 90 seconds; the other speeds scale from that. Tune by feel. The notes in the mockup's menu ("one commit a second", "a year in 20 seconds") are illustrative only.
+- **Speed (Decided):** playback follows calendar time, not commit count, so busy periods do not crawl. At the default 4× the whole history plays in about 90 seconds; the other speeds scale from that.
 - Reaching the latest commit stops playback.
 
 ### The repository field (`05-repo-field-open`)
@@ -233,34 +233,33 @@ Reading a pasted repository happens in two passes, which is why the loading scre
   - "Try one of these": the demo repository first, marked "the demo, loads instantly", then the two suggestions with their commit counts.
   - "Recently opened": the last few repositories the user loaded, from `localStorage`, with how long ago.
   - "Or paste any public GitHub URL and press Enter."
-- Accept `github.com/owner/repo`, a full `https://` URL, and `owner/repo`.
+- Accepts `github.com/owner/repo`, a full `https://` URL, and `owner/repo`.
 - Arrow keys move through the rows, Enter loads, Escape closes.
 
 ### Loading a pasted repository (`06-loading`)
 
-- The Tracks layout stays in place. The upper half shows the progress: "1,240 OF 3,870 COMMITS" in the display type, "Reading history newest first. Back to September 2023 so far.", a progress bar, a "Stop loading" button and a "Back to the demo repo" link.
-- To the right, the three steps with their state: "Download the repository" (done, with the size), "Read every commit" (the percentage, highlighted), "Work out line history" (when you open a file). Under them: "You can already scrub and play the part that has loaded."
+- The Tracks layout stays in place. The upper half shows the progress in the display type ("1,240 OF 3,870 COMMITS", "Unpacking", "Crediting merged work"), a sentence on what is happening ("Reading history newest first. Back to September 2023 so far.", "GitHub is preparing the download. For a big repository this can take a minute or two." while nothing has arrived yet), a progress bar, a "Stop loading" button and a "Back to the demo repo" link.
+- To the right, the three steps with their state: "Download the repository" (done, with the size, or "done, from this browser"), "Read every commit" (the percentage, highlighted), "Work out line history" (when you open a file). Under them: "You can already scrub and play the part that has loaded."
 - The tracks fill in from the right. The part not read yet is a dashed outline labeled "Not read yet", with a dashed marker "read back to here" at its edge.
 - The legend reads "Authors found so far". Because final ranks are not known until every commit is read, every clip is drawn in the Others gray while loading, and author colors appear all at once when reading finishes (Decided).
-- Scrubbing and playing work on the loaded part.
-- Show real numbers. Never a bare spinner.
+- Scrubbing and playing work on the loaded part. Real numbers, never a bare spinner.
+- **Kept in this browser.** Beside each downloaded pack, the finished data file and every line history worked out are kept, stamped with a fingerprint of the WebAssembly core that made them (data from another version of the core is ignored and read afresh). Opened again, the repository shows from them at once; a reader is rebuilt quietly in the background, a few seconds later or as soon as a file's line history is not kept, for files not opened before. A new download for a repository replaces its old pack only once written in full.
 
 ### Too big, and other failures (`07-too-big`)
 
 - When a repository has more commits than the limit: the heading "Too big for one browser tab", then "This repository has <n> commits. Palimpsest reads history inside your browser, and it stops at <limit> so the tab stays responsive.", and a "Back to the demo repo" link. The play controls are disabled and the track area shows empty dashed rows with "Nothing is loaded yet. Tracks will appear here."
-- **The limit is 50,000 commits (Decided).** Keep it in one constant; if measurements show a tab cannot handle it comfortably, tell the author. It counts every commit the default branch reaches, as GitHub's commit count does, read from the header of a commits-only pack, so a huge repository is refused in under a second without downloading it.
-- **Loading part of it (built after the MVP).** Beside the message, "Load part of it instead" offers windows of recent history: the longest of 2 years, 1 year, 6 months, 3 months or 1 month that fits under the limit (the main, yellow button), and the last 3 months as a quicker second choice. Each says roughly how many commits it holds and when it starts ("About 36,000 commits, back to November 2025"); each count is one header-only shallow request (`deepen-since` with `filter tree:0`). If even the last month is over the limit, only the message is shown. The mockup's "one folder, all of its history" was dropped: GitHub refuses folder filters (`sparse:oid`), so it would mean downloading every commit and folder listing of the whole repository, the very thing the limit avoids.
-- A window is downloaded as a shallow pack (`deepen-since`), and the address carries it (`since=2025-11-22`), so a window can be shared and reloaded. The core stops the first-parent walk where the window's commits end; the window's first commit stands for the code already there, credited to a stand-in author drawn in its own color (`--author-earlier`, faded parchment) and named "Before Nov 2025" in the legend, the who-wrote bar and hover cards. That commit is shown as "The loaded history starts here", and its lines as "Already there when the loaded history starts".
-- **Measured on the biggest case (November 2026):** rust-lang/rust's last year, the longest window that fits (35,797 commits by GitHub's count, 1,580 on the main line), through the local proxy: GitHub prepared the pack for well over half a minute before sending anything (the loading screen says so), the download was 209 MB, unpacking took 34 s, reading 40 s and line history 50 s: about 3.5 minutes in all. Reopening it from the browser's storage skips the download but still unpacks and reads again, about 2 minutes. Once loaded, playback ran at about 100 frames a second and scrolling a 3,800-line file in Lines at 116, with the page itself using 64 MB. The tab coped, so the limit stays at 50,000.
-- **Opening a repository again (added after the measurement).** Beside each kept pack, the finished data file and every line history worked out are kept too, stamped with a fingerprint of the WebAssembly core that made them (data from another version of the core is ignored and read afresh). Opened again, the repository shows from them at once: rust-lang/rust's year, with its code, in under a second instead of about 2 minutes. A reader is rebuilt quietly in the background, starting a few seconds later (or at once when a file's line history is not kept), for files not opened before: the first such file takes about a minute on that window, as the pack is unpacked and read again. Unpacking (indexing the pack) runs in slices of about 50 ms, so kept line histories are still answered meanwhile (about a quarter of a second for rust's `symbol.rs`), the loading screen shows its progress, and Stop works during it.
-- Reuse the same layout for the other failures, with one sentence each: the URL is not a repository, the repository is private or does not exist, the network or the proxy failed. Each offers the way back to the demo repository. Write these messages in the same plain voice.
+- **The limit is 50,000 commits (Decided).** One constant. It counts every commit the default branch reaches, as GitHub's commit count does, read from the header of a commits-only pack, so a huge repository is refused in seconds without downloading it. Measured on the biggest window it allows, the tab copes (see [Measurements](#measurements)).
+- **Load part of it instead.** Beside the message, windows of recent history: the longest of 2 years, 1 year, 6 months, 3 months or 1 month that fits under the limit (the main, yellow button), and the last 3 months as a quicker second choice. Each says roughly how many commits it holds and when it starts ("About 36,000 commits, back to November 2025"); each count is one header-only shallow request (`deepen-since` with `filter tree:0`). While they are counted, the loading screen says it is looking for a recent part that fits. If even the last month is over the limit, only the message is shown. A window is downloaded as a shallow pack and kept in the address (`since=2025-11-22`); its first commit reads "The loaded history starts here", and its lines "Already there when the loaded history starts".
+- The mockup's "one folder, all of its history" is not built: GitHub refuses folder filters (`sparse:oid`), so it would mean downloading every commit and folder listing of the whole repository, the very thing the limit avoids.
+- The same layout serves the other failures, with one sentence each in the same plain voice: the URL is not a repository, the repository is private or does not exist, the network or the proxy failed. Each offers the way back to the demo repository.
 
-### Phone (`08-phone-tracks`)
+### Phone (`08-phone-tracks`, `09-phone-overview-lines`)
 
-- At phone width, Tracks rearranges: the wordmark and a compact repository button on the first row; the view tabs and the theme switch on the second; the date, the commit count and the current commit; then the legend with first names; then the tracks, each with its file name above it instead of beside it; the play controls pinned to the bottom.
-- There is no code viewer. Tapping a track opens its lines. Year labels shorten to two digits. A deleted or new file says so after its name.
-- Only Tracks has a phone design. Overview and Lines must still be usable at phone width (rows stack, wide content scrolls sideways), but do not need a bespoke layout for the MVP.
-- After the MVP, Overview and Lines got their own phone layouts (`09-phone-overview-lines`). **Overview:** the date, the share bar without its heading, the current commit on one line (no changed-files list), the legend with first names, then the folders with their names and sizes ("17k lines", "gone 2019") above thinner rows that fit the screen, without author chips; the controls pinned to the bottom. A tap opens the folder in Tracks. **Lines:** a smaller date (26 px) beside the file's back button, no legend, each line's number, chip and code above its track, and the selected line's story in a sheet above the controls. A tap or swipe down on the sheet's handle hides it; tapping a line brings it back for that line.
+- **Header:** the wordmark, a compact repository button and the About button ("i") on the first row; the view tabs on the second.
+- **Tracks:** the date, the commit count and the current commit; then the legend with first names; then the tracks, each with its file name above it; the play controls pinned to the bottom. There is no code viewer: tapping a track opens its lines. Year labels shorten to two digits. A deleted or new file says so after its name.
+- **Overview:** the date, the share bar without its heading, the current commit on one line (no changed-files list), the legend with first names, then the folders with their names and sizes ("17k lines", "gone 2019") above thinner rows that fit the screen, without author chips; the controls pinned to the bottom. A tap opens the folder in Tracks.
+- **Lines:** a smaller date (26 px) beside the file's back button, no legend, each line's number, chip and code above its track, and the selected line's story in a sheet above the controls. A tap or swipe down on the sheet's handle hides it; tapping a line brings it back for that line.
+- Not on phones: hover cards, Find a file, and the About panel's shortcut list.
 
 ### Keyboard (Decided)
 
@@ -273,19 +272,19 @@ Reading a pasted repository happens in two passes, which is why the loading scre
 | ↑ ↓ | Move the selection between rows |
 | Enter | Open the selected folder or file in the next view down |
 | Escape | Go back up one view, or close a menu |
-| / | Find a file (Tracks, added after the MVP) |
+| / | Find a file (Tracks) |
 
 Shortcuts are ignored while a text field has focus. Everything is also reachable with Tab, with a visible focus ring.
 
 ### The URL (Decided)
 
 ```
-/<owner>/<repo>?at=2026-03-12&view=tracks&folder=src&file=src/parser/lexer.ts&line=43
+/<owner>/<repo>?at=2026-03-12&view=tracks&folder=src&file=src/parser/lexer.ts&line=43&since=2025-11-22
 ```
 
-`/` alone is the demo repository at its latest commit, in Tracks, playing. Update the address as the state changes, without adding a history entry for every frame of a scrub.
+`/` alone is the demo repository at its latest commit, in Tracks, playing. The address follows the state, without adding a history entry for every frame of a scrub. `since` is the start of a window of a repository too big to read whole.
 
-A window of a repository too big to read whole adds `since=YYYY-MM-DD`. While playing, the moment keeps moving, so the address leaves out `at`, `line` and, in Overview and Tracks, `file`. Lines keeps its `file`, since it shows nothing without one: reloading a playing Lines plays that file from the start.
+While playing, the moment keeps moving, so the address leaves out `at`, `line` and, in Overview and Tracks, `file`. Lines keeps its `file`, since it shows nothing without one: reloading a playing Lines plays that file from the start.
 
 ---
 
@@ -307,24 +306,25 @@ A window of a repository too big to read whole adds `since=YYYY-MM-DD`. While pl
 
 Rules:
 
-1. Authors are ranked once per repository by commits over its whole history, so a person's color never changes while scrubbing.
+1. Authors are ranked once per repository by commits over its whole history, counting one more for each merge that credits them with files, so a person's color never changes while scrubbing.
 2. The top five get a color, in this order. Everyone from sixth place down is Others.
 3. Bots are never ranked. Their commits always go to Others.
-4. Yellow-green is reserved for the playhead and the current selection. It is never an author.
-5. Untouched is a hatched fill, not a solid gray, so it cannot be confused with Others.
-6. There is deliberately no red, so nothing reads as an error.
-7. Text on any author color is the dark ink `--on-author`, in both themes. It passes 4.5:1 on all five.
-8. Color is never the only cue. Chips and clips carry the author's initials.
+4. The code already there when a window of history starts has its own color, named after the window's start, never ranked.
+5. Yellow-green is reserved for the playhead and the current selection. It is never an author.
+6. Untouched is a hatched fill, not a solid gray, so it cannot be confused with Others.
+7. There is deliberately no red, so nothing reads as an error.
+8. Text on any author color is the dark ink `--on-author`, in both themes. It passes 4.5:1 on all five.
+9. Color is never the only cue. Chips and clips carry the author's initials.
 
 The lightness of each color was chosen so the five stay distinguishable under the three common kinds of color blindness, which is why they are not evenly bright. Do not "even them out". An earlier palette had a blue and a lilac that were nearly identical for people with deuteranopia.
 
-Initials are the first letters of the first and last name. When two ranked authors share initials, use a third letter for the lower-ranked one.
+Initials are the first letters of the first and last name. When two ranked authors share initials, the lower-ranked one gets a third letter.
 
 ---
 
 ## Design tokens
 
-All values come from the designs and are in `design/tokens.css` with a comment on each. The essentials:
+All values come from the designs and are in `web/src/styles/tokens.css` with a comment on each. The essentials:
 
 ### Surfaces and text
 
@@ -337,9 +337,10 @@ All values come from the designs and are in `design/tokens.css` with a comment o
 | `--line` | Dividers and quiet borders | `#3d3746` | `#cbc6bd` |
 | `--line-strong` | Ruler ticks, outlined buttons | `#5a5366` | `#a8a297` |
 | `--fg` | Text | `#f1edf5` | `#201d1a` |
-| `--mute` | Secondary text | `#b3abc0` | `#5c564e` |
-| `--active-bg` / `--active-fg` | Current tab, current theme, current speed | `#f1edf5` / `#16131b` | `#201d1a` / `#f8f7f4` |
-| `--now` / `--on-now` | Play button, playhead handle | `#e4f26b` / `#1d2106` | same |
+| `--mute` | Secondary text, comments in code | `#b3abc0` | `#5c564e` |
+| `--code-string` | Strings in code | `#d6cfe0` | `#3e3934` |
+| `--active-bg` / `--active-fg` | Current tab, current speed | `#f1edf5` / `#16131b` | `#201d1a` / `#f8f7f4` |
+| `--now` / `--on-now` | Play button, playhead handle, main buttons | `#e4f26b` / `#1d2106` | same |
 | `--playhead-line` | The playhead line | `#e4f26b` | `#201d1a` |
 | `--selected-row` | Selected code or menu row | `#2f2a38` | `#eef59a` |
 
@@ -350,6 +351,10 @@ Two deliberate differences between the themes, both for legibility:
 - In light, yellow-green fills get a 2 px ink outline and the playhead line is ink.
 - In dark, an inline highlight is yellow-green text; in light it is ink on a pale yellow-green background (`#eef59a`).
 
+### Code tones
+
+Code has no syntax colors: color means authors. Instead, comments are drawn in `--mute` and strings in `--code-string`, in the code viewer and in Lines (Decided). Lines are read one at a time (`web/src/data/tone.ts`), from the file's extension or name; inside a block comment only lines starting with `*` are known to be comment, and other multi-line comments and strings stay plain. Files of unknown kinds, Markdown included, stay plain.
+
 ### Type
 
 | Use | Font, size, weight |
@@ -357,8 +362,9 @@ Two deliberate differences between the themes, both for legibility:
 | Interface text | Barlow, 14 px, line height 1.4. Captions and legends 13 px. |
 | Headings inside panels | Barlow, 15 px, 600 |
 | Wordmark | Barlow Condensed, 20 px, 600, uppercase, letter spacing 0.02em |
-| Date display | Barlow Condensed, 54 px, 600, uppercase (44 px on the phone) |
+| Date display | Barlow Condensed, 54 px, 600, uppercase (44 px on the phone, 26 px in phone Lines) |
 | Year labels, clip labels | Barlow Condensed, 14 px, 500 |
+| Release names | Barlow Condensed, 12 px, 500 |
 | Author chips | Barlow Condensed, 12 px, 600 |
 | Speed button | Barlow Condensed, 16 px, 600, uppercase |
 | Paths, code, hashes | JetBrains Mono, 13 px (track labels 12 px) |
@@ -374,11 +380,12 @@ Two deliberate differences between the themes, both for legibility:
 | Track row, gap | 30 px, 4 px (Lines: 24 px, 3 px) |
 | Track label gutter | 168 px (Lines: 44% of the width) |
 | Ruler | 20 to 22 px tall, a tick at each year, labels centered in the year |
+| Release strip | 18 px, under the ruler |
 | Clip, lane, field, tab radius | 4 px |
 | Author chip | at least 26 × 18, 3 px radius |
 | Code row | 27 px |
 | Playhead | 2 px line, 18 × 14 handle with 3 px radius |
-| Menus | 8 px radius, `--shadow-menu` |
+| Menus, cards, the About panel | 8 px radius, `--shadow-menu` |
 
 ---
 
@@ -392,55 +399,58 @@ Two deliberate differences between the themes, both for legibility:
 | Suggestion | `BurntSushi/ripgrep` | 2,287 | Overwhelmingly one author, so it tests a nearly one-color view. It has a large reorganization into `crates/`. |
 | Suggestion | `docker/compose` | 6,319 | Many contributors, many moves between folders, and over a thousand renames. Its default branch's first-parent history starts in April 2020 with the Go version, so the Python-to-Go rewrite is not on it; kept anyway (Decided in step 1). |
 
-- Precompute all three with the command-line tool and ship the files in `web/public/data/`. None of them is ever cloned in the browser.
-- The expectations in the "Why" column (author mix, renames, the rewrite) come from general knowledge and were not measured. Check them when the data exists; if alacritty turns out to make a dull demo, tell the author.
-- Check each repository's license before shipping derived data and credit the projects in the README. All three are expected to be permissively licensed.
-- A repository with many authors needs the "top five and Others" rule from day one; ripgrep needs the app to look good in nearly one color; compose needs a sensible file selection when the whole file set changes.
+- All three are precomputed from pinned commits by `scripts/build-demo-data.sh` and shipped in `web/public/data/`. None of them is ever read in the browser.
+- They are permissively licensed, and the README credits them.
+- A repository with many authors needs the "top five and Others" rule; ripgrep needs the app to look good in nearly one color; compose needs a sensible file selection when the whole file set changes.
 
-Rough size bands for reading history in a browser tab. These are estimates, not measurements:
+---
 
-| Commits | Expectation |
-| --- | --- |
-| Under 5,000 | Feels instant |
-| 5,000 to 30,000 | Fine, with the loading state |
-| 30,000 to 100,000 | Slow and memory-heavy; where the limit belongs |
-| Over 100,000 | Too big without a server |
+## Measurements
+
+Taken in November 2026, in Chrome, through the local development proxy.
+
+- **The biggest window the limit allows:** rust-lang/rust's last year (35,797 commits by GitHub's count, 1,580 on the main line). GitHub prepared the pack for well over half a minute before sending anything; the download was 209 MB; unpacking took 34 s, reading 40 s and line history 50 s: about 3.5 minutes in all. Once loaded, playback ran at about 100 frames a second and scrolling a 3,800-line file in Lines at 116, with the page itself using 64 MB. The tab coped, so the limit stays at 50,000.
+- **The last 3 months of rust:** an 86 MB download, 413 main-line commits, about a minute in all; crediting merged work took about 3 s.
+- **Opening a repository again** from the browser's storage: rust's year shows, with its code, in under a second (it took about 2 minutes before the finished data was kept). A file not opened before then takes about a minute on that window, while the reader is rebuilt in the background; kept line histories are answered meanwhile in about a quarter of a second.
+- **Smaller repositories:** git/git's last 2 years (about 7,500 commits) load in about 20 seconds; the demo-sized ones in a few.
+
+The original estimates, for reference: under 5,000 commits feels instant; 5,000 to 30,000 is fine with the loading state; 30,000 to 100,000 is slow and memory-heavy, where the limit belongs; over 100,000 is too big without a server.
 
 ---
 
 ## Build order
 
-Build in small, working steps and commit each one.
+The MVP was built in these five steps, each in small, working commits.
 
-1. **The Rust core as a command-line tool.** Point it at a local clone of alacritty and write the data file. Design the data format here, carefully: every later step depends on it. Include clips, renames and folder sizes; write tests on small fixture repositories.
-2. **Tracks on that file.** React, the canvas track renderer, the playhead store, scrubbing, play and pause, the header, the dark theme. This is already a shippable demo with no WebAssembly.
+1. **The Rust core as a command-line tool.** Pointed at a local clone of alacritty, it writes the data file. Clips, renames and folder sizes, with tests on small fixture repositories.
+2. **Tracks on that file.** React, the canvas track renderer, the playhead store, scrubbing, play and pause, the header, the dark theme. Already a shippable demo with no WebAssembly.
 3. **Overview and Lines** on the same data, including the per-file line history files and the drill-down between views. Then the playing state, the repository field with the two suggestions, the URL, the keyboard shortcuts and the phone layout.
-4. **Pasted repositories.** First the one-day experiment on fetching inside WebAssembly. Then compile the core to WebAssembly, run it in a Worker, add the proxy, the loading screen, and the too-big and failure screens.
-5. **Ship.** Deploy to Cloudflare Pages, write the README from `README-draft.md` with a short recording of the app playing.
+4. **Pasted repositories.** The core compiled to WebAssembly in a Worker, the git client, the proxy, the loading screen, and the too-big and failure screens.
+5. **Ship.** Deployed to Cloudflare; the README written from `README-draft.md` with a recording of the app playing.
 
-The dark theme comes along from step 2. Light is not built for now.
+## After the MVP
 
----
+Built since, in this order; each is described in its section above.
 
-## Later features (not the MVP)
+- Automatic deploys from GitHub Actions, and a CI badge in the README.
+- [Hover cards](#the-transport-bar-and-the-timeline-every-view) on clips.
+- The [logo mark and favicon](#whats-in-this-folder) (`docs/logo/`), in the header and the README.
+- [Find a file](#tracks-02-tracks-the-home-screen) in Tracks, with pinning.
+- [Release tags](#data-and-rules) on the ruler.
+- The [About panel](#the-header-every-screen).
+- [Phone layouts](#phone-08-phone-tracks-09-phone-overview-lines) for Overview and Lines, from the `09-phone-overview-lines` sketch.
+- [Code tones](#code-tones): comments and strings quieter, no syntax colors.
+- [Windows of recent history](#too-big-and-other-failures-07-too-big) for repositories over the limit, with earlier code in its own color.
+- [Kept repositories](#loading-a-pasted-repository-06-loading) that open again at once, listed and deletable in About; unpacking in slices.
+- [Merge credit file by file](#data-and-rules) (rollup credit), which also fixed pasted repositories crediting every merge to whoever merged it.
+- [Clip units that scale](#data-and-rules) with the history's length.
 
-Do not build these now.
+## Not built yet
 
-- ~~**Loading part of a big repository:** the last 2 years, or one folder with all of its history (`07-too-big`).~~ Built after the MVP as windows of recent history; the folder option proved impossible (see Too big).
-- ~~**Hover details** on a clip: who, which dates, how many commits.~~ Built after the MVP: a card beside the mouse in Tracks and Lines (not on phones). In Lines it also gives the reason of the commit that wrote the line.
-- ~~**An about panel** in the header: one sentence on what this is, a link to the source and to the author.~~ Built after the MVP: an "About" button at the far right of the header (where the theme switch was designed), an "i" icon beside the repository button on phones. Its panel opens under it like the repository menu: one sentence, how to read the timeline (colors, Others, hatching, release ticks, the veil), the keyboard shortcuts (not on phones), the repositories kept in this browser (count, total size, the biggest few, and a "Delete them" button), and a footer saying everything runs in the browser, with the author linked to their GitHub profile and the source. Escape or a click elsewhere closes it.
-- ~~**Bespoke phone layouts** for Overview and Lines.~~ Built after the MVP: see Phone above.
-- ~~**Pinning and searching files** in Tracks beyond the basic pin.~~ Built after the MVP: a "Find a file" field over the file names (press /) matches any path a file ever had, busiest first, with file-name matches counting more. Results show the latest path, plus the name Tracks will label the file with at the playhead when it differs ("src/config.rs on this date", "created in Apr 2019 as src/cursor.rs"). Picking one pauses, selects it and pins it to the top of the list, even when it was already shown, whatever the folder; a pin button on its label unpins it. A file named in the address that is not among the busiest is pinned the same way. Pins are kept while the tab is open, not in the address. Not on phones yet.
-- **Other colorings.** An early design had a "Color by" switch (age, author, churn). Only author survived; the renderer should not make another one impossible.
-- ~~**Release tags** as markers on the ruler.~~ Built after the MVP. The core keeps the project's own finished versions (bare `15.2.0` or `v0.16.0` tags when there are any, else the most common prefix such as `app-`; never release candidates) and dates each by its tagger date, else its commit's, since releases are often tagged on a release branch off the first-parent history. The data file gained an optional `tags` list (older files have none). On the timeline they get an 18 px strip under the ruler in every view: a tick per release, longer for major ones, and as many names as fit, major releases first; the release current at the playhead is brighter, and a tick shows a card on hover. For a pasted repository the tags come from GitHub's ref listing; commits of tags on unmerged branches are fetched as a small commits-only pack (at most 500), and tags whose commit cannot be found are left out.
-- **Hosts other than GitHub**, and private repositories.
-- **Merge-aware history** instead of first-parent only.
-- ~~**A logo mark and favicon**, once designed.~~ Built after the MVP: the files are in `docs/logo/` (its README gives the geometry), the icons and web app manifest in `web/public/`, and the mark sits before the live-text wordmark in the header. Only the dark version exists.
-- **The light theme** and the sun and moon switch, as in `design/screens/light/`.
-
-### Code tones (added after the MVP)
-
-Code has no syntax colors: color means authors. Instead, comments are drawn in `--mute` and strings in `--code-string` (between `--fg` and `--mute`), in the code viewer and in Lines. Lines are read one at a time (`web/src/data/tone.ts`), from the file's extension or name; inside a block comment only lines starting with `*` are known to be comment, and other multi-line comments and strings stay plain. Files of unknown kinds, Markdown included, stay plain.
+- **Other colorings.** An early design had a "Color by" switch (age, author, churn). Only author survived; the renderer does not make another one impossible. It needs design first: what age and churn look like, and how the legend reads.
+- **Hosts other than GitHub**, and private repositories. Other hosts need their own proxy rules; private repositories would mean tokens through the proxy, against "no account, nothing stored on a server".
+- **Merge-aware history** instead of first-parent only. A deep change to the core and the timeline.
+- **The light theme** and the sun and moon switch, as in `design/screens/light/`. Every color is already a token.
 
 ---
 
@@ -451,28 +461,33 @@ Code has no syntax colors: color means authors. Instead, comments are drawn in `
 | Name | Palimpsest: a manuscript scraped and written over, with the old text still faintly there. Rejected: "Back to the Future" (a film title, unsearchable) and Janus (sounds wrong in French). | Decided |
 | Concept | Three views of one moment, all drawn as tracks: folders, files, lines. Earlier designs (a treemap dashboard, a stacked "strata" chart, a manuscript-style line view) were dropped in favor of this. | Decided |
 | Home screen | Tracks, the view the author liked first and most. | Decided |
-| Themes | Dark only for now, no theme switch. Light stays designed and in the tokens for later. Never the system setting. Backgrounds never pure black or white. | Decided |
-| Colors | Author colors as specified. No red anywhere. Yellow-green means "now" and nothing else. | Decided |
+| Themes | Dark only, no theme switch. Light stays designed and in the tokens. Never the system setting. Backgrounds never pure black or white. | Decided |
+| Colors | Author colors as specified. No red anywhere. Yellow-green means "now" and nothing else. No syntax colors in code. | Decided |
 | First open | A demo repository already loaded and already playing. Never an empty page with a URL box. | Decided |
 | Demo repositories | alacritty by default; ripgrep and docker/compose as suggestions. All precomputed. | Decided |
 | Back end | None. A static site plus one CORS proxy Worker. No database, no accounts. | Decided |
-| Stack | React, TypeScript, Vite, Canvas 2D; Rust core compiled natively and to WebAssembly; gitoxide; Cloudflare. | Decided |
+| Stack | React, TypeScript, Vite, Canvas 2D; Rust core compiled natively and to WebAssembly; gitoxide natively; Cloudflare. | Decided |
 | Rust from day one | The author wants Rust and WebAssembly in this project as a goal in itself, not as a fallback for speed. | Decided |
 | While playing | The code viewer becomes a commit feed. | Decided |
 | Legend | In a row above the tracks, not in the header, so five authors, Others and Untouched fit. | Decided |
-| Files shown in Tracks | Most-committed files in the folder, a fixed list while scrubbing. | Decided |
-| Folders shown in Overview | Up to five, plus "everything else", with two or three notable moments. | Decided |
+| Files shown in Tracks | Pinned files, then the most-committed files in the folder; a fixed list while scrubbing. | Decided |
+| Folders shown in Overview | Up to five, plus "everything else", with up to three notable moments. | Decided |
 | Keyboard shortcuts | As listed above. | Decided |
 | URL scheme | As listed above. | Decided |
-| Playback speed | Calendar time; the whole demo in about 90 seconds at 4×. | Decided |
+| Playback speed | Calendar time; the whole history in about 90 seconds at 4×. | Decided |
 | Colors while loading | Others gray until every commit is read, then final colors at once. | Decided |
-| Commit limit | 50,000. | Decided |
-| Clip, untouched, rename and line-pairing rules | As listed under "Data the views need": monthly clips, 12 months for Untouched, similarity-based renames and line pairing, all tunable. | Decided |
+| Commit limit | 50,000, kept after measuring rust's biggest allowed window. | Decided |
+| Big repositories | Windows of recent history (the longest that fits, plus the last 3 months), not one folder. Earlier code in its own parchment color. | Decided |
+| Merge credit | File by file, to whoever last changed each file on the merged branches. | Decided |
+| Clip, untouched, rename and line-pairing rules | As listed under [Data and rules](#data-and-rules): clip units scaled to the history's length, 12 months for Untouched, similarity-based renames and line pairing, all tunable. | Decided |
+| Storage | Packs, finished data and line histories kept in the browser, deletable from About. Nothing stored anywhere else. | Decided |
 | pnpm, bundled fonts, MIT | As listed in the stack. | Decided |
 
 ---
 
-## Done means
+## Done means (the MVP)
+
+The acceptance list for the MVP, met at the end of step 5.
 
 - Opening the site shows alacritty in Tracks, already playing, with no clone and no spinner.
 - Tracks, Overview and Lines look like their screens in `design/screens/dark/`, with real data in place of the invented data.
